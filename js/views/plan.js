@@ -18,7 +18,7 @@ function openMenu() {
         </select></div>
         <button type="button" class="btn wide" data-m="saveday">${M.saveDay}</button>
         ${undoStack.length ? h`<button type="button" class="btn wide" data-m="undo">${M.undo(undoStack[undoStack.length - 1].label)}</button>` : ''}
-        ${d && d.blocks ? h`<button type="button" class="btn wide" data-m="reset">${M.reset}</button>${hint(M.resetHint)}` : ''}
+        ${d && d.blocks ? h`${view === todayISO() ? h`<button type="button" class="btn wide" data-m="reset-rest">${M.resetRest}</button>` : ''}<button type="button" class="btn wide" data-m="reset">${M.reset}</button>${hint(M.resetHint)}` : ''}
       </section>
       <section class="grp"><h3>${M.food}</h3><div class="list">
         ${navRow('week', M.week, din ? M.todayDish(din.name) : '')}
@@ -57,6 +57,7 @@ function openMenu() {
         else if (k === 'saveday') openSaveDaySheet();
         else if (k === 'undo') undoLast();
         else if (k === 'reset') { closeSheet(); commit(M.toastReset, () => { delete state.days[view].blocks; }); }
+        else if (k === 'reset-rest') { closeSheet(); commit(M.toastResetRest, () => resetRestOfDay(view)); }
       });
       q('#m-daytpl').addEventListener('change', e => {
         const v = e.target.value;
@@ -91,15 +92,16 @@ function openBlockSheet(id, tplId) {
   const tplName = state.templates[inTpl ? tplId : templateFor(view)].name;
   reopen = null;
   const back = () => openTemplateEditor(tplId);
+  const isBed = !isNew && !inTpl && nightBlock(blocks) === src;
 
   const delSection = isNew ? '' : inTpl
     ? h`<section class="grp quiet"><button type="button" class="btn link" data-del>${B.delBlock}</button>
         <div class="confirm" data-confirm hidden>${hint(B.delConfirmTpl(b.title, tplName))}
         <div class="btnrow"><button type="button" class="btn small danger" data-del-scope="tpl">${B.delFromTpl}</button></div></div>
       </section>`
-    : h`<section class="grp"><h3>${B.shiftHead(dayLbl)}</h3><div class="shift">${shiftButtons('data-shift')}</div>
+    : h`<section class="grp"><h3>${isBed ? B.shiftHeadBed : B.shiftHead}</h3><div class="shift">${shiftButtons('data-shift')}</div>
         ${isToday ? h`<button type="button" class="btn small wide" data-shift="now">${T.tl.startsNow}</button>` : ''}
-        ${hint(B.shiftHint(dayLbl))}
+        ${hint(isBed ? B.shiftHintBed(dayLbl) : B.shiftHint(dayLbl))}
       </section>
       <section class="grp quiet"><button type="button" class="btn link" data-del>${B.del}</button>
         <div class="confirm" data-confirm hidden>${hint(B.delConfirm(b.title, dayLbl, tplName))}
@@ -147,10 +149,8 @@ function openBlockSheet(id, tplId) {
       q('#f-items').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); q('[data-add]').click(); } });
       sheet.querySelectorAll('[data-shift]').forEach(btn => btn.addEventListener('click', () => {
         const v = btn.dataset.shift;
-        const delta = v === 'now' ? nowMin() - toMin(src.start) : Number(v);
         closeSheet();
-        if (!delta) return;
-        commit(T.tl.moved(src.title || T.tl.block, delta), () => shiftFrom(b.id, delta));
+        if (v === 'now') startNow(b.id); else moveBlockBy(b.id, Number(v));
       }));
       bindDelete(sheet, () => {});
       sheet.querySelectorAll('[data-del-scope]').forEach(btn => btn.addEventListener('click', () => {
@@ -184,6 +184,38 @@ function readBlock(sheet, b) {
     .map(r => ({ id: r.dataset.iid || 'i-' + uid(), text: r.querySelector('input').value.trim() }))
     .filter(x => x.text);
   if (!b.slot) b.slot = b.id;
+}
+
+/* ---------- start nå for en bolk som ikke er neste ----------
+   Viser hva som vil skje, og lar brukeren velge et trygt alternativ. */
+function openStartNowSheet(b, p) {
+  const S = T.startNow, now = nowMin();
+  const names = list => list.map(x => x.title).join(', ');
+  const btn = (act, label, primary) => h`<button type="button" class="btn wide${primary ? ' primary' : ''}" data-sn="${act}">${label}</button>`;
+  let body = [];
+  if (p.kind === 'afterBed') body = [hint(S.afterBed(b.title, p.bed.start))];
+  else if (p.kind === 'bedtime') body = [hint(S.bedtime(b.start, toHM(now))), btn('bed', S.changeBed, true)];
+  else if (p.kind === 'past') body = [hint(S.past(b.title, b.start)), p.alt ? btn('alt', S.useAlt(p.alt.title, p.alt.start), true) : '', btn('copy', S.copy), hint(S.copyHint)];
+  else if (p.kind === 'ahead') body = [
+    p.meals.length ? hint(S.meals(names(p.meals))) : hint(S.ahead(names(p.between))),
+    p.alt ? btn('alt', S.useAlt(p.alt.title, p.alt.start), true) : '',
+    p.meals.length ? '' : btn('skip', S.skip(names(p.between)), !p.alt),
+    p.meals.length ? '' : hint(S.skipHint)];
+  reopen = null;
+  openSheet(h`${headHTML(S.title(b.title))}
+    <div class="sh-body"><section class="grp">${body}</section>
+      <button type="button" class="btn wide" data-close>${S.cancel}</button></div>`,
+    sheet => sheet.addEventListener('click', e => {
+      const a = e.target.closest('[data-sn]');
+      if (!a) return;
+      closeSheet();
+      shiftOpen = null;
+      const k = a.dataset.sn, t = nowMin();
+      if (k === 'alt') commit('', () => fitMessage(moveBlock(p.alt.id, t)));
+      else if (k === 'bed') commit('', () => fitMessage(moveBlock(b.id, t)));
+      else if (k === 'copy') commit(S.copied(b.title), () => { copyBlockNow(b.id); });
+      else if (k === 'skip') commit('', () => { skipBlocks(p.between.map(x => x.id)); return S.skipped(names(p.between)) + ' ' + fitMessage(moveBlock(b.id, t)); });
+    }));
 }
 
 /* ---------- maler ---------- */

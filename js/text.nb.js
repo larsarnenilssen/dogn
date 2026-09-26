@@ -26,7 +26,7 @@ const T = {
   },
 
   types: { prep: 'Forberedelse', meal: 'Måltid', sleep: 'Søvn', awake: 'Våkentid', routine: 'Rutine' },
-  roles: { '': 'Ingen', bedtime: 'Legging', reset: 'Nullstilling' },
+  roles: { '': 'Ingen', wake: 'Morgen', bedtime: 'Legging', reset: 'Nullstilling' },
   cats: { fisk: 'fisk', kjott: 'kjøtt', kylling: 'kylling', vegetar: 'vegetar', annet: 'annet' },
   meals: { dinner: 'Middag', lunch: 'Lunsj' },
   rates: { godt: 'godt', middels: 'middels', lite: 'lite' },
@@ -46,7 +46,7 @@ const T = {
   },
 
   kids: {
-    word: 'barna',                        // standard samlebetegnelse
+    word: 'barnene',                      // standard samlebetegnelse
     both: 'Begge', all: 'Alle', and: ' og ',
     forKids: w => 'Til ' + w + ': ',
     eat: w => cap(w) + ' spiser',
@@ -78,8 +78,8 @@ const T = {
     clothes: 'klær', clothesToday: 'klær i dag', ate: 'spiste',
     rememberFrom: d => 'Husk fra ' + d, late: n => plural(n, T.n.dag) + ' på etterskudd',
     openLog: 'Åpne dagslogg', shareReport: 'Del dagsrapport', exportBackup: 'Eksporter backup',
-    shiftHead: today => 'Flytt denne og resten av ' + (today ? 'i dag' : 'dagen') + ' (min)', startsNow: 'Starter nå',
-    moved: (title, delta) => title + ' flyttet ' + signed(delta), block: 'Rubrikken', alreadyNow: title => title + ' starter allerede nå',
+    shiftHead: 'Flytt (min). Bolkene etter tilpasses fram til leggetid.', shiftHeadBed: 'Flytt leggetid (min). Nullstilling flyttes like mye.', startsNow: 'Starter nå',
+    alreadyNow: title => title + ' starter allerede nå',
   },
 
   sleep: {
@@ -87,6 +87,7 @@ const T = {
     asleep: 'Sovnet', awake: 'Våknet', nowAsleep: who => who + ' sovnet nå', nowAwake: who => who + ' våknet nå',
     fellAsleep: (who, t) => who + ' sovnet ' + t + '.', wokeUp: (who, t) => who + ' våknet ' + t + '.',
     nextBlock: 'Neste bolk', shiftNote: (title, start, delta) => ' ' + title + ' starter ' + start + ' (' + signed(delta) + ').',
+    morning: 'morgen', wokeAt: t => 'våknet ' + t,
   },
 
   nowbar: {
@@ -94,10 +95,28 @@ const T = {
     next: (t, title) => 'neste ' + t + ' ' + title, last: 'siste bolk i dag',
     woke: who => who + ' våknet', slept: who => who + ' sovnet',
     start: 'start nå', again: 'trykk igjen', startAria: 'Start neste bolk nå og flytt resten av dagen',
-    started: (title, delta) => title + ' starter nå, resten av dagen flyttet ' + signed(delta), blockFallback: 'Bolken',
+
   },
 
   sheet: { dialog: 'Ark' },
+
+  // Når bolker flyttes eller startes: leggetid står, resten tilpasses
+  fit: {
+    moved: (title, start) => title + ' ' + start + '.', rest: bed => ' Resten av dagen er tilpasset fram til leggetid ' + bed + '.',
+    bedtime: start => 'Leggetid i dag: ' + start + '.', block: 'Bolken',
+  },
+  startNow: {
+    title: name => 'Start ' + name + ' nå',
+    past: (name, start) => name + ' ' + start + ' er passert.',
+    useAlt: (name, start) => 'Start ' + name + ' (' + start + ') i stedet',
+    copy: 'Legg inn en kopi nå', copyHint: 'Kopien legges inn nå, bare i dag. Resten av dagen står.',
+    ahead: list => list + ' ligger imellom.',
+    skip: list => 'Hopp over ' + list, skipHint: 'Bolkene imellom fjernes bare i dag. Resten av dagen tilpasses fram til leggetid, som står.',
+    meals: list => list + ' ligger imellom. Måltider hoppes ikke over, så start heller neste bolk.',
+    afterBed: (name, bed) => name + ' kommer etter leggetid (' + bed + ') og kan ikke startes før den.',
+    bedtime: (from, to) => 'Leggetiden endres fra ' + from + ' til ' + to + ' i dag. Nullstilling flyttes like mye. Malen endres ikke.',
+    changeBed: 'Endre leggetid', cancel: 'Avbryt', skipped: list => 'Hoppet over ' + list + '.', copied: name => name + ' lagt inn nå.',
+  },
 
   cal: {
     title: 'Velg dag', prev: 'Forrige måned', next: 'Neste måned', week: 'uke', today: 'I dag', tomorrow: 'I morgen',
@@ -110,13 +129,14 @@ const T = {
     linkOpts: { '': 'Nei, bruk teksten under', dinner: 'Ja, dagens middag', lunch: 'Ja, dagens lunsj' },
     bankHint: 'Når en rett fra banken er valgt for dagen, vises den i stedet for tekstene over.',
     role: 'Rolle',
-    roleOpts: { '': 'Ingen', bedtime: 'Legging – nattesøvnen logges her', reset: 'Nullstilling – i morgen, dagsrapport og backup' },
-    roleHint: 'Hver rolle brukes av én bolk om gangen. Velger du en rolle her, fjernes den fra de andre bolkene.',
+    roleOpts: { '': 'Ingen', wake: 'Morgen – dagen starter når alle har våknet', bedtime: 'Legging – fast leggetid, nattesøvnen logges her', reset: 'Nullstilling – i morgen, dagsrapport og backup' },
+    roleHint: 'Hver rolle brukes av én bolk om gangen. Velger du en rolle her, fjernes den fra de andre bolkene. Leggetiden endres bare når du flytter leggebolken selv.',
     checklist: 'Sjekkliste', addItem: 'Legg til punkt', itemAria: 'Punkt i sjekklisten', removeItem: 'Fjern punkt',
     tasksHere: list => 'Gjøremål som går igjen vises også her: ' + list + '. De endres under Meny.',
     today: 'i dag', thisDay: 'denne dagen',
     delBlock: 'Slett bolken', delConfirmTpl: (title, tpl) => 'Slette «' + title + '» fra malen «' + tpl + '»?', delFromTpl: 'Slett fra malen',
-    shiftHead: dayLbl => 'Flytt denne og resten av ' + dayLbl, shiftHint: dayLbl => 'Tall i minutter. Gjelder bare ' + dayLbl + '.',
+    shiftHead: 'Flytt denne bolken', shiftHint: dayLbl => 'Tall i minutter. Bolkene etter tilpasses fram til leggetid, som står. Gjelder bare ' + dayLbl + '.',
+    shiftHeadBed: 'Flytt leggetid', shiftHintBed: dayLbl => 'Tall i minutter. Nullstilling flyttes like mye. Gjelder bare ' + dayLbl + '.',
     del: 'Slett rubrikk', delConfirm: (title, dayLbl, tpl) => 'Slette «' + title + '» bare ' + dayLbl + ', eller fra malen «' + tpl + '»?',
     delDay: dayLbl => 'Slett ' + dayLbl, saveTpl: 'Lagre i malen', saveDay: dayLbl => 'Lagre for ' + dayLbl,
     deletedTpl: 'Slettet fra malen', deletedDay: dayLbl => 'Slettet ' + dayLbl,
@@ -127,7 +147,8 @@ const T = {
     title: 'Meny', newBlock: 'Ny rubrikk', add: 'Husk eller avtale', dayTpl: 'Mal for dagen',
     follow: name => 'Følg planen (' + name + ')', only: name => name + ' bare denne dagen',
     saveDay: 'Lagre dagen som mal', undo: label => 'Angre: ' + label, reset: 'Tilbakestill dagen til malen',
-    resetHint: 'Dagen har egne endringer i rubrikkene. Lagre dem som mal, eller tilbakestill. Avkrysninger og logg beholdes uansett.',
+    resetRest: 'Tilbakestill resten av dagen', toastResetRest: 'Resten av dagen følger malen igjen',
+    resetHint: 'Dagen har egne endringer i rubrikkene. Lagre dem som mal, eller tilbakestill hele dagen eller bare resten av den (fra nå). Avkrysninger og logg beholdes uansett.',
     food: 'Mat', week: 'Ukemeny', todayDish: name => 'I dag: ' + name, shop: 'Handleliste', shopMeta: 'Neste 7 dager fra ukemenyen',
     bank: 'Middagsbank', bankMeta: (n, fish) => plural(n, T.n.rett) + ', fisk ' + fish + ' ganger i uken',
     acts: 'Aktiviteter', library: 'Aktivitetsbibliotek',
@@ -270,7 +291,7 @@ const T = {
     notChosen: 'Ikke valgt', welcome: 'Velkommen til Døgn', title: 'Profil',
     haveFile: 'Har du en backup eller startfil?', importFile: 'Importer fil', importHint: 'Ellers setter du opp appen under. Alt kan endres senere under Meny › Profil.',
     kids: 'Barn', addKid: 'Legg til barn',
-    kidsWord: 'Samlebetegnelse', kidsWordHint: 'Brukes i teksten, for eksempel «Til barna» eller «Guttene spiser». Skriv for eksempel barna, guttene eller jentene.',
+    kidsWord: 'Samlebetegnelse', kidsWordHint: 'Brukes i teksten, for eksempel «Til barnene» eller «Guttene spiser». Skriv for eksempel barnene, guttene eller jentene.',
     place: 'Sted', searchPh: 'Søk etter sted, for eksempel Nesttun', searchAria: 'Søk etter sted', search: 'Søk', geo: 'Bruk posisjonen min',
     placeHint: 'Stedet brukes til værmelding, soloppgang og solnedgang.', home: 'Hjemme',
     searching: 'Søker …', notFound: 'Fant ikke stedet. Prøv et annet navn, eller bruk posisjonen din.', offline: 'Stedsøk virker ikke uten nett. Prøv igjen senere, eller bruk posisjonen din.',

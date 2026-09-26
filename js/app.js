@@ -31,10 +31,7 @@ $('#timeline').addEventListener('click', e => {
     const id = qs.closest('.blk').dataset.id;
     const b = blocksFor(view).find(x => x.id === id);
     if (!b) return;
-    const delta = qs.dataset.qshift === 'now' ? nowMin() - toMin(b.start) : Number(qs.dataset.qshift);
-    if (!delta) { toast(T.tl.alreadyNow(b.title)); return; }
-    if (qs.dataset.qshift === 'now') shiftOpen = null;
-    commit(T.tl.moved(b.title || T.tl.block, delta), () => shiftFrom(id, delta));
+    if (qs.dataset.qshift === 'now') startNow(id); else moveBlockBy(id, Number(qs.dataset.qshift));
     return;
   }
   const el = e.target.closest('[data-act]');
@@ -63,6 +60,7 @@ $('#timeline').addEventListener('click', e => {
     case 'rate': commit(null, () => cycleRate(view, blk.dataset.id, el.dataset.kid), 'timeline'); break;
     case 'sleep-now': commit('', () => logSleepNow(view, blk.dataset.id, kidsOf())); break;
     case 'night-now': commit('', () => logNightNow(view, blk.dataset.id, kidsOf())); break;
+    case 'wake-now': commit('', () => logWakeNow(view, kidsOf())); break;
     case 'sleep-edit': openNapSheet(view, blk.dataset.id, el.dataset.kid, null); break;
   }
 });

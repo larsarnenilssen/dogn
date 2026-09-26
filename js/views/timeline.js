@@ -101,7 +101,8 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date) {
     })
   ];
   const doneN = rows.filter(r => isDone(date, r.id)).length;
-  const collapsed = phase === 'past' && !expanded.has(b.id);
+  const napOpen = date === today && getLog(date).sleep.some(e => e.blockId === b.id && e.start && !e.end);
+  const collapsed = phase === 'past' && !expanded.has(b.id) && !napOpen && !(b === wakeBlock(blocks) && morningOpen(date, blocks, now));
   const last = i === blocks.length - 1;
   const title = b.title || T.types[b.type];
   const tag = title.toLowerCase() === T.types[b.type].toLowerCase() ? '' : T.types[b.type].toLowerCase();
@@ -145,6 +146,8 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date) {
     }
     const nb = nightBlock(blocks);
     if (nb && nb.id === b.id && (date < today || (date === today && (started || s - now <= 60)))) inner.push(nightLogHTML(date, b));
+    const wb = wakeBlock(blocks);
+    if (wb && wb.id === b.id && (date === today ? now >= s - 120 : state.kids.some(k => wokeAt(date, k.id)))) inner.push(morningLogHTML(date));
     if (rows.length) {
       inner.push(h`<ul class="checks">${rows.map(r =>
         h`<li${r.rec ? raw(' class="rec"') : r.gen ? raw(' class="gen"') : ''}><label><input type="checkbox" data-done="${r.id}"${isDone(date, r.id) ? raw(' checked') : ''}>
@@ -171,7 +174,7 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date) {
           <span class="hl"><span class="title">${title}</span>${sl}</span>
           ${collapsed ? h`<span class="meta">${meta}</span>` : h`<span class="edit" aria-hidden="true">${ICON_EDIT}</span>`}
         </button>
-      </div>${shiftOpen === b.id ? shiftBarHTML(date) : ''}${inner}${prog}
+      </div>${shiftOpen === b.id ? shiftBarHTML(date, nightBlock(blocks) === b) : ''}${inner}${prog}
     </div></section>`;
 }
 
@@ -187,6 +190,19 @@ function nightLogHTML(date, b) {
   const none = state.kids.every(k => !(N[k.id] && N[k.id].asleep));
   return h`<div class="log night"><span class="lg-h">${S.nightLog}</span>${rowsH}
     ${isToday && none && state.kids.length > 1 ? h`<button type="button" class="btn small wide" data-act="night-now" data-kid="all">${S.nowAsleep(groupWord())}</button>` : ''}</div>`;
+}
+
+function morningLogHTML(date) {
+  const isToday = date === todayISO(), S = T.sleep;
+  const rowsH = state.kids.map(k => {
+    const w = wokeAt(date, k.id);
+    return h`<div class="lg-row"><span class="kn">${k.name}</span>
+      <button type="button" class="lg-t" data-act="log">${w ? S.wokeAt(w) : S.notLogged}</button>
+      ${isToday && !w ? h`<button type="button" class="btn small" data-act="wake-now" data-kid="${k.id}">${S.awake}</button>` : ''}</div>`;
+  });
+  const none = state.kids.every(k => !wokeAt(date, k.id));
+  return h`<div class="log night"><span class="lg-h">${S.morning}</span>${rowsH}
+    ${isToday && none && state.kids.length > 1 ? h`<button type="button" class="btn small wide primary" data-act="wake-now" data-kid="all">${S.nowAwake(groupWord())}</button>` : ''}</div>`;
 }
 
 function sleepLogHTML(date, b) {
@@ -209,9 +225,9 @@ function sleepLogHTML(date, b) {
   return h`<div class="log"><span class="lg-h">${S.napLog}</span>${rowsH}${both}</div>`;
 }
 
-function shiftBarHTML(date) {
+function shiftBarHTML(date, isBed) {
   const isToday = date === todayISO();
-  return h`<div class="shiftbar"><span class="sb-l">${T.tl.shiftHead(isToday)}</span>
+  return h`<div class="shiftbar"><span class="sb-l">${isBed ? T.tl.shiftHeadBed : T.tl.shiftHead}</span>
     <div class="sb-btns">${[-30, -15, 15, 30].map(d => h`<button type="button" class="btn small" data-qshift="${d}">${(d > 0 ? '+' : '−') + Math.abs(d)}</button>`)}</div>
     ${isToday ? h`<button type="button" class="btn small primary" data-qshift="now">${T.tl.startsNow}</button>` : ''}</div>`;
 }
@@ -297,7 +313,9 @@ function nowModel() {
   let act = null;
   const napState = blk => ids.map(k => { const e = napEntry(date, k, blk.id); return !e ? 'none' : (!e.end ? 'open' : 'done'); });
   const who = list => list.length > 1 && list.length === ids.length ? groupWord() : list.map(kidName).join(T.kids.and);
-  if (b && b.type === 'sleep') {
+  const on = openNap(date);
+  if (on) act = { kind: 'sleep', block: on.blockId, kids: on.kids, label: N.woke(who(on.kids)) };
+  if (!act && b && b.type === 'sleep') {
     const st = napState(b);
     const open = ids.filter((k, i) => st[i] === 'open'), none = ids.filter((k, i) => st[i] === 'none');
     if (open.length) act = { kind: 'sleep', block: b.id, kids: open, label: N.woke(who(open)) };
@@ -307,6 +325,11 @@ function nowModel() {
     const NL = getLog(date).night;
     const none = ids.filter(k => !(NL[k] && NL[k].asleep));
     if (none.length) act = { kind: 'night', block: b.id, kids: none, label: N.slept(who(none)) };
+  }
+  if (!act && morningOpen(date, blocks, now)) {
+    const wb = wakeBlock(blocks);
+    const none = ids.filter(k => !wokeAt(date, k));
+    if (none.length) act = { kind: 'wake', block: wb.id, kids: none, label: N.woke(who(none)) };
   }
   if (!act && next && next.type === 'sleep' && toMin(next.start) - now <= 45 && napState(next).every(x => x === 'none')) {
     act = { kind: 'sleep', block: next.id, kids: ids, label: N.slept(groupWord()) };
@@ -336,14 +359,34 @@ function nowbarAction(act) {
   if (!act) return;
   if (act.kind === 'sleep') commit('', () => logSleepNow(view, act.block, act.kids));
   else if (act.kind === 'night') commit('', () => logNightNow(view, act.block, act.kids));
-  else if (act.kind === 'start') {
-    const b = blocksFor(view).find(x => x.id === act.block);
-    if (!b) return;
-    const delta = nowMin() - toMin(b.start);
-    if (!delta) { toast(T.tl.alreadyNow(b.title)); return; }
-    commit(T.nowbar.started(b.title || T.nowbar.blockFallback, delta), () => shiftFrom(b.id, delta));
-  }
+  else if (act.kind === 'wake') commit('', () => logWakeNow(view, act.kids));
+  else if (act.kind === 'start') startNow(act.block);
   scrollToNow();
+}
+
+/* ---------- flytt og start nå ----------
+   Nåværende og neste bolk startes direkte. For andre bolker vises et valg,
+   slik at måltider og leggetid ikke kan hoppes over ved et uhell. */
+function fitMessage(r) {
+  if (!r) return '';
+  const title = r.block.title || T.fit.block;
+  if (r.kind === 'bedtime') return T.fit.bedtime(r.block.start);
+  return T.fit.moved(title, r.block.start) + (r.kind === 'fit' && r.end ? T.fit.rest(r.end) : '');
+}
+function moveBlockBy(id, delta) {
+  const b = blocksFor(view).find(x => x.id === id);
+  if (!b || !delta) return;
+  let r = null;
+  commit('', () => { r = moveBlock(id, toMin(b.start) + delta); return fitMessage(r); });
+}
+function startNow(id) {
+  const b = blocksFor(view).find(x => x.id === id);
+  if (!b) return;
+  const now = nowMin();
+  if (toMin(b.start) === now) { toast(T.tl.alreadyNow(b.title)); return; }
+  const p = startNowPlan(view, id);
+  if (p.kind === 'direct') { shiftOpen = null; commit('', () => fitMessage(moveBlock(id, now))); return; }
+  openStartNowSheet(b, p);
 }
 
 function scrollToNow() {

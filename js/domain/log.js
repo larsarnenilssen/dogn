@@ -13,9 +13,18 @@ function shiftNote(oldMin, b) {
   return delta ? T.sleep.shiftNote(b.title || T.sleep.nextBlock, b.start, delta) : '';
 }
 const whoText = kids => kids.length > 1 ? groupWord() : kidName(kids[0]);
+/* Flytter en bolk til nå (hvis avviket er rimelig) og legger til en kort melding */
+function startBlockAt(blockId, now) {
+  const b = blocksFor(view).find(x => x.id === blockId);
+  if (!b) return '';
+  const old = toMin(b.start), delta = now - old;
+  if (!delta || Math.abs(delta) > MAX_AUTO_SHIFT) return '';
+  const r = moveBlock(blockId, now);
+  return r ? shiftNote(old, r.block) + (r.kind === 'fit' && r.end ? T.fit.rest(r.end) : '') : '';
+}
 
-/* Søvnklokken for lurer. Første «sovnet» setter lurens start til nå.
-   Når siste barn våkner, starter neste bolk nå. Resten av dagen står der den står. */
+/* Søvnklokken for lurer. Første «sovnet» starter luren nå. Når siste barn våkner,
+   starter neste bolk nå. Resten av dagen tilpasses fram til leggetid, som står. */
 function logSleepNow(date, blockId, kids) {
   const L = logRec(date), now = nowMin(), t = toHM(now);
   const had = L.sleep.some(x => x.blockId === blockId);
@@ -29,21 +38,47 @@ function logSleepNow(date, blockId, kids) {
   const blocks = blocksFor(date);
   const i = blocks.findIndex(b => b.id === blockId);
   if (i < 0) return msg;
-  if (!had) {
-    const delta = now - toMin(blocks[i].start);
-    if (delta && Math.abs(delta) <= MAX_AUTO_SHIFT) { const old = toMin(blocks[i].start); const nb = moveStart(blockId, now); if (nb) msg += shiftNote(old, nb); }
-  } else if (ended) {
+  if (!had) msg += startBlockAt(blockId, now);
+  else if (ended) {
     const entries = L.sleep.filter(x => x.blockId === blockId);
     const allAwake = state.kids.every(k => entries.some(x => x.kid === k.id && x.end));
     const next = blocks[i + 1];
-    if (allAwake && next) {
-      const delta = now - toMin(next.start);
-      if (delta && Math.abs(delta) <= MAX_AUTO_SHIFT) { const old = toMin(next.start); const nb = moveStart(next.id, now); if (nb) msg += shiftNote(old, nb); }
-    }
+    if (allAwake && next) msg += startBlockAt(next.id, now);
   }
   return msg;
 }
-/* Nattesøvn: når siste barn har sovnet, starter bolken etter leggingen nå. */
+/* Morgen: når siste barn har våknet, starter dagen (morgenbolken) nå,
+   og resten av dagen tilpasses fram til leggetid. Våknetiden føres på natten før. */
+const wakeLogDate = date => addDays(date, -1);
+function wokeAt(date, kid) { const n = getLog(wakeLogDate(date)).night[kid]; return (n && n.wake) || ''; }
+/* En lur som pågår (sovnet er logget, våknet ikke), for i dag */
+function openNap(date) {
+  const open = getLog(date).sleep.filter(e => e.start && !e.end);
+  if (!open.length) return null;
+  const blockId = open[open.length - 1].blockId;
+  return { blockId, kids: open.filter(e => e.blockId === blockId).map(e => e.kid) };
+}
+/* Morgenen er åpen for «våknet» fra litt før planlagt start til første lur, så lenge ikke alle er logget */
+function morningOpen(date, blocks, now) {
+  if (date !== todayISO()) return false;
+  const wb = wakeBlock(blocks);
+  if (!wb || now < toMin(wb.start) - 90) return false;
+  const nap = blocks.find(b => b.type === 'sleep' && toMin(b.start) > toMin(wb.start));
+  if (nap && (now >= toMin(nap.start) || getLog(date).sleep.length)) return false;
+  return state.kids.some(k => !wokeAt(date, k.id));
+}
+function logWakeNow(date, kids) {
+  const L = logRec(wakeLogDate(date)), now = nowMin(), t = toHM(now);
+  const allBefore = state.kids.every(k => wokeAt(date, k.id));
+  kids.forEach(kid => { (L.night[kid] ??= {}).wake = t; });
+  let msg = T.sleep.wokeUp(whoText(kids), t);
+  const allNow = state.kids.every(k => wokeAt(date, k.id));
+  const wb = wakeBlock(blocksFor(date));
+  if (!allBefore && allNow && wb) msg += startBlockAt(wb.id, now);
+  return msg;
+}
+/* Nattesøvn: når siste barn har sovnet, starter nullstillingen nå, men aldri før
+   leggetid. Leggetiden endres ikke. */
 function logNightNow(date, blockId, kids) {
   const L = logRec(date), now = nowMin(), t = toHM(now);
   const allBefore = state.kids.every(k => L.night[k.id] && L.night[k.id].asleep);
@@ -53,16 +88,7 @@ function logNightNow(date, blockId, kids) {
   const blocks = blocksFor(date);
   const i = blocks.findIndex(b => b.id === blockId);
   const next = blocks[i + 1];
-  if (!allBefore && allNow && next) {
-    const delta = now - toMin(next.start);
-    if (delta && Math.abs(delta) <= MAX_AUTO_SHIFT) {
-      // Sovnet før leggebolken skulle starte: flytt leggingen tidligere også.
-      if (now < toMin(blocks[i].start) + 5) moveStart(blockId, now - 15);
-      const old = toMin(next.start);
-      const nb = moveStart(next.id, now);
-      if (nb) msg += shiftNote(old, nb);
-    }
-  }
+  if (!allBefore && allNow && next) msg += startBlockAt(next.id, Math.max(now, toMin(blocks[i].start) + MIN_BLOCK));
   return msg;
 }
 function lastWake(date) {

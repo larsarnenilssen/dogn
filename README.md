@@ -34,7 +34,7 @@ Last aldri opp backupfiler, startfiler eller turnusfiler hit. Repoet er offentli
 - iPhone: åpne adressen i **Safari**, trykk **Del → Legg til på Hjem-skjerm**, og bruk alltid appen fra ikonet.
 - Android: åpne i Chrome, meny → **Installer app**.
 
-Første gang du åpner appen, kommer oppsettet: barnas navn og hva appen skal kalle dem samlet (for eksempel «barna» eller «guttene»), sted, permisjonsdatoer, antall lurer og om partneren har turnus. Har du en startfil eller backup, velger du **Importer fil** i stedet.
+Første gang du åpner appen, kommer oppsettet: barnas navn og hva appen skal kalle dem samlet (for eksempel «barnene» eller «guttene»), sted, permisjonsdatoer, antall lurer og om partneren har turnus. Har du en startfil eller backup, velger du **Importer fil** i stedet.
 
 ## 3. Backup
 
@@ -88,13 +88,25 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 - **Lagre en dag som mal:** Juster en dag i tidslinjen (flytt bolker, endre tekst), og velg **Meny → Lagre dagen som mal**. Velg **Ny mal fra en dato** for å la dager før datoen beholde den gamle rytmen, eller **Erstatt** for å endre malen for alle dager.
 - **Planlegge en mal i ro og mak:** **Meny → Maler → Ny mal**. Start med en kopi eller en tom mal, og rediger bolkene. Malen påvirker ingen dager før du trykker **Bruk fra denne datoen**. **Se malen på en dag** viser den i tidslinjen for én dag.
 - Trinnvise overganger, som å fase ut MME eller gå over til én lur, gjøres som flere maler etter hverandre i planen.
-- **Roller:** To bolker har en rolle. **Legging** er bolken der nattesøvnen logges. **Nullstilling** er kveldsbolken som viser «i morgen», dagsrapporten, ukentlig backup og det som skal gjøres dagen før. Rollen velges nederst i **Rubrikk**-delen når du redigerer en bolk, så bolkene kan hete hva du vil. Hver rolle brukes av én bolk om gangen.
+- **Roller:** Tre bolker har en rolle. **Morgen** er bolken der dagen starter når barnene har våknet. **Legging** har fast leggetid, og nattesøvnen logges der. **Nullstilling** er kveldsbolken som viser «i morgen», dagsrapporten, ukentlig backup og det som skal gjøres dagen før. Rollen velges nederst i **Rubrikk**-delen når du redigerer en bolk, så bolkene kan hete hva du vil. Hver rolle brukes av én bolk om gangen.
+
+### Når dagen ikke går etter planen
+
+Dagen har en ramme: fra når barnene våkner til leggetid. Leggetiden er fast og endres bare når du flytter leggebolken selv.
+
+- Når en bolk starter tidligere eller senere enn planlagt (våknet, sovnet, våknet fra lur, «start nå», ±15/30 min), fordeles bolkene mellom den og leggetid forholdsmessig i tiden som er igjen. Alle måltider og lurer blir med, litt tettere eller mer spredt. Bolker som er passert, står.
+- Våkner barnene sent, trykk **Begge våknet**. Dagen starter da, og resten tilpasses fram til leggetid.
+- Flytter du leggetid (på leggebolken), følger nullstillingen med, og bolkene fra nå fram til leggetid tilpasses den nye rammen.
+- «Start nå» virker direkte på bolken dere er i og den neste. På andre bolker får du et valg: Er bolken passert, foreslås neste bolk av samme type, eller en kopi nå. Ligger den langt fram, foreslås neste bolk av samme type, og måltider kan aldri hoppes over. Nullstilling kan ikke startes før leggetid.
+- Sovner barnene før leggetid, logges tiden, men leggetiden står. Nullstillingen starter tidligst ti minutter etter leggetid.
+- En lur som varer lenger enn planlagt, forsvinner ikke fra tidslinjen, og «våknet» står i nå-kortet til den er logget.
+- **Meny → Tilbakestill resten av dagen** setter alt fra nå tilbake til tidene i malen. Det som er gjort og logget, beholdes.
 
 ## 7. Daglig bruk
 
-- **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge barna har vært våkne, og en knapp for sovnet eller våknet når det er aktuelt. Ved siden av neste bolk står en liten «start nå» som krever to trykk, fordi den flytter resten av dagen. Trykk på teksten for å hoppe til bolken.
+- **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge barnene har vært våkne, og en knapp for sovnet eller våknet når det er aktuelt. Om morgenen står det «Begge våknet» til dere har logget det. Ved siden av neste bolk står en liten «start nå» som krever to trykk. Trykk på teksten for å hoppe til bolken.
 - **Hopp til en dag:** Trykk på datoen i toppen. Kalenderen viser ukenummer, partnerens vakter, avtaler og huskepunkter (prikk) og dager med egne endringer (stjerne). Pilene og sveiping går fortsatt én dag om gangen.
-- **Rekkefølge:** Sjekklister i bolkene, gjøremål, huskelisten, barna i Profil og «Andre varer» i handlelisten kan sorteres. Dra i grepet (⋮⋮) til venstre, eller velg grepet og bruk pil opp og ned. Gjøremålene står i bolkene i samme rekkefølge, etter sjekklisten. Retter, aktiviteter og vaktkoder sorteres automatisk.
+- **Rekkefølge:** Sjekklister i bolkene, gjøremål, huskelisten, barnene i Profil og «Andre varer» i handlelisten kan sorteres. Dra i grepet (⋮⋮) til venstre, eller velg grepet og bruk pil opp og ned. Gjøremålene står i bolkene i samme rekkefølge, etter sjekklisten. Retter, aktiviteter og vaktkoder sorteres automatisk.
 - **Pluss-knappen** nede til høyre legger til noe å huske (i neste lur, i kveld eller i morgen), en avtale eller en bolk.
 - **Nullstilling** viser «i morgen»: vær, klær, vakt, middag, første lur, faste tilbud, avtaler og gjøremål. Der kan du også dele en kort dagsrapport.
 - **Klær og pakkeliste** vises når dere skal ut. Pakkelisten redigeres under Meny → Aktivitetsbibliotek.

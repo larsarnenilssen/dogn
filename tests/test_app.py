@@ -139,21 +139,118 @@ class DognTest(unittest.TestCase):
         pg.click('#undo')
         self.assertEqual(before, self.times(pg))
 
-    def test_sleep_moves_only_the_boundary(self):
+    def start_of(self, pg, slot):
+        return pg.evaluate("blocksFor(view).find(b => b.slot === '%s').start" % slot)
+
+    def assert_day_is_sane(self, pg):
+        """Leggetid 19:00, alle måltider til stede og i rekkefølge, minst 10 min per bolk."""
+        slots = pg.evaluate("blocksFor(view).map(b => b.slot)")
+        mins = pg.evaluate("blocksFor(view).map(b => toMin(b.start))")
+        self.assertEqual(self.start_of(pg, 'legging'), '19:00')
+        for meal in ['mme-morgen', 'frokost', 'lunsj', 'middag', 'kvelds', 'legging']:
+            self.assertIn(meal, slots)
+        self.assertLess(slots.index('frokost'), slots.index('lunsj'))
+        self.assertLess(slots.index('lunsj'), slots.index('middag'))
+        self.assertLess(slots.index('middag'), slots.index('kvelds'))
+        self.assertTrue(all(b - a >= 10 for a, b in zip(mins, mins[1:])), mins)
+
+    def test_sleep_refits_until_bedtime(self):
         pg = self.open(when=(2026, 10, 7, 14, 0))
         pg.click('.blk[data-id="to-lurer.lur2"] [data-act="sleep-now"][data-kid="all"]')
-        self.assertIn('14:00', self.times(pg))
-        pg.clock.set_system_time(datetime.datetime(2026, 10, 7, 15, 10, tzinfo=TZ))
+        self.assertEqual(self.start_of(pg, 'lur2'), '14:00')
+        pg.clock.set_system_time(datetime.datetime(2026, 10, 7, 15, 40, tzinfo=TZ))
         pg.evaluate('render()')
         pg.click('.blk[data-id="to-lurer.lur2"] [data-act="sleep-now"][data-kid="all"]')
-        t = self.times(pg)
-        self.assertIn('15:10', t)       # våkentiden starter når begge våknet
-        self.assertIn('17:30', t)       # middagen står der den står
+        self.assertEqual(self.start_of(pg, 'vaken3'), '15:40')     # våkentiden starter når begge våknet
+        self.assertTrue('17:30' < self.start_of(pg, 'kvelds') < '18:00')   # kvelds skyves litt, ikke hele avviket
+        self.assert_day_is_sane(pg)
 
-    def test_night_sleep_moves_reset_block(self):
+    def test_long_nap_keeps_wake_button(self):
+        pg = self.open(when=(2026, 10, 7, 9, 20))
+        pg.evaluate("commit(null, () => { logRec('2026-10-06').night = { a: { wake: '07:00' }, b: { wake: '07:00' } }; })")
+        pg.click('.blk[data-id="to-lurer.lur1"] [data-act="sleep-now"][data-kid="all"]')
+        pg.clock.set_system_time(datetime.datetime(2026, 10, 7, 11, 20, tzinfo=TZ))   # luren varer lenger enn planlagt
+        pg.evaluate('render()')
+        self.assertTrue(pg.is_visible('.blk[data-id="to-lurer.lur1"] [data-act="sleep-now"][data-kid="all"]'))
+        self.assertIn('våknet', pg.inner_text('#nowbar [data-nb="act"]'))
+        pg.click('#nowbar [data-nb="act"]')
+        self.assertEqual(self.start_of(pg, 'opp1'), '11:20')
+        self.assert_day_is_sane(pg)
+
+    def test_night_sleep_never_moves_bedtime(self):
         pg = self.open(when=(2026, 10, 7, 18, 52))
         pg.click('.blk[data-id="to-lurer.legging"] [data-act="night-now"][data-kid="all"]')
-        self.assertIn('18:52', self.times(pg))
+        self.assertEqual(self.start_of(pg, 'legging'), '19:00')
+        self.assertEqual(self.start_of(pg, 'kveld'), '19:10')      # nullstilling tidligst ti min etter leggetid
+
+    def test_late_wake_refits_day_and_keeps_bedtime(self):
+        pg = self.open(when=(2026, 10, 7, 8, 10))
+        pg.click('#nowbar [data-nb="act"]')                         # «Begge våknet»
+        self.assertEqual(self.start_of(pg, 'mme-morgen'), '08:10')
+        self.assertEqual(self.start_of(pg, 'morgen'), '06:30')      # forberedelsen før står
+        self.assertTrue('08:15' < self.start_of(pg, 'frokost') < '09:45')
+        self.assert_day_is_sane(pg)
+        self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a.wake"), '08:10')
+
+    def test_start_passed_block_offers_next_of_same_type(self):
+        pg = self.open(when=(2026, 10, 7, 14, 0))
+        pg.evaluate("expanded.add('to-lurer.lur1'); renderTimeline()")
+        pg.click('.blk[data-id="to-lurer.lur1"] .tbtn')
+        pg.click('.blk[data-id="to-lurer.lur1"] [data-qshift="now"]')
+        pg.wait_for_selector('#sheet-root.open [data-sn="alt"]')
+        self.assertEqual(self.start_of(pg, 'lur1'), '09:15')        # ingenting endret før brukeren velger
+        pg.click('[data-sn="alt"]')
+        pg.wait_for_timeout(300)
+        self.assertEqual(self.start_of(pg, 'lur2'), '14:00')
+        self.assertEqual(self.start_of(pg, 'lur1'), '09:15')
+        self.assert_day_is_sane(pg)
+
+    def test_start_far_ahead_never_skips_meals(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        pg.click('.blk[data-id="to-lurer.lur2"] .tbtn')
+        pg.click('.blk[data-id="to-lurer.lur2"] [data-qshift="now"]')
+        pg.wait_for_selector('#sheet-root.open [data-sn="alt"]')
+        self.assertEqual(pg.query_selector_all('[data-sn="skip"]'), [])
+        pg.click('[data-sn="alt"]')
+        pg.wait_for_timeout(300)
+        self.assertEqual(self.start_of(pg, 'lur1'), '09:05')
+        self.assertEqual(self.start_of(pg, 'lur2') > '13:30', True)
+        self.assert_day_is_sane(pg)
+
+    def test_reset_block_cannot_start_before_bedtime(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        pg.click('.blk[data-id="to-lurer.kveld"] .tbtn')
+        pg.click('.blk[data-id="to-lurer.kveld"] [data-qshift="now"]')
+        pg.wait_for_selector('#sheet-root.open')
+        self.assertEqual(pg.query_selector_all('[data-sn]'), [])
+        self.assertEqual(self.start_of(pg, 'kveld'), '19:30')
+
+    def test_bedtime_changes_only_when_moved_itself(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        for slot, d in [('middag', '30'), ('kvelds', '30'), ('vaken4', '30')]:
+            pg.click('.blk[data-id="to-lurer.%s"] .tbtn' % slot)
+            pg.click('.blk[data-id="to-lurer.%s"] [data-qshift="%s"]' % (slot, d))
+            pg.click('.blk[data-id="to-lurer.%s"] .tbtn' % slot)
+        self.assert_day_is_sane(pg)
+        # Leggetid flyttes bare når leggebolken selv flyttes, og dagen fram dit tilpasses
+        pg.click('.blk[data-id="to-lurer.legging"] .tbtn')
+        pg.click('.blk[data-id="to-lurer.legging"] [data-qshift="-30"]')
+        self.assertEqual(self.start_of(pg, 'legging'), '18:30')
+        self.assertEqual(self.start_of(pg, 'kveld'), '19:00')
+        mins = pg.evaluate("blocksFor(view).map(b => toMin(b.start))")
+        self.assertTrue(all(b - a >= 10 for a, b in zip(mins, mins[1:])), mins)
+        self.assertEqual(self.start_of(pg, 'frokost'), '08:15')      # det som er passert, står
+
+    def test_reset_rest_of_day(self):
+        pg = self.open(when=(2026, 10, 7, 12, 40))
+        pg.click('#nowbar [data-nb="start"]')
+        pg.click('#nowbar [data-nb="start"]')
+        self.assertEqual(self.start_of(pg, 'middag'), '12:40')
+        pg.click('#menu')
+        pg.click('[data-m="reset-rest"]')
+        pg.wait_for_timeout(300)
+        self.assertEqual(self.start_of(pg, 'middag'), '13:30')
+        self.assertEqual(self.start_of(pg, 'lur2'), '14:15')
 
     def test_save_day_as_new_template_from_date(self):
         pg = self.open()
@@ -259,6 +356,7 @@ class DognTest(unittest.TestCase):
         self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'kveld').role"), 'reset')
         self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'legging').role"), 'bedtime')
         self.assertEqual(pg.evaluate('state.settings.kidsWord'), 'guttene')
+        self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'mme-morgen').role"), 'wake')
 
     def test_export_import_roundtrip(self):
         pg = self.open()
@@ -296,14 +394,14 @@ class DognTest(unittest.TestCase):
         pg.click('.sh-foot [data-save="tpl"]')
         pg.wait_for_timeout(200)
         roles = pg.evaluate("Object.fromEntries(state.templates['to-lurer'].blocks.filter(b => b.role).map(b => [b.slot, b.role]))")
-        self.assertEqual(roles, {'legg': 'bedtime', 'kveldsrutine': 'reset'})
+        self.assertEqual(roles, {'mme-morgen': 'wake', 'legg': 'bedtime', 'kveldsrutine': 'reset'})
         pg.evaluate('closeSheet()')
         pg.wait_for_timeout(300)
         self.assertTrue(pg.is_visible('.blk[data-id="to-lurer.legg"] .log.night'))
 
     def test_kids_word(self):
         pg = self.open()
-        self.assertIn('Barna', pg.inner_text('.blk[data-id="to-lurer.middag"]'))
+        self.assertIn('Barnene', pg.inner_text('.blk[data-id="to-lurer.middag"]'))
         pg.evaluate("openProfileSheet(false)")
         pg.fill('#p-kw', 'tvillingene')
         pg.click('.sh-foot [data-save]')

@@ -26,22 +26,22 @@ const SEED_INGREDIENTS = {
 function seedDishes() {
   const D = (id, name, meal, minutes, cat, x = {}) => ({ id, name, meal, minutes, cat, weekday: x.weekday || 0, kids: x.kids || '', prep: x.prep || '', dayBefore: x.dayBefore || '', ingredients: (SEED_INGREDIENTS[id] || []).slice() });
   return [
-    D('d-pizza',       'Pizza',                                   'dinner', 40, 'annet',   { weekday: 5, kids: 'Mindre ost og skinke på barnas del. Skjær i strimler.', prep: 'Lag deigen og la den heve' }),
-    D('d-taco',        'Taco',                                    'dinner', 25, 'kjott',   { weekday: 6, kids: 'Ta ut barnas kjøttdeig før tacokrydderet. Grønnsaker i små biter, lefse i strimler.', prep: 'Kutt grønnsaker' }),
+    D('d-pizza',       'Pizza',                                   'dinner', 40, 'annet',   { weekday: 5, kids: 'Mindre ost og skinke på barnenes del. Skjær i strimler.', prep: 'Lag deigen og la den heve' }),
+    D('d-taco',        'Taco',                                    'dinner', 25, 'kjott',   { weekday: 6, kids: 'Ta ut barnenes kjøttdeig før tacokrydderet. Grønnsaker i små biter, lefse i strimler.', prep: 'Kutt grønnsaker' }),
     D('d-fiskekaker',  'Fiskekaker med potet og gulrot',          'dinner', 25, 'fisk',    { kids: 'Velg fiskekaker med lite salt. Mos potet og gulrot.', prep: 'Skrell potet og gulrot' }),
     D('d-fiskeboller', 'Fiskeboller i hvit saus med potet',       'dinner', 25, 'fisk',    { kids: 'Del fiskebollene i små biter.', prep: 'Skrell potet og gulrot' }),
     D('d-laks',        'Laks i ovn med potet og brokkoli',        'dinner', 30, 'fisk',    { kids: 'Sjekk for bein. Mos laks og potet med litt smør.', prep: 'Skrell potet', dayBefore: 'Tin laks i kjøleskapet' }),
     D('d-torsk',       'Torsk i ovn med ris og grønnsaker',       'dinner', 30, 'fisk',    { kids: 'Sjekk for bein.', prep: 'Kutt grønnsaker', dayBefore: 'Tin torsk i kjøleskapet' }),
     D('d-fiskegrateng','Fiskegrateng med revet gulrot',           'dinner', 50, 'fisk',    { kids: 'Passer godt som den er.', prep: 'Kok makaroni og gjør gratengen klar til ovnen' }),
-    D('d-kjottkaker',  'Kjøttkaker med potet og ertestuing',      'dinner', 40, 'kjott',   { kids: 'Lite salt i farsen. Lag noen små kaker til barna.', prep: 'Skrell potet, lag farse' }),
+    D('d-kjottkaker',  'Kjøttkaker med potet og ertestuing',      'dinner', 40, 'kjott',   { kids: 'Lite salt i farsen. Lag noen små kaker til barnene.', prep: 'Skrell potet, lag farse' }),
     D('d-bolognese',   'Spaghetti bolognese med revet gulrot',    'dinner', 30, 'kjott',   { kids: 'Kutt spaghettien i biter. Lite salt.', prep: 'Riv gulrot og hakk løk' }),
     D('d-kyllinggryte','Mild kyllinggryte med ris',               'dinner', 30, 'kylling', { kids: 'Kutt kyllingen i små biter.', prep: 'Kutt kylling og grønnsaker' }),
     D('d-kyllingovn',  'Kyllinglår i ovn med søtpotet',           'dinner', 45, 'kylling', { kids: 'Fjern skinn og bein. Mos søtpoteten.', prep: 'Skrell og kutt søtpotet' }),
-    D('d-kyllingwok',  'Mild kyllingwok med nudler',              'dinner', 20, 'kylling', { kids: 'Klipp nudlene. Ta ut barnas porsjon før soyasaus.', prep: 'Kutt grønnsaker' }),
+    D('d-kyllingwok',  'Mild kyllingwok med nudler',              'dinner', 20, 'kylling', { kids: 'Klipp nudlene. Ta ut barnenes porsjon før soyasaus.', prep: 'Kutt grønnsaker' }),
     D('d-omelett',     'Grønnsaksomelett med grovbrød',           'dinner', 15, 'vegetar', { kids: 'Stek eggene helt gjennom.' }),
     D('d-tomatsuppe',  'Tomatsuppe med makaroni og egg',          'dinner', 20, 'vegetar', { kids: 'La suppen kjøle seg. Kutt egget i biter.' }),
     D('d-pannekaker',  'Pannekaker med blåbær',                   'dinner', 30, 'vegetar', { kids: 'Lite sukker. Blåbærene moses eller deles.', prep: 'Rør røren og la den svelle' }),
-    D('l-risgrot',     'Risgrynsgrøt',                            'lunch',  60, 'vegetar', { weekday: 6, kids: 'Lite eller ikke sukker og kanel på barnas porsjon.', prep: 'Sett på grøten, den koker i ca. 45 min og må røres i' }),
+    D('l-risgrot',     'Risgrynsgrøt',                            'lunch',  60, 'vegetar', { weekday: 6, kids: 'Lite eller ikke sukker og kanel på barnenes porsjon.', prep: 'Sett på grøten, den koker i ca. 45 min og må røres i' }),
   ];
 }
 
@@ -86,7 +86,7 @@ function seedTemplates() {
   });
   const morning = [
     ['morgen',     'prep',    '06:30', 'Forberedelser',     { items: ['Trakte kaffe', 'Varme melk', 'Lage havregrøt til frokost'] }],
-    ['mme-morgen', 'meal',    '07:00', 'Henting og MME',    { boys: 'MME (flaske)', items: ['Bleieskift', 'Påkledning'] }],
+    ['mme-morgen', 'meal',    '07:00', 'Henting og MME',    { boys: 'MME (flaske)', items: ['Bleieskift', 'Påkledning'], role: 'wake' }],
     ['vaken1',     'awake',   '07:15', 'Våkentid',          { note: 'Aktivitet inne' }],
     ['frokost',    'meal',    '08:15', 'Frokost',           { boys: 'Havregrøt', adults: 'Havregrøt' }],
   ];

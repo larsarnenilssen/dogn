@@ -4,7 +4,7 @@
    for trinn, og sanitize() retter eller fjerner verdier som ikke har riktig
    form (for eksempel fra en fil som er redigert for hånd). Gyldige data
    endres ikke. */
-const DATA_VERSION = 7;
+const DATA_VERSION = 8;
 const TYPE_KEYS = Object.keys(T.types);
 const ROLE_KEYS = Object.keys(T.roles);
 
@@ -77,6 +77,18 @@ function migrate(s) {
     Object.values(s.days).forEach(d => { if (d && Array.isArray(d.blocks)) setRoles(d.blocks); });
     if (!s.settings.kidsWord) s.settings.kidsWord = 'guttene';
     s.version = 7;
+  }
+  if (s.version < 8) {
+    // v8: rollen «morgen». Dagen tilpasses etter når barnene våkner, fram til fast leggetid.
+    // Første bolk som ikke er en forberedelse, får rollen.
+    const setWake = blocks => {
+      if (!Array.isArray(blocks) || blocks.some(b => b && b.role === 'wake')) return;
+      const w = blocks.filter(b => b && typeof b === 'object').sort((a, b) => toMin(a.start) - toMin(b.start)).find(b => b.type !== 'prep');
+      if (w && !w.role) w.role = 'wake';
+    };
+    Object.values(s.templates).forEach(t => setWake(t && t.blocks));
+    Object.values(s.days).forEach(d => setWake(d && d.blocks));
+    s.version = 8;
   }
   (s.dishes || []).forEach(d => { if (d && !Array.isArray(d.ingredients)) d.ingredients = []; });
   s.shop = Object.assign({ checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() }, s.shop || {});
