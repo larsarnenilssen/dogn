@@ -89,6 +89,13 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 - **Angre** står i meldingen nederst og i menyen, og går opptil 15 steg tilbake.
 - Nå-kort, «i morgen» og klær/pakkeliste kan slås av under Meny → Profil → Visning.
 
+## 8. Handleliste, søvnoversikt, helse og visning
+
+- **Handleliste:** Meny → Handleliste (eller knappen i ukemenyen) samler ingrediensene fra rettene de neste sju dagene. Legg til egne varer, kryss av i butikken og del listen. Varer du alltid har hjemme, holdes utenfor. Ingrediensene redigeres på hver rett i middagsbanken.
+- **Søvnoversikt:** Meny → Oversikt viser en graf over lur per dag for hvert barn, og snitt for de siste sju dagene mot uken før.
+- **Helse:** I dagsloggen, eller med pluss-knappen → Helse, fører du temperatur, medisin og symptomer. Når et barn er merket som sykt, vises et varsel øverst med siste medisin og temperatur, og forslagene holder seg hjemme. Appen gir ikke råd om dosering.
+- **Visning:** Meny → Profil → Visning har lyst tema (lettere å lese ute), «følg telefonen» og større tekst.
+
 ## Oppdateringer
 
 Last opp ny `index.html` (og eventuelt `sw.js`) i det offentlige repoet med **Upload files**. Appen henter ny versjon neste gang den åpnes med nett. Dataene dine berøres ikke.

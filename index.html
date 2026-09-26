@@ -23,10 +23,23 @@
   --ink:#E8ECEF; --muted:#A3AEB7; --faint:#66737D;
   --accent:#E2AA4F; --accent-ink:#141008; --accent-dim:rgba(226,170,79,.14);
   --late:#E58A6E; --danger:#E0705E;
+  --accent-line:rgba(226,170,79,.45); --accent-glow:rgba(226,170,79,.35); --field-line:#46535E;
   --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --rcol:18px; --gap:14px; --head-h:110px;
   --c-appt:#E79BBE; --c-prep:#B8A0EE; --c-meal:#6FC2AF; --c-sleep:#80A9DE; --c-awake:#A7CC7D; --c-routine:#A3B6C7;
   color-scheme:dark;
+}
+/* Lyst tema for bruk ute i dagslys */
+:root[data-theme="light"]{
+  --ground:#EEF1F3; --bar:#FFFFFF; --panel:#FFFFFF; --panel-hi:#FFF7E8; --field:#F4F6F8;
+  --night:#EAF0F7; --night-line:#BDCDE0; --night-bar:#5F84B0;
+  --line:#BFC8CF; --line-soft:#D9DFE4;
+  --ink:#0F161D; --muted:#46525D; --faint:#88949E;
+  --accent:#9A5B00; --accent-ink:#FFFFFF; --accent-dim:rgba(154,91,0,.10);
+  --late:#B0421B; --danger:#B3261E;
+  --accent-line:rgba(154,91,0,.45); --accent-glow:rgba(154,91,0,.18); --field-line:#9AA6B0;
+  --c-appt:#B23C78; --c-prep:#6A48BF; --c-meal:#177C65; --c-sleep:#2F66A3; --c-awake:#4E7F16; --c-routine:#566B7D;
+  color-scheme:light;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -38,9 +51,9 @@ button{font:inherit;color:inherit}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* Header */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bar);border-bottom:1px solid rgba(226,170,79,.45);box-shadow:0 12px 20px -14px rgba(0,0,0,.95)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bar);border-bottom:1px solid var(--accent-line);box-shadow:0 12px 20px -14px rgba(0,0,0,.95)}
 .top .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 12px;padding-block:20px 14px;align-items:center}
-.date{font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.date{font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0;line-height:1.25;overflow-wrap:anywhere}
 .date::before{content:"› ";color:var(--accent);font-weight:500}
 .nav{display:flex;gap:6px}
 .sub{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;font-size:13.5px;color:var(--ink);border-top:1px solid var(--line-soft);padding-top:12px}
@@ -78,7 +91,7 @@ button{font:inherit;color:inherit}
 
 .blk.now .t{color:var(--accent)}
 .blk.now .node{background:var(--accent)}
-.blk.now .panel{border-color:var(--accent);background:var(--panel-hi);box-shadow:0 0 0 1px var(--accent),0 8px 24px -12px rgba(226,170,79,.35)}
+.blk.now .panel{border-color:var(--accent);background:var(--panel-hi);box-shadow:0 0 0 1px var(--accent),0 8px 24px -12px var(--accent-glow)}
 .blk.ty-sleep.now .panel{background:var(--night)}
 .prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent-dim)}
 .prog span{display:block;height:100%;background:var(--accent)}
@@ -143,7 +156,7 @@ button{font:inherit;color:inherit}
 .field{display:flex;flex-direction:column;gap:8px;min-width:0}
 .stack{display:flex;flex-direction:column;gap:14px}
 .field>label,.lbl{font-size:13px;color:var(--muted)}
-input[type=text],input[type=password],input[type=time],input[type=date],input[type=number],select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid #46535E;border-radius:6px;padding:10px 12px;width:100%;min-height:46px;min-width:0}
+input[type=text],input[type=password],input[type=time],input[type=date],input[type=number],select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--field-line);border-radius:6px;padding:10px 12px;width:100%;min-height:46px;min-width:0}
 input[type=time],input[type=date]{-webkit-appearance:none;appearance:none;display:block}
 select{-webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
 textarea{resize:vertical;line-height:1.45}
@@ -200,6 +213,19 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
 .tbl .faint{color:var(--faint)}
 .tbl .acc{color:var(--accent)}
 .endrow .btn{flex:1}
+.banner.sick{border-color:var(--late)}
+.checks.shop{border-top:none;margin-top:0}
+.checks.shop li{display:flex;align-items:flex-start;gap:6px}
+.checks.shop li label{flex:1}
+.ch-legend{display:flex;gap:16px;font-size:13px;color:var(--ink)}
+.ch-legend i,.ch-tip i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.ch-wrap{position:relative}
+.chart{width:100%;height:auto;display:block;touch-action:pan-y}
+.ch-grid{stroke:var(--line-soft);stroke-width:1}
+.ch-cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.ch-ax{fill:var(--muted);font:11px var(--mono)}
+.ch-tip{position:absolute;top:0;transform:translateX(-50%);background:var(--panel-hi);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:12.5px;display:flex;flex-direction:column;gap:2px;pointer-events:none;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.tbl .late{color:var(--late)}
 .endrow{flex-wrap:wrap}
 .nowbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;border-top:1px solid var(--line-soft);padding-top:10px}
 .nb-txt{all:unset;box-sizing:border-box;flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;cursor:pointer}
@@ -250,7 +276,7 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
 .sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;max-width:40rem;margin:0 auto;background:var(--ground);border:1px solid var(--line);border-bottom:none;border-radius:10px 10px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
 #sheet-root.open .scrim{opacity:1}
 #sheet-root.open .sheet{transform:none}
-.sh-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 12px 14px 20px;border-bottom:1px solid rgba(226,170,79,.45);background:var(--bar);border-radius:10px 10px 0 0}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 12px 14px 20px;border-bottom:1px solid var(--accent-line);background:var(--bar);border-radius:10px 10px 0 0}
 .sh-head h2{font-size:17px;font-weight:600;margin:0}
 .sh-head h2::before{content:"› ";color:var(--accent)}
 .sh-body{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 14px 28px;display:flex;flex-direction:column;gap:14px}
@@ -305,8 +331,8 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
    Datastrukturen har versjonsnummer (DATA_VERSION) slik at
    nye versjoner av appen kan oppgradere lagrede data trygt.
    ============================================================ */
-const APP_VERSION = '1.7.1';
-const DATA_VERSION = 5;
+const APP_VERSION = '1.8.0';
+const DATA_VERSION = 6;
 const DAY_END = 22 * 60;                      // siste rubrikk varer til kl. 22
 
 const TYPES = { prep: 'Forberedelse', meal: 'Måltid', sleep: 'Søvn', awake: 'Våkentid', routine: 'Rutine' };
@@ -344,7 +370,7 @@ const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 
 /* ---------- startdata ---------- */
 function seedDishes() {
-  const D = (id, name, meal, minutes, cat, x = {}) => ({ id, name, meal, minutes, cat, weekday: x.weekday || 0, kids: x.kids || '', prep: x.prep || '', dayBefore: x.dayBefore || '' });
+  const D = (id, name, meal, minutes, cat, x = {}) => ({ id, name, meal, minutes, cat, weekday: x.weekday || 0, kids: x.kids || '', prep: x.prep || '', dayBefore: x.dayBefore || '', ingredients: (SEED_INGREDIENTS[id] || []).slice() });
   return [
     D('d-pizza',       'Pizza',                                   'dinner', 40, 'annet',   { weekday: 5, kids: 'Mindre ost og skinke på guttenes del. Skjær i strimler.', prep: 'Lag deigen og la den heve' }),
     D('d-taco',        'Taco',                                    'dinner', 25, 'kjott',   { weekday: 6, kids: 'Ta ut guttenes kjøttdeig før tacokrydderet. Grønnsaker i små biter, lefse i strimler.', prep: 'Kutt grønnsaker' }),
@@ -430,7 +456,8 @@ function seed() {
     activities: seedActivities(),
     menu: {},
     menuWeeks: {},
-    settings: { fishPerWeek: 2, show: { nowbar: true, tomorrow: true, gear: true }, packList: DEFAULT_PACK.slice() },
+    settings: { fishPerWeek: 2, show: { nowbar: true, tomorrow: true, gear: true }, packList: DEFAULT_PACK.slice(), theme: 'dark', textSize: 1 },
+    shop: { checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() },
     appts: [],
     days: {},
     meta: { created: todayISO(), lastExport: null, setupDone: false }
@@ -489,6 +516,16 @@ function migrate(s) {
     if (s.partner && s.partner.name === 'Kona') s.partner.name = 'Konen';
     s.version = 5;
   }
+  if (s.version < 6) {
+    // v6: ingredienser på rettene fra startdataene, handleliste, tema og tekststørrelse.
+    (s.dishes || []).forEach(d => { if (!Array.isArray(d.ingredients)) d.ingredients = (SEED_INGREDIENTS[d.id] || []).slice(); });
+    (s.activities || []).forEach(a => { if (a.id === 'a-besok') a.sickOk = false; });
+    s.version = 6;
+  }
+  (s.dishes || []).forEach(d => { if (!Array.isArray(d.ingredients)) d.ingredients = []; });
+  s.shop = Object.assign({ checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() }, s.shop || {});
+  if (!s.settings.theme) s.settings.theme = 'dark';
+  if (!s.settings.textSize) s.settings.textSize = 1;
   s.settings.show = Object.assign({ nowbar: true, tomorrow: true, gear: true }, s.settings.show || {});
   if (!Array.isArray(s.settings.packList)) s.settings.packList = DEFAULT_PACK.slice();
   // Rydd bort huskepunkter som ble krysset av for mer enn 30 dager siden
@@ -878,7 +915,7 @@ function render() { renderHeader(); renderTimeline(); refreshWeather(); }
 
 function renderHeader() {
   const today = todayISO();
-  { const dd = parseISO(view); $('#date').textContent = WD[dd.getDay()] + ' ' + dd.getDate() + '. ' + MO_SHORT[dd.getMonth()]; }
+  { const dd = parseISO(view); const big = (Number(state.settings.textSize) || 1) > 1; $('#date').textContent = (big ? WD_SHORT[isoWd(view) - 1].toLowerCase() : WD[dd.getDay()]) + ' ' + dd.getDate() + '. ' + MO_SHORT[dd.getMonth()]; }
   const L = state.leave, parts = [];
   const kv = (k, v) => '<span class="k">' + k + '</span>' + v;
   if (view < L.start) parts.push(kv('start om', plural(diffDays(view, L.start), 'dag', 'dager')));
@@ -898,7 +935,7 @@ function renderHeader() {
 }
 
 function bannerHTML() {
-  let out = '';
+  let out = sickBannerHTML(view);
   if (!store.ok) out += '<div class="banner warn">Lagring er ikke tilgjengelig i denne nettleseren. Endringer forsvinner når siden lukkes.</div>';
   const today = todayISO();
   if (view === today && syncOn()) {
@@ -1317,6 +1354,7 @@ function openMenu() {
       '</section>' +
       '<section class="grp"><h3>Mat</h3><div class="list">' +
         navRow('week', 'Ukemeny', din ? 'I dag: ' + esc(din.name) : '') +
+        navRow('shop', 'Handleliste', 'Neste 7 dager fra ukemenyen') +
         navRow('bank', 'Middagsbank', plural(state.dishes.length, 'rett', 'retter') + ', fisk ' + state.settings.fishPerWeek + ' ganger i uken') +
       '</div></section>' +
       '<section class="grp"><h3>Aktiviteter</h3><div class="list">' +
@@ -1342,7 +1380,7 @@ function openMenu() {
         const m = e.target.closest('[data-m]');
         if (nav) {
           const n = nav.dataset.nav;
-          ({ week: openWeekSheet, bank: openBankSheet, log: () => openLogSheet(view), history: openHistorySheet, tasks: openTasksSheet, templates: openTemplatesSheet, backup: openSyncSheet, profile: () => openProfileSheet(false), partner: openPartnerSheet, acts: openActivitiesSheet })[n]();
+          ({ week: openWeekSheet, bank: openBankSheet, log: () => openLogSheet(view), history: openHistorySheet, tasks: openTasksSheet, templates: openTemplatesSheet, backup: openSyncSheet, profile: () => openProfileSheet(false), partner: openPartnerSheet, acts: openActivitiesSheet, shop: () => openShopSheet() })[n]();
           return;
         }
         if (!m) return;
@@ -1390,6 +1428,7 @@ function openWeekSheet(ws) {
         }).join('') + '</div>' +
         '<p class="hint">Trykk på en dag for å bytte rett. Faste retter står på sine dager, fisk spres utover uken, og ellers kommer retten som er spist for lengst siden.</p>' +
       '</section>' +
+      '<button type="button" class="btn primary wide" data-shop>Handleliste for uken</button>' +
       '<section class="grp"><h3>Lag menyen på nytt</h3>' +
         '<p class="hint">Gjelder dager fra og med i morgen (' + fmtDateShort(tomorrow) + '). Retter du har valgt selv, beholdes.</p>' +
         '<button type="button" class="btn wide" data-regen>Lag ny meny fra i morgen</button>' +
@@ -1398,6 +1437,7 @@ function openWeekSheet(ws) {
     sheet => {
       sheet.querySelectorAll('[data-wk]').forEach(b => b.addEventListener('click', () => openWeekSheet(addDays(ws, Number(b.dataset.wk)))));
       sheet.querySelectorAll('[data-day]').forEach(b => b.addEventListener('click', () => openSwapSheet(b.dataset.day, 'dinner', () => openWeekSheet(ws))));
+      sheet.querySelector('[data-shop]').addEventListener('click', () => openShopSheet(ws < todayISO() ? todayISO() : ws));
       sheet.querySelector('[data-regen]').addEventListener('click', () => {
         mutate('Ny meny fra ' + fmtDateShort(tomorrow), () => regenerateFrom(tomorrow));
         openWeekSheet(ws);
@@ -1483,7 +1523,7 @@ function openBankSheet() {
 
 function openDishSheet(id, back, meal) {
   const isNew = !id;
-  const src = isNew ? { id: 'd-' + uid(), name: '', meal: meal || 'dinner', minutes: 30, cat: 'kjott', weekday: 0, kids: '', prep: '', dayBefore: '' } : dishById(id);
+  const src = isNew ? { id: 'd-' + uid(), name: '', meal: meal || 'dinner', minutes: 30, cat: 'kjott', weekday: 0, kids: '', prep: '', dayBefore: '', ingredients: [] } : dishById(id);
   if (!src) return;
   const d = clone(src);
   reopen = null;
@@ -1501,6 +1541,9 @@ function openDishSheet(id, back, meal) {
           '<div class="field"><label for="d-wd">Fast dag</label><select id="d-wd"><option value="0">Ingen</option>' + WD_SHORT.map((w, i) => '<option value="' + (i + 1) + '"' + (Number(d.weekday) === i + 1 ? ' selected' : '') + '>' + w + '</option>').join('') + '</select></div>' +
         '</div>' +
       '</section>' +
+      '<section class="grp"><h3>Ingredienser</h3><label for="d-ing" class="vh">Ingredienser, én per linje</label>' +
+        '<textarea id="d-ing" rows="5" placeholder="Én vare per linje">' + esc((d.ingredients || []).join('\n')) + '</textarea>' +
+        '<p class="hint">Brukes til handlelisten.</p></section>' +
       '<section class="grp"><h3>Til guttene</h3>' +
         '<label for="d-kids" class="vh">Tilpasning til guttene</label><textarea id="d-kids" rows="2" placeholder="For eksempel lite salt, ta ut porsjonen før krydder">' + esc(d.kids) + '</textarea>' +
       '</section>' +
@@ -1533,7 +1576,8 @@ function openDishSheet(id, back, meal) {
           name, meal: q('#d-meal').value, cat: q('#d-cat').value,
           minutes: Math.max(1, parseInt(q('#d-min').value, 10) || 30),
           weekday: Number(q('#d-wd').value),
-          kids: q('#d-kids').value.trim(), prep: q('#d-prep').value.trim(), dayBefore: q('#d-before').value.trim()
+          kids: q('#d-kids').value.trim(), prep: q('#d-prep').value.trim(), dayBefore: q('#d-before').value.trim(),
+          ingredients: q('#d-ing').value.split('\n').map(x => x.trim()).filter(Boolean)
         });
         mutate('Rett lagret', () => {
           const i = state.dishes.findIndex(x => x.id === d.id);
@@ -1571,6 +1615,13 @@ function openLogSheet(date) {
           '<div class="field"><label for="n-w-' + k.id + '">Våknet i morgen</label><input type="time" id="n-w-' + k.id + '" data-night="' + k.id + '" data-f="wake" value="' + (n.wake || '') + '"></div>' +
         '</div></div>'; }).join('') +
       '</section>' +
+      '<section class="grp" id="lg-health"><h3>Helse</h3>' +
+        '<div class="chips">' + state.kids.map(k => '<button type="button" class="chip" data-sick="' + esc(k.id) + '" aria-pressed="' + !!(L.sick && L.sick[k.id]) + '">' + esc(k.name) + ' er syk</button>').join('') + '</div>' +
+        ((L.health || []).length ? '<div class="list">' + [...L.health].sort((a, b) => a.time.localeCompare(b.time)).map(h => '<div><span class="grow">' + h.time + ' ' + esc(kidName(h.kid)) + '<span class="m">' + esc(HEALTH[h.kind] + (h.value ? ': ' + h.value : '')) + '</span></span><button type="button" class="icon-btn sm" data-rm-h="' + esc(h.id) + '" aria-label="Fjern">' + ICON_X + '</button></div>').join('') + '</div>' : '') +
+        healthFormHTML(date) +
+        '<button type="button" class="btn wide" data-add-h>Legg til</button>' +
+        '<p class="hint">For temperatur, medisin og symptomer. Appen gir ikke råd om dosering. Når et barn er sykt, foreslås bare aktiviteter hjemme.</p>' +
+      '</section>' +
       '<section class="grp"><h3>Måltider</h3>' +
         (mealBlocks.length ? '<div class="list">' + mealBlocks.map(b => { const r = L.meals[b.id] || {};
           return '<div><span class="grow">' + esc(b.title) + '<span class="m">' + b.start + '</span></span><span class="rates">' +
@@ -1597,6 +1648,13 @@ function openLogSheet(date) {
         if (e) openNapSheet(date, e.blockId, e.kid, () => openLogSheet(date));
       }));
       sheet.querySelector('[data-report]').addEventListener('click', () => shareReport(date));
+      sheet.querySelectorAll('[data-sick]').forEach(c => c.addEventListener('click', () => {
+        const Lr = logRec(date); Lr.sick ??= {};
+        if (Lr.sick[c.dataset.sick]) delete Lr.sick[c.dataset.sick]; else Lr.sick[c.dataset.sick] = true;
+        persist(); render(); openLogSheet(date);
+      }));
+      sheet.querySelectorAll('[data-rm-h]').forEach(b => b.addEventListener('click', () => { const Lr = logRec(date); Lr.health = (Lr.health || []).filter(h => h.id !== b.dataset.rmH); persist(); render(); openLogSheet(date); }));
+      sheet.querySelector('[data-add-h]').addEventListener('click', () => { const h = readHealth(sheet); if (!h) return; mutate('Helse: ' + kidName(h.kid) + ', ' + HEALTH[h.kind].toLowerCase() + ' ' + h.time, () => addHealth(date, h)); openLogSheet(date); });
       const note = sheet.querySelector('#l-note');
       note.addEventListener('input', () => { logRec(date).note = note.value; persist(); });
     });
@@ -1658,17 +1716,20 @@ function openHistorySheet() {
   openSheet(
     headHTML('Oversikt', true) +
     '<div class="sh-body">' +
+      '<section class="grp"><h3>Lur per dag</h3>' + napChartHTML([...days].reverse()) + '</section>' +
+      '<section class="grp"><h3>Snitt</h3>' + statsHTML() + '</section>' +
       '<section class="grp"><h3>Siste 14 dager</h3><div class="tblwrap"><table class="tbl"><thead><tr><th>dag</th>' +
         state.kids.map(k => '<th>lur ' + esc(k.name.charAt(0)) + '</th>').join('') +
         state.kids.map(k => '<th>kveld ' + esc(k.name.charAt(0)) + '</th>').join('') + '</tr></thead><tbody>' +
         days.map(d => { const L = getLog(d);
-          return '<tr data-day="' + d + '"><td>' + fmtDateTiny(d) + (L.note ? ' <span class="acc">#</span>' : '') + '</td>' +
+          return '<tr data-day="' + d + '"><td>' + fmtDateTiny(d) + (L.note ? ' <span class="acc">#</span>' : '') + (L.sick && Object.values(L.sick).some(Boolean) ? ' <span class="late">syk</span>' : '') + '</td>' +
             state.kids.map(k => cell(napTotal(d, k.id) ? fmtDurShort(napTotal(d, k.id)) : '')).join('') +
             state.kids.map(k => cell((L.night[k.id] || {}).asleep)).join('') + '</tr>'; }).join('') +
       '</tbody></table></div>' +
-      '<p class="hint">Trykk på en dag for å åpne dagsloggen. # betyr at dagen har notat. Når luren flyttes eller kortes ned over tid, kan det være tid for malen «Én lur».</p></section>' +
+      '<p class="hint">Trykk på en dag for å åpne dagsloggen. # betyr at dagen har notat. Grafen og snittene viser tendenser. Kortere lur 2, senere legging eller lang våkentid før 1. lur kan være tegn på at det nærmer seg én lur.</p></section>' +
     '</div>',
     sheet => {
+      bindChart(sheet);
       sheet.querySelectorAll('tr[data-day]').forEach(tr => tr.addEventListener('click', () => openLogSheet(tr.dataset.day)));
     });
 }
@@ -2039,6 +2100,7 @@ function importData(file) {
       const obj = migrate(JSON.parse(r.result));
       closeSheet();
       mutate('Backup importert', () => { state = obj; });
+      applyTheme();
     } catch (e) { toast(e.message && e.message.includes('Døgn') ? e.message : 'Filen kunne ikke leses som backup.'); }
   };
   r.onerror = () => toast('Filen kunne ikke leses.');
@@ -2260,7 +2322,10 @@ function openProfileSheet(firstRun) {
       '</div></section>' +
       (firstRun ? '' : '<section class="grp"><h3>Visning</h3><div class="chips">' +
         [['nowbar', 'Nå-kort'], ['tomorrow', 'I morgen i Nullstilling'], ['gear', 'Klær og pakkeliste']].map(([k, l]) => '<button type="button" class="chip" data-show="' + k + '" aria-pressed="' + showOn(k) + '">' + l + '</button>').join('') +
-        '</div><p class="hint">Slå av det du ikke bruker. Endringen lagres med en gang.</p></section>') +
+        '</div><p class="hint">Slå av det du ikke bruker. Endringen lagres med en gang.</p>' +
+        '<span class="lbl">Tema</span><div class="chips">' + [['dark', 'Mørkt'], ['light', 'Lyst'], ['auto', 'Følg telefonen']].map(([k, l]) => '<button type="button" class="chip" data-theme-set="' + k + '" aria-pressed="' + ((state.settings.theme || 'dark') === k) + '">' + l + '</button>').join('') + '</div>' +
+        '<span class="lbl">Tekststørrelse</span><div class="chips">' + [[1, 'Normal'], [1.1, 'Stor'], [1.2, 'Ekstra stor']].map(([k, l]) => '<button type="button" class="chip" data-size-set="' + k + '" aria-pressed="' + ((Number(state.settings.textSize) || 1) === k) + '">' + l + '</button>').join('') + '</div>' +
+        '<p class="hint">Lyst tema er lettere å lese ute i dagslys.</p></section>') +
       (firstRun ? '<section class="grp"><h3>Dagsrytme</h3><label for="p-tpl" class="vh">Antall lurer</label><select id="p-tpl">' +
           Object.values(state.templates).map(t => '<option value="' + esc(t.id) + '">' + esc(t.name) + '</option>').join('') +
         '</select><p class="hint">Tidene i malen er et utgangspunkt. Juster dem i tidslinjen og lagre i malen.</p></section>' +
@@ -2302,6 +2367,14 @@ function openProfileSheet(firstRun) {
           () => toast('Fikk ikke tilgang til posisjonen. Søk etter stedet i stedet.'),
           { timeout: 10000 });
       });
+      sheet.querySelectorAll('[data-theme-set]').forEach(c => c.addEventListener('click', () => {
+        state.settings.theme = c.dataset.themeSet; persist(); applyTheme(); render();
+        sheet.querySelectorAll('[data-theme-set]').forEach(x => x.setAttribute('aria-pressed', x === c));
+      }));
+      sheet.querySelectorAll('[data-size-set]').forEach(c => c.addEventListener('click', () => {
+        state.settings.textSize = Number(c.dataset.sizeSet); persist(); applyTheme(); render();
+        sheet.querySelectorAll('[data-size-set]').forEach(x => x.setAttribute('aria-pressed', x === c));
+      }));
       sheet.querySelectorAll('[data-show]').forEach(c => c.addEventListener('click', () => {
         const k = c.dataset.show, on = !showOn(k);
         state.settings.show = Object.assign({}, state.settings.show, { [k]: on });
@@ -2544,7 +2617,7 @@ function seedActivities() {
     A('a-leke',    'Lekeplass',                    'ute',  45, { weather: 'dry', travel: 'gange', note: 'Huske og sandkasse.' }),
     A('a-handel',  'Handletur med vogn',           'inne', 45, { travel: 'gange', note: 'Fint på regnværsdager.' }),
     A('a-bibl',    'Biblioteket',                  'inne', 45, { travel: 'gange', note: 'Bildebøker og lekekrok. Sjekk åpningstider.' }),
-    A('a-besok',   'Besøk eller lekeavtale',       'inne', 90),
+    A('a-besok',   'Besøk eller lekeavtale',       'inne', 90, { sickOk: false }),
   ];
 }
 function lastPicked(aid, before) {
@@ -2570,7 +2643,9 @@ function suggest(date, s, e) {
   const light = sun.rise == null ? e - s : Math.max(0, Math.min(e, sun.set) - Math.max(s, sun.rise));
   const wet = isWet(w), windy = isWindy(w);
   const out = [];
+  const sick = sickKids(date).length > 0;
   for (const a of state.activities) {
+    if (sick && (a.travel !== 'hjemme' || a.sickOk === false)) continue;
     if (!actFits(a, date, s, e)) continue;
     let score = 0;
     if (a.kind === 'ute') {
@@ -2899,6 +2974,7 @@ function dayReport(date) {
   if (din) out.push('Middag: ' + din.name + '.');
   const ap = (state.appts || []).filter(a => a.date === date);
   if (ap.length) out.push('Avtaler: ' + ap.map(a => a.start + ' ' + a.title).join(', ') + '.');
+  (L.health || []).slice().sort((a, b) => a.time.localeCompare(b.time)).forEach(h => out.push(kidName(h.kid) + ' ' + h.time + ': ' + HEALTH[h.kind].toLowerCase() + (h.value ? ' ' + h.value : '') + '.'));
   if (L.note) out.push('Notat: ' + L.note);
   return out.join('\n');
 }
@@ -2937,7 +3013,8 @@ function openAddSheet(mode) {
   openSheet(
     headHTML('Legg til') +
     '<form class="sh-body" id="qa" novalidate>' +
-      '<div class="chips">' + tab('husk', 'Husk') + tab('avtale', 'Avtale') + tab('bolk', 'Bolk i dag') + '</div>' +
+      '<div class="chips">' + tab('husk', 'Husk') + tab('avtale', 'Avtale') + tab('helse', 'Helse') + tab('bolk', 'Bolk i dag') + '</div>' +
+      (mode === 'helse' ? '<section class="grp"><h3>Helse</h3>' + healthFormHTML(view) + '<p class="hint">Barnet merkes som sykt for dagen. Dagsloggen viser alt.</p></section>' : '') +
       (mode === 'husk' ?
         '<section class="grp"><h3>Husk</h3>' +
           '<label for="q-text" class="vh">Hva skal du huske</label><input id="q-text" type="text" placeholder="For eksempel Kjøp bleier" autocomplete="off">' +
@@ -2947,7 +3024,7 @@ function openAddSheet(mode) {
       (mode === 'avtale' ? apptFormHTML({ date: view, start: '10:00', minutes: 60, title: '', where: '', note: '' }) : '') +
       (mode === 'bolk' ? '<section class="grp"><p class="hint">Legger til en ny bolk i tidslinjen for ' + (view === todayISO() ? 'i dag' : fmtDateTiny(view)) + '.</p><button type="button" class="btn primary wide" data-bolk>Ny bolk</button></section>' : '') +
     '</form>' +
-    (mode === 'bolk' ? '' : '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>' + (mode === 'husk' ? 'Legg til' : 'Lagre avtale') + '</button></div>'),
+    (mode === 'bolk' ? '' : '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>' + (mode === 'avtale' ? 'Lagre avtale' : 'Legg til') + '</button></div>'),
     sheet => {
       const q = s => sheet.querySelector(s);
       q('#qa').addEventListener('submit', e => e.preventDefault());
@@ -2965,6 +3042,11 @@ function openAddSheet(mode) {
         });
       }
       if (mode === 'avtale') bindApptForm(sheet, null);
+      if (mode === 'helse') q('[data-save]').addEventListener('click', () => {
+        const h = readHealth(sheet); if (!h) return;
+        closeSheet();
+        mutate('Helse: ' + kidName(h.kid) + ', ' + HEALTH[h.kind].toLowerCase() + (h.value ? ' ' + h.value : '') + ' kl. ' + h.time, () => addHealth(view, h));
+      });
     });
 }
 function apptFormHTML(a) {
@@ -3006,6 +3088,218 @@ function openApptSheet(id) {
       bindApptForm(sheet, id);
       sheet.querySelector('[data-del]').addEventListener('click', () => { closeSheet(); mutate('Avtale slettet', () => { state.appts = state.appts.filter(x => x.id !== id); }); });
     });
+}
+
+/* ---------- tema og tekststørrelse ---------- */
+function applyTheme() {
+  const st = (state && state.settings) || {};
+  const pref = st.theme || 'dark';
+  const light = pref === 'light' || (pref === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+  document.documentElement.dataset.theme = light ? 'light' : 'dark';
+  const z = Number(st.textSize) || 1;
+  document.body.style.zoom = z === 1 ? '' : String(z);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', light ? '#FFFFFF' : '#1B2127');
+}
+try { window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (state && state.settings.theme === 'auto') { applyTheme(); render(); } }); } catch (e) {}
+
+/* ---------- handleliste ---------- */
+const SEED_INGREDIENTS = {
+  'd-pizza': ['Pizzabunn eller mel og gjær', 'Tomatsaus', 'Revet ost', 'Skinke', 'Paprika'],
+  'd-taco': ['Kjøttdeig', 'Tacokrydder', 'Tortillalefser', 'Agurk', 'Tomat', 'Mais', 'Rømme', 'Revet ost'],
+  'd-fiskekaker': ['Fiskekaker', 'Poteter', 'Gulrøtter', 'Smør'],
+  'd-fiskeboller': ['Fiskeboller i hvit saus', 'Poteter', 'Gulrøtter'],
+  'd-laks': ['Laksefilet', 'Poteter', 'Brokkoli', 'Smør'],
+  'd-torsk': ['Torskefilet', 'Ris', 'Brokkoli', 'Gulrøtter'],
+  'd-fiskegrateng': ['Fiskefilet', 'Makaroni', 'Melk', 'Hvetemel', 'Smør', 'Revet ost', 'Gulrøtter', 'Griljermel'],
+  'd-kjottkaker': ['Kjøttdeig', 'Egg', 'Havregryn', 'Poteter', 'Erter', 'Melk'],
+  'd-bolognese': ['Kjøttdeig', 'Spaghetti', 'Hakkede tomater', 'Gulrøtter', 'Løk', 'Revet ost'],
+  'd-kyllinggryte': ['Kyllingfilet', 'Ris', 'Matfløte', 'Paprika', 'Brokkoli', 'Løk'],
+  'd-kyllingovn': ['Kyllinglår', 'Søtpotet', 'Brokkoli', 'Olivenolje'],
+  'd-kyllingwok': ['Kyllingfilet', 'Eggnudler', 'Wokgrønnsaker', 'Soyasaus'],
+  'd-omelett': ['Egg', 'Melk', 'Paprika', 'Spinat', 'Revet ost', 'Grovbrød'],
+  'd-tomatsuppe': ['Tomatsuppe', 'Makaroni', 'Egg'],
+  'd-pannekaker': ['Hvetemel', 'Melk', 'Egg', 'Blåbær', 'Smør'],
+  'l-risgrot': ['Grøtris', 'Helmelk', 'Kanel', 'Smør']
+};
+const DEFAULT_PANTRY = ['Salt', 'Pepper', 'Olivenolje', 'Hvetemel', 'Kanel', 'Soyasaus'];
+const normItem = t => t.trim().toLowerCase();
+function shopItems(from, days) {
+  const pantry = new Set((state.shop.pantry || []).map(normItem));
+  const map = new Map();
+  for (let i = 0; i < days; i++) {
+    const d = addDays(from, i);
+    for (const meal of ['dinner', 'lunch']) {
+      const dish = dishFor(d, meal);
+      if (!dish) continue;
+      (dish.ingredients || []).forEach(ing => {
+        const k = normItem(ing);
+        if (!k || pantry.has(k)) return;
+        if (!map.has(k)) map.set(k, { key: k, name: ing.trim(), dishes: [] });
+        const it = map.get(k);
+        if (!it.dishes.includes(dish.name)) it.dishes.push(dish.name);
+      });
+    }
+  }
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'nb'));
+}
+function openShopSheet(from) {
+  from = from || (view > todayISO() ? view : todayISO());
+  reopen = () => openShopSheet(from);
+  const S = state.shop;
+  const items = shopItems(from, 7);
+  const missing = [...new Set(Array.from({ length: 7 }, (_, i) => addDays(from, i)).flatMap(d => ['dinner', 'lunch'].map(m => dishFor(d, m))).filter(x => x && !(x.ingredients || []).length).map(x => x.name))];
+  const row = (key, name, sub, extra) => '<li><label><input type="checkbox" data-shop="' + esc(key) + '"' + (S.checked[key] ? ' checked' : '') + '><span class="txt"><span class="main">' + esc(name) + '</span>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span></label>' +
+    (extra ? '<button type="button" class="icon-btn sm" data-rm-extra="' + esc(extra) + '" aria-label="Fjern ' + esc(name) + '">' + ICON_X + '</button>' : '') + '</li>';
+  openSheet(
+    headHTML('Handleliste', true) +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>' + fmtDateTiny(from) + ' til ' + fmtDateTiny(addDays(from, 6)) + '</h3>' +
+        '<div class="row2"><button type="button" class="btn small" data-wk="-7">Forrige 7 dager</button><button type="button" class="btn small" data-wk="7">Neste 7 dager</button></div>' +
+        (items.length ? '<ul class="checks shop">' + items.map(it => row(it.key, it.name, it.dishes.join(', '))).join('') + '</ul>' : '<p class="hint">Ingen varer. Legg inn ingredienser på rettene i middagsbanken.</p>') +
+        (missing.length ? '<p class="hint">Mangler ingredienser: ' + esc(missing.join(', ')) + '.</p>' : '') +
+      '</section>' +
+      '<section class="grp"><h3>Andre varer</h3>' +
+        (S.extra.length ? '<ul class="checks shop">' + S.extra.map(x => row('x:' + x.id, x.text, '', x.id)).join('') + '</ul>' : '') +
+        '<div class="item"><input type="text" id="sh-add" placeholder="For eksempel Bleier str. 4" autocomplete="off" aria-label="Legg til vare"><button type="button" class="btn small" data-add-extra>Legg til</button></div>' +
+      '</section>' +
+      '<div class="row2"><button type="button" class="btn primary" data-share>Del listen</button><button type="button" class="btn" data-clear>Nullstill avkrysninger</button></div>' +
+      '<section class="grp"><h3>Har alltid hjemme</h3><label for="sh-pantry" class="vh">Varer som ikke skal på listen, én per linje</label>' +
+        '<textarea id="sh-pantry" rows="4">' + esc((S.pantry || []).join('\n')) + '</textarea><p class="hint">Én vare per linje. Disse kommer ikke på listen.</p></section>' +
+    '</div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      sheet.querySelectorAll('[data-wk]').forEach(b => b.addEventListener('click', () => openShopSheet(addDays(from, Number(b.dataset.wk)))));
+      sheet.addEventListener('change', e => {
+        const cb = e.target.closest('[data-shop]');
+        if (cb) { if (cb.checked) S.checked[cb.dataset.shop] = true; else delete S.checked[cb.dataset.shop]; persist(); }
+      });
+      sheet.querySelectorAll('[data-rm-extra]').forEach(b => b.addEventListener('click', () => { const id = b.dataset.rmExtra; S.extra = S.extra.filter(x => x.id !== id); delete S.checked['x:' + id]; persist(); openShopSheet(from); }));
+      const add = () => { const v = q('#sh-add').value.trim(); if (!v) return; S.extra.push({ id: uid(), text: v }); persist(); openShopSheet(from); setTimeout(() => { const i = document.querySelector('#sh-add'); if (i) i.focus(); }, 50); };
+      q('[data-add-extra]').addEventListener('click', add);
+      q('#sh-add').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+      q('[data-clear]').addEventListener('click', () => { mutate('Avkrysninger nullstilt', () => { state.shop.checked = {}; }); openShopSheet(from); });
+      q('#sh-pantry').addEventListener('change', e => { const list = e.target.value.split('\n').map(x => x.trim()).filter(Boolean); mutate('Lagret', () => { state.shop.pantry = list; }); openShopSheet(from); });
+      q('[data-share]').addEventListener('click', async () => {
+        const lines = items.filter(it => !S.checked[it.key]).map(it => '- ' + it.name).concat(S.extra.filter(x => !S.checked['x:' + x.id]).map(x => '- ' + x.text));
+        const text = 'Handleliste ' + fmtDateTiny(from) + '–' + fmtDateTiny(addDays(from, 6)) + '\n' + lines.join('\n');
+        try { if (navigator.share) { await navigator.share({ title: 'Handleliste', text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+        try { await navigator.clipboard.writeText(text); toast('Listen er kopiert'); } catch (e) { toast('Kunne ikke dele listen her.'); }
+      });
+    });
+}
+
+/* ---------- helse og sykdom ---------- */
+const HEALTH = { temp: 'Temperatur', med: 'Medisin', sym: 'Symptom', other: 'Annet' };
+const sickKids = date => { const L = getLog(date); return state.kids.filter(k => L.sick && L.sick[k.id]); };
+function lastHealth(kind, date) {
+  const L = getLog(date);
+  return (L.health || []).filter(h => h.kind === kind).sort((a, b) => b.time.localeCompare(a.time))[0] || null;
+}
+function sickBannerHTML(date) {
+  const sick = sickKids(date);
+  if (!sick.length) return '';
+  const med = lastHealth('med', date), tmp = lastHealth('temp', date);
+  const parts = ['Syk: ' + sick.map(k => k.name).join(' og ')];
+  if (med) parts.push('Sist medisin ' + med.time + (date === todayISO() && toMin(med.time) <= nowMin() ? ' (' + fmtDur(nowMin() - toMin(med.time)) + ' siden)' : '') + (med.value ? ', ' + med.value : '') + ' til ' + kidName(med.kid));
+  if (tmp) parts.push('Sist temperatur ' + tmp.value + ' kl. ' + tmp.time + ' (' + kidName(tmp.kid) + ')');
+  return '<div class="banner sick"><span>' + esc(parts.join('. ')) + '.</span><button type="button" class="btn small" data-act="health">Logg</button></div>';
+}
+function healthFormHTML(date) {
+  return '<div class="row2">' +
+      '<div class="field"><label for="h-kid">Barn</label><select id="h-kid">' + state.kids.map(k => '<option value="' + esc(k.id) + '">' + esc(k.name) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="h-kind">Hva</label><select id="h-kind">' + Object.entries(HEALTH).map(([k, v]) => '<option value="' + k + '">' + v + '</option>').join('') + '</select></div>' +
+    '</div>' +
+    '<div class="row2">' +
+      '<div class="field"><label for="h-val">Verdi eller notat</label><input id="h-val" type="text" autocomplete="off" placeholder="38,4 / Paracet 2,5 ml"></div>' +
+      '<div class="field"><label for="h-time">Klokken</label><input id="h-time" type="time" value="' + (date === todayISO() ? toHM(nowMin()) : '12:00') + '"></div>' +
+    '</div>';
+}
+function readHealth(sheet) {
+  const q = s => sheet.querySelector(s);
+  const value = q('#h-val').value.trim(), time = q('#h-time').value;
+  if (!time) return null;
+  return { id: 'h-' + uid(), kid: q('#h-kid').value, kind: q('#h-kind').value, value, time };
+}
+function addHealth(date, h) {
+  const L = logRec(date);
+  (L.health ??= []).push(h);
+  if (h.kind === 'temp' || h.kind === 'med' || h.kind === 'sym') (L.sick ??= {})[h.kid] = true;
+}
+
+/* ---------- søvnanalyse ---------- */
+const SERIES = { dark: ['#3a87d4', '#c9711f', '#199e70'], light: ['#2a6fb8', '#b35f12', '#1baf7a'] };
+const seriesColor = i => SERIES[document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'][i % 3];
+function sleepStats(kid, days) {
+  const naps = [], counts = [], firstWin = [], beds = [];
+  days.forEach(d => {
+    const L = getLog(d);
+    const list = L.sleep.filter(e => e.kid === kid && e.start && e.end).sort((a, b) => a.start.localeCompare(b.start));
+    if (list.length) { naps.push(list.reduce((s, e) => s + toMin(e.end) - toMin(e.start), 0)); counts.push(list.length); }
+    const prevN = getLog(addDays(d, -1)).night[kid];
+    if (list.length && prevN && prevN.wake) firstWin.push(toMin(list[0].start) - toMin(prevN.wake));
+    const n = L.night[kid];
+    if (n && n.asleep) beds.push(toMin(n.asleep));
+  });
+  const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
+  return { nap: avg(naps), count: counts.length ? Math.round(counts.reduce((x, y) => x + y, 0) / counts.length * 10) / 10 : null, first: avg(firstWin), bed: avg(beds), n: naps.length };
+}
+function napChartHTML(days) {
+  const W = 340, H = 170, L = 34, R = 10, T = 14, B = 26;
+  const vals = state.kids.map(k => days.map(d => { const v = napTotal(d, k.id); return v || null; }));
+  const max = Math.max(60, ...vals.flat().filter(v => v != null));
+  const top = Math.ceil(max / 60) * 60;
+  const x = i => L + (W - L - R) * (days.length === 1 ? 0.5 : i / (days.length - 1));
+  const y = v => T + (H - T - B) * (1 - v / top);
+  let g = '';
+  for (let h = 0; h <= top; h += 60) g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(h) + '" y2="' + y(h) + '" class="ch-grid"/><text x="' + (L - 6) + '" y="' + (y(h) + 4) + '" class="ch-ax" text-anchor="end">' + (h / 60) + 't</text>';
+  days.forEach((d, i) => { if ((days.length - 1 - i) % 2 === 0) g += '<text x="' + x(i) + '" y="' + (H - 8) + '" class="ch-ax" text-anchor="middle">' + parseISO(d).getDate() + '.</text>'; });
+  let lines = '';
+  vals.forEach((arr, si) => {
+    const col = seriesColor(si);
+    let path = '', pen = false;
+    arr.forEach((v, i) => { if (v == null) { pen = false; return; } path += (pen ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); pen = true; });
+    lines += '<path d="' + path + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    arr.forEach((v, i) => { if (v != null) lines += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="4" fill="' + col + '" stroke="var(--panel)" stroke-width="2"/>'; });
+  });
+  const hits = days.map((d, i) => '<rect x="' + (x(i) - (W - L - R) / days.length / 2).toFixed(1) + '" y="' + T + '" width="' + ((W - L - R) / days.length).toFixed(1) + '" height="' + (H - T - B) + '" fill="transparent" data-ci="' + i + '"/>').join('');
+  const legend = '<div class="ch-legend">' + state.kids.map((k, i) => '<span><i style="background:' + seriesColor(i) + '"></i>' + esc(k.name) + '</span>').join('') + '</div>';
+  const data = JSON.stringify(days.map((d, i) => ({ d: fmtDateTiny(d), v: vals.map(a => a[i]) })));
+  return legend + '<div class="ch-wrap"><svg viewBox="0 0 ' + W + ' ' + H + '" class="chart" role="img" aria-label="Lur per dag, siste ' + days.length + ' dager. Se tabellen under for tallene.">' + g + lines + '<line class="ch-cross" x1="0" x2="0" y1="' + T + '" y2="' + (H - B) + '" visibility="hidden"/>' + hits + '</svg><div class="ch-tip" hidden></div></div>' +
+    '<script type="application/json" class="ch-data">' + data.replace(/</g, '\\u003c') + '</' + 'script>';
+}
+function bindChart(sheet) {
+  const svg = sheet.querySelector('.chart');
+  if (!svg) return;
+  const data = JSON.parse(sheet.querySelector('.ch-data').textContent);
+  const tip = sheet.querySelector('.ch-tip'), cross = svg.querySelector('.ch-cross');
+  const show = r => {
+    const i = Number(r.dataset.ci), cx = Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2;
+    cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('visibility', 'visible');
+    tip.hidden = false;
+    tip.innerHTML = '<strong>' + esc(data[i].d) + '</strong>' + state.kids.map((k, j) => '<span><i style="background:' + seriesColor(j) + '"></i>' + esc(k.name) + ' ' + (data[i].v[j] != null ? fmtDurShort(data[i].v[j]) : '–') + '</span>').join('');
+    const pct = cx / 340;
+    tip.style.left = Math.min(Math.max(pct * 100, 18), 82) + '%';
+  };
+  svg.querySelectorAll('[data-ci]').forEach(r => { r.addEventListener('pointerenter', () => show(r)); r.addEventListener('click', () => show(r)); });
+  svg.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+}
+function statsHTML() {
+  const today = todayISO();
+  const last = [...Array(7)].map((_, i) => addDays(today, -i));
+  const prev = [...Array(7)].map((_, i) => addDays(today, -7 - i));
+  const f = v => v == null ? '–' : fmtDurShort(v);
+  const cmp = (a, b, fmt) => a == null ? '–' : fmt(a) + (b != null ? '<br><span class="faint">(' + fmt(b) + ')</span>' : '');
+  const rows = [
+    ['lur per dag', s => s.nap, f],
+    ['antall lurer', s => s.count, v => String(v).replace('.', ',')],
+    ['våken før 1. lur', s => s.first, f],
+    ['sovnet om kvelden', s => s.bed, v => toHM(v)],
+  ];
+  const st = state.kids.map(k => ({ a: sleepStats(k.id, last), b: sleepStats(k.id, prev) }));
+  return '<div class="tblwrap"><table class="tbl"><thead><tr><th>snitt</th>' + state.kids.map(k => '<th>' + esc(k.name) + '</th>').join('') + '</tr></thead><tbody>' +
+    rows.map(([lbl, get, fmt]) => '<tr><td>' + lbl + '</td>' + st.map(s => '<td>' + cmp(get(s.a), get(s.b), fmt) + '</td>').join('') + '</tr>').join('') +
+    '</tbody></table></div><p class="hint">Siste 7 dager, forrige 7 i parentes. «Våken før 1. lur» krever at du fører «våknet» for natten i dagsloggen.</p>';
 }
 
 /* ---------- melding med angre ---------- */
@@ -3056,6 +3350,7 @@ $('#timeline').addEventListener('click', e => {
   else if (a === 'week') openWeekSheet();
   else if (a === 'acts') openActivitiesSheet();
   else if (a === 'report') shareReport(view);
+  else if (a === 'health') { openLogSheet(view); setTimeout(() => { const g = document.querySelector('#lg-health'); if (g) g.scrollIntoView({ block: 'start' }); }, 300); }
   else if (a === 'dish') openSwapSheet(view, el.dataset.meal, null);
   else if (a === 'wife') {
     const ph = partnerHome(view);
@@ -3118,6 +3413,7 @@ window.addEventListener('resize', renderHeader);
   try { state = saved ? migrate(saved) : seed(); } catch (e) { state = seed(); }
   persist();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch (e) {}
+  applyTheme();
   render();
   scrollToNow();
   if (!state.meta.setupDone) setTimeout(() => openProfileSheet(true), 300);
