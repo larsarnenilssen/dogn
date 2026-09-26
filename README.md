@@ -80,6 +80,15 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 - **Planlegge en mal i ro og mak:** **Meny → Maler → Ny mal**. Start med en kopi eller en tom mal, og rediger bolkene. Malen påvirker ingen dager før du trykker **Bruk fra denne datoen**. **Se malen på en dag** viser den i tidslinjen for én dag.
 - Trinnvise overganger, som å fase ut MME eller gå over til én lur, gjøres som flere maler etter hverandre i planen.
 
+## 7. Daglig bruk
+
+- **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge guttene har vært våkne, og én knapp for det du mest sannsynlig skal gjøre nå (sovnet, våknet eller «starter nå»). Trykk på teksten for å hoppe til bolken.
+- **Pluss-knappen** nede til høyre legger til noe å huske (i neste lur, i kveld eller i morgen), en avtale eller en bolk.
+- **Nullstilling** viser «i morgen»: vær, klær, vakt, middag, første lur, faste tilbud, avtaler og gjøremål. Der kan du også dele en kort dagsrapport.
+- **Klær og pakkeliste** vises når dere skal ut. Pakkelisten redigeres under Meny → Aktivitetsbibliotek.
+- **Angre** står i meldingen nederst og i menyen, og går opptil 15 steg tilbake.
+- Nå-kort, «i morgen» og klær/pakkeliste kan slås av under Meny → Profil → Visning.
+
 ## Oppdateringer
 
 Last opp ny `index.html` (og eventuelt `sw.js`) i det offentlige repoet med **Upload files**. Appen henter ny versjon neste gang den åpnes med nett. Dataene dine berøres ikke.

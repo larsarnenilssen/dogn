@@ -25,7 +25,7 @@
   --late:#E58A6E; --danger:#E0705E;
   --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --rcol:18px; --gap:14px; --head-h:110px;
-  --c-prep:#B8A0EE; --c-meal:#6FC2AF; --c-sleep:#80A9DE; --c-awake:#A7CC7D; --c-routine:#A3B6C7;
+  --c-appt:#E79BBE; --c-prep:#B8A0EE; --c-meal:#6FC2AF; --c-sleep:#80A9DE; --c-awake:#A7CC7D; --c-routine:#A3B6C7;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -200,6 +200,31 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
 .tbl .faint{color:var(--faint)}
 .tbl .acc{color:var(--accent)}
 .endrow .btn{flex:1}
+.endrow{flex-wrap:wrap}
+.nowbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;border-top:1px solid var(--line-soft);padding-top:10px}
+.nb-txt{all:unset;box-sizing:border-box;flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;cursor:pointer}
+.nb-txt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nb-1{font-size:14px;font-weight:600;color:var(--accent);overflow-wrap:anywhere}
+.nb-2{font-size:12.5px;color:var(--muted)}
+.nb-act{flex:none;max-width:52%;white-space:normal;line-height:1.2}
+.fab{position:fixed;right:max(16px,calc((100vw - 40rem) / 2 + 16px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;width:54px;height:54px;border-radius:50%;border:none;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 8px 20px rgba(0,0,0,.45);cursor:pointer}
+.fab:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+#timeline{padding-bottom:96px}
+.appt-row{display:grid;grid-template-columns:var(--rcol) minmax(0,1fr)}
+.appt-row .rail{position:relative}
+.appt-row .rail::before{content:"";position:absolute;left:50%;top:calc(var(--gap) / -2 - 1px);bottom:calc(var(--gap) / -2 - 1px);width:1px;background:var(--line);transform:translateX(-50%)}
+.appt{all:unset;box-sizing:border-box;margin-left:6px;display:flex;flex-direction:column;gap:3px;padding:10px 14px;border:1px solid var(--c-appt);border-left-width:4px;border-radius:6px;background:color-mix(in srgb,var(--c-appt) 9%,var(--panel));cursor:pointer}
+.appt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ap-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ap-t{font-weight:600;color:var(--c-appt)}
+.ap-n{font-weight:600}
+.appt .tag{font-size:12px;color:var(--c-appt);border:1px solid color-mix(in srgb,var(--c-appt) 45%,transparent);border-radius:3px;padding:0 6px}
+.appt .sm{font-size:13px;color:var(--muted)}
+.tomorrow{margin-top:12px;padding:12px;border:1px dashed var(--line);border-radius:6px}
+.tm-h{display:block;font-size:13px;color:var(--accent);margin-bottom:6px}
+.tomorrow dl{display:grid;grid-template-columns:6.8rem minmax(0,1fr);gap:4px 12px;margin:0;font-size:13.5px}
+.tomorrow dt{color:var(--muted)}
+.tomorrow dd{margin:0;overflow-wrap:anywhere}
 .list .row[class*="tb-"]{border-left:3px solid var(--line)}
 .list .tb-prep{border-left-color:var(--c-prep)!important}.list .tb-meal{border-left-color:var(--c-meal)!important}.list .tb-sleep{border-left-color:var(--c-sleep)!important}.list .tb-awake{border-left-color:var(--c-awake)!important}.list .tb-routine{border-left-color:var(--c-routine)!important}
 .wx{margin:12px 0 0;font-size:13.5px;color:var(--ink)}
@@ -244,7 +269,7 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
 .confirm{display:flex;flex-direction:column;gap:8px;border:1px solid var(--danger);border-radius:6px;padding:12px}
 
 /* Toast */
-#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;background:var(--panel-hi);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 8px 8px 14px;display:flex;gap:10px;align-items:center;z-index:60;width:min(calc(100% - 32px),30rem);justify-content:space-between;font-size:13.5px;min-height:44px;box-shadow:0 10px 24px rgba(0,0,0,.5)}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;background:var(--panel-hi);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 8px 8px 14px;display:flex;gap:10px;align-items:center;z-index:60;width:min(calc(100% - 32px),30rem);justify-content:space-between;font-size:13.5px;min-height:44px;box-shadow:0 10px 24px rgba(0,0,0,.5)}
 #toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 #toast button{border:none;background:none;color:var(--accent);font-weight:600;padding:6px 8px;cursor:pointer;min-height:36px}
 #toast:not(:has(button)){padding-right:14px}
@@ -264,9 +289,11 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
       <button class="icon-btn" id="menu" type="button" aria-label="Meny"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
     </div>
     <div class="sub" id="sub"></div>
+    <div class="nowbar" id="nowbar" hidden></div>
   </div>
 </header>
 <main class="wrap" id="timeline" aria-live="off"></main>
+<button type="button" class="fab" id="fab" aria-label="Legg til husk, avtale eller bolk"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 <div id="sheet-root" hidden></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
@@ -278,7 +305,7 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
    Datastrukturen har versjonsnummer (DATA_VERSION) slik at
    nye versjoner av appen kan oppgradere lagrede data trygt.
    ============================================================ */
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 const DATA_VERSION = 4;
 const DAY_END = 22 * 60;                      // siste rubrikk varer til kl. 22
 
@@ -403,7 +430,8 @@ function seed() {
     activities: seedActivities(),
     menu: {},
     menuWeeks: {},
-    settings: { fishPerWeek: 2 },
+    settings: { fishPerWeek: 2, show: { nowbar: true, tomorrow: true, gear: true }, packList: DEFAULT_PACK.slice() },
+    appts: [],
     days: {},
     meta: { created: todayISO(), lastExport: null, setupDone: false }
   };
@@ -448,6 +476,11 @@ function migrate(s) {
   if (s.meta.setupDone === undefined) s.meta.setupDone = true;
   if (s.version < 4) { if (!Array.isArray(s.activities)) s.activities = seedActivities(); s.version = 4; }
   if (!Array.isArray(s.activities)) s.activities = seedActivities();
+  if (!Array.isArray(s.appts)) s.appts = [];
+  s.settings.show = Object.assign({ nowbar: true, tomorrow: true, gear: true }, s.settings.show || {});
+  if (!Array.isArray(s.settings.packList)) s.settings.packList = DEFAULT_PACK.slice();
+  // Rydd bort huskepunkter som ble krysset av for mer enn 30 dager siden
+  s.tasks = s.tasks.filter(t => !(t.rule && t.rule.kind === 'once') || !Object.keys(s.days).some(d => s.days[d].done && s.days[d].done[t.id] && d < addDays(todayISO(), -30)));
   // (Fremtidige oppgraderinger: if (s.version < 4) { … ; s.version = 4; })
   return s;
 }
@@ -518,7 +551,6 @@ let view = todayISO();
 let lastToday = todayISO();
 const expanded = new Set();
 let shiftOpen = null;   // id til bolken som har flyttelinjen åpen
-let undoSnap = null;
 let reopen = null;      // arket som skal vises igjen etter «Angre»
 
 function dayRec(date) { return (state.days[date] ??= { done: {} }); }
@@ -551,16 +583,30 @@ function endOf(blocks, i) {
 function isDone(date, id) { return !!(state.days[date] && state.days[date].done && state.days[date].done[id]); }
 function kidName(id) { const k = state.kids.find(x => x.id === id); return k ? k.name : id; }
 
+const undoStack = [];
 function mutate(msg, fn) {
-  undoSnap = JSON.stringify(state);
-  fn();
+  const snap = JSON.stringify(state);
+  const r = fn();
+  if (typeof r === 'string' && r) msg = r;
+  undoStack.push({ snap, label: msg });
+  if (undoStack.length > 15) undoStack.shift();
   persist();
   render();
   toast(msg, true);
 }
+function undoLast() {
+  const u = undoStack.pop();
+  if (!u) return;
+  state = JSON.parse(u.snap);
+  persist();
+  render();
+  if (sheetOpen() && reopen) reopen();
+  toast('Angret: ' + u.label);
+}
 
 /* ---------- gjentakende gjøremål ---------- */
 function ruleText(r) {
+  if (r.kind === 'once') return 'Én gang, ' + fmtDateShort(r.start);
   if (r.kind === 'daily') return 'Hver dag';
   if (r.kind === 'weekdays') return (r.days || []).slice().sort().map(d => WD_SHORT[d - 1]).join(', ') || 'Ingen dager valgt';
   if (r.every === 7) return 'Hver uke';
@@ -577,6 +623,10 @@ function taskStatus(task, date) {
   const start = r.start || '0000-01-01';
   if (date < start) return { show: done, done, late: 0 };
   if (r.kind === 'daily') return { show: true, done, late: 0 };
+  if (r.kind === 'once') {
+    if (completions(task.id).some(d => d < date)) return { show: false, done, late: 0 };
+    return { show: true, done, late: done ? 0 : diffDays(start, date) };
+  }
   if (r.kind === 'weekdays') return { show: done || (r.days || []).includes(isoWd(date)), done, late: 0 };
   const every = Math.max(1, Number(r.every) || 1);
   const prev = completions(task.id).filter(d => d < date).pop();
@@ -825,11 +875,12 @@ function renderHeader() {
   const d = state.days[view];
   if (d && (d.blocks || d.templateId)) parts.push(kv('mal', esc(state.templates[templateFor(view)].name.toLowerCase()) + '*'));
   const ps = partnerStatus(view);
-  if (ps && ps.code) parts.push(kv(esc(partnerName().toLowerCase()), esc(shiftText(ps))));
+  if (ps && ps.code) parts.push(kv(esc(partnerName().toLowerCase()), esc(shiftText(ps).replace(/(\d\d):00/g, '$1'))));
   const sun = sunTimes(view);
   if (sun.rise != null) parts.push(kv('sol', fmtT(toHM(sun.rise)) + '–' + fmtT(toHM(sun.set))));
   $('#sub').innerHTML = parts.map(p => '<span>' + p + '</span>').join('') +
     (view !== today ? '<button type="button" class="today" id="go-today">Til i dag</button>' : '');
+  renderNowbar();
   const h = $('#top').offsetHeight;
   document.documentElement.style.setProperty('--head-h', h + 'px');
 }
@@ -858,6 +909,9 @@ function renderTimeline() {
   const blocks = blocksFor(date);
   const placed = placeTasks(date, blocks);
   const gen = genRows(date, blocks);
+  const pack = packRows(date, blocks);
+  Object.entries(pack).forEach(([k, v]) => { gen[k] = (gen[k] || []).concat(v); });
+  const appts = apptsFor(date);
   let cur = -1;
   if (isToday) {
     blocks.forEach((b, i) => { if (toMin(b.start) <= now) cur = i; });
@@ -868,17 +922,21 @@ function renderTimeline() {
   const sunRow = k => '<div class="sun" aria-label="' + (k.up ? 'Soloppgang' : 'Solnedgang') + ' ' + toHM(k.m) + '"><span class="rail"></span><span class="lbl">' + (k.up ? '↑ soloppgang ' : '↓ solnedgang ') + toHM(k.m) + '</span></div>';
 
   let html = bannerHTML();
-  if (blocks.length) marks.filter(k => k.m < toMin(blocks[0].start)).forEach(k => html += sunRow(k));
+  const first = blocks.length ? toMin(blocks[0].start) : 24 * 60;
+  marks.filter(k => k.m < first).forEach(k => html += sunRow(k));
+  appts.filter(a => toMin(a.start) < first).forEach(a => html += apptHTML(a));
   blocks.forEach((b, i) => {
     const s = toMin(b.start), e = endOf(blocks, i);
     const phase = !isToday ? (date < today ? 'done-day' : 'future') : (i === cur ? 'now' : (e <= now ? 'past' : 'future'));
     html += blockHTML(b, i, blocks, placed[b.id] || [], gen[b.id] || [], phase, now, date);
     marks.filter(k => k.m >= s && k.m < e).forEach(k => html += sunRow(k));
+    appts.filter(a => toMin(a.start) >= s && (toMin(a.start) < e || i === blocks.length - 1)).forEach(a => html += apptHTML(a));
   });
   if (blocks.length) marks.filter(k => k.m >= endOf(blocks, blocks.length - 1)).forEach(k => html += sunRow(k));
   if (!blocks.length) html += '<p class="hint" style="padding:24px 0">Dagen har ingen rubrikker. Legg til den første.</p>';
-  html += '<div class="endrow"><button type="button" class="btn small" data-act="new">Ny rubrikk</button><button type="button" class="btn small" data-act="log">Dagslogg</button></div>';
+  html += '<div class="endrow"><button type="button" class="btn small" data-act="log">Dagslogg</button><button type="button" class="btn small" data-act="week">Ukemeny</button><button type="button" class="btn small" data-act="acts">Aktiviteter</button></div>';
   $('#timeline').innerHTML = html;
+  renderNowbar();
 }
 
 function blockHTML(b, i, blocks, tasks, gen, phase, now, date) {
@@ -888,7 +946,7 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date) {
     ...b.items.map(it => ({ id: it.id, text: it.text, sub: '', rec: false })),
     ...gen,
     ...tasks.map(({ task, st }) => {
-      let sub = task.rule && task.rule.kind === 'interval' ? ruleText(task.rule) : '';
+      let sub = task.rule && task.rule.kind === 'interval' ? ruleText(task.rule) : (task.rule && task.rule.kind === 'once' && st.late > 0 ? 'Husk fra ' + fmtDateShort(task.rule.start) : '');
       if (st.late > 0) sub = (sub ? sub + ', ' : '') + plural(st.late, 'dag', 'dager') + ' på etterskudd';
       return { id: task.id, text: task.text, sub, late: st.late > 0, rec: true };
     })
@@ -925,7 +983,13 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date) {
       inner += '<div class="rowline"><button type="button" class="chip sm" data-act="wife" aria-pressed="' + ph.home + '">' + esc(partnerName()) + (ph.home ? ' spiser med' : ' spiser ikke med') + esc(st) + (ph.manual ? ' *' : '') + '</button></div>';
     }
     if (b.note) inner += '<p class="note">' + esc(b.note) + '</p>';
-    if (b.type === 'awake') inner += activityHTML(date, b, s, e, phase);
+    if (b.type === 'awake') {
+      inner += activityHTML(date, b, s, e, phase);
+      const dd = state.days[date];
+      const pa = dd && dd.picks && dd.picks[b.id] && state.activities.find(x => x.id === dd.picks[b.id]);
+      if (pa && showOn('gear') && (pa.kind === 'ute' || pa.travel !== 'hjemme')) { const w = wxFor(date, s, e); if (w) inner += '<p class="wx"><span class="wx-k">klær</span>' + esc(clothesFor(w, true)) + '</p>'; }
+    }
+    if (b.type === 'prep' && i === 0 && showOn('gear')) { const w = wxFor(date, 9 * 60, 15 * 60); if (w) inner += '<p class="wx"><span class="wx-k">klær i dag</span>' + esc(clothesFor(w, true)) + '</p>'; }
     if (b.type === 'meal' && (b.boys || dish) && started) {
       const r = getLog(date).meals[b.id] || {};
       inner += '<div class="rowline"><span class="rl">spiste</span>' + state.kids.map(k =>
@@ -943,8 +1007,11 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date) {
         (r.sub ? '<small class="' + (r.late ? 'late' : '') + '">' + esc(r.sub) + '</small>' : '') +
         '</span></label></li>').join('') + '</ul>';
     }
-    if (b.slot === 'kveld') inner += '<div class="rowline"><button type="button" class="btn small" data-act="log">Åpne dagslogg</button>' +
-      (!syncOn() && isoWd(date) === 7 ? '<button type="button" class="btn small" data-act="export">Eksporter backup</button>' : '') + '</div>';
+    if (b.slot === 'kveld') {
+      if (showOn('tomorrow')) inner += tomorrowHTML(date);
+      inner += '<div class="rowline"><button type="button" class="btn small" data-act="log">Åpne dagslogg</button><button type="button" class="btn small" data-act="report">Del dagsrapport</button>' +
+        (!syncOn() && isoWd(date) === 7 ? '<button type="button" class="btn small" data-act="export">Eksporter backup</button>' : '') + '</div>';
+    }
   }
   let prog = '';
   if (phase === 'now') {
@@ -1227,12 +1294,13 @@ function openMenu() {
     headHTML('Meny') +
     '<div class="sh-body">' +
       '<section class="grp"><h3>' + fmtDateLong(view) + '</h3>' +
-        '<div class="row2"><button type="button" class="btn" data-m="new">Ny rubrikk</button><button type="button" class="btn" data-nav="log">Dagslogg</button></div>' +
+        '<div class="row2"><button type="button" class="btn" data-m="new">Ny rubrikk</button><button type="button" class="btn" data-m="add">Husk eller avtale</button></div>' +
         '<div class="field"><label for="m-daytpl">Mal for dagen</label><select id="m-daytpl">' +
           '<option value="">Følg planen (' + esc(state.templates[follow].name) + ')</option>' +
           tpls.map(t => '<option value="' + esc(t.id) + '"' + (d && d.templateId === t.id ? ' selected' : '') + '>' + esc(t.name) + ' bare denne dagen</option>').join('') +
         '</select></div>' +
         '<button type="button" class="btn wide" data-m="saveday">Lagre dagen som mal</button>' +
+        (undoStack.length ? '<button type="button" class="btn wide" data-m="undo">Angre: ' + esc(undoStack[undoStack.length - 1].label) + '</button>' : '') +
         (d && d.blocks ? '<button type="button" class="btn wide" data-m="reset">Tilbakestill dagen til malen</button><p class="hint">Dagen har egne endringer i rubrikkene. Lagre dem som mal, eller tilbakestill. Avkrysninger og logg beholdes uansett.</p>' : '') +
       '</section>' +
       '<section class="grp"><h3>Mat</h3><div class="list">' +
@@ -1249,7 +1317,7 @@ function openMenu() {
       '<section class="grp"><h3>Oppsett</h3><div class="list">' +
         navRow('profile', 'Profil', esc(state.kids.map(k => k.name).join(', ')) + (state.place ? ', ' + esc(state.place.name) : '')) +
         navRow('partner', 'Partner og turnus', partnerOn() ? esc(partnerName()) + ', ' + plural(Object.keys(state.partner.shifts).length, 'dag', 'dager') + ' i turnusen' : 'Av') +
-        navRow('tasks', 'Gjøremål som går igjen', plural(state.tasks.length, 'gjøremål', 'gjøremål')) +
+        navRow('tasks', 'Gjøremål og huskeliste', plural(state.tasks.filter(t => !t.rule || t.rule.kind !== 'once').length, 'gjøremål', 'gjøremål') + ' som går igjen') +
         navRow('templates', 'Maler', tpls.map(t => esc(t.name)).join(', ')) +
         navRow('backup', 'Backup', syncOn() ? 'Automatisk til GitHub' + (sync.cfg.lastPush ? ', sist ' + fmtStamp(sync.cfg.lastPush) : '') : (le ? 'Siste fil ' + fmtDateShort(le) : 'Ingen backup ennå')) +
       '</div></section>' +
@@ -1267,7 +1335,9 @@ function openMenu() {
         }
         if (!m) return;
         if (m.dataset.m === 'new') openBlockSheet(null);
+        else if (m.dataset.m === 'add') openAddSheet();
         else if (m.dataset.m === 'saveday') openSaveDaySheet();
+        else if (m.dataset.m === 'undo') undoLast();
         else if (m.dataset.m === 'reset') { closeSheet(); mutate('Dagen følger malen igjen', () => { delete state.days[view].blocks; }); }
       });
       q('#m-daytpl').addEventListener('change', e => {
@@ -1498,6 +1568,7 @@ function openLogSheet(date) {
       '</section>' +
       '<section class="grp"><h3>Notat</h3><label for="l-note" class="vh">Notat for dagen</label>' +
         '<textarea id="l-note" rows="4" placeholder="Hva gikk bra, hva bør endres?">' + esc(L.note) + '</textarea></section>' +
+      '<button type="button" class="btn wide" data-report>Del dagsrapport</button>' +
     '</div>',
     sheet => {
       sheet.querySelectorAll('[data-night]').forEach(inp => inp.addEventListener('change', () => {
@@ -1513,6 +1584,7 @@ function openLogSheet(date) {
         const e = getLog(date).sleep.find(x => x.id === btn.dataset.nap);
         if (e) openNapSheet(date, e.blockId, e.kid, () => openLogSheet(date));
       }));
+      sheet.querySelector('[data-report]').addEventListener('click', () => shareReport(date));
       const note = sheet.querySelector('#l-note');
       note.addEventListener('input', () => { logRec(date).note = note.value; persist(); });
     });
@@ -1594,17 +1666,23 @@ function openTasksSheet() {
   reopen = openTasksSheet;
   const slots = allSlots();
   const slotLabel = t => { const s = slots.find(x => x.slot === t.slot); return s ? s.label : TYPES[t.type] || ''; };
+  const pending = state.tasks.filter(t => t.rule && t.rule.kind === 'once' && !completions(t.id).length);
+  const recurring = state.tasks.filter(t => !t.rule || t.rule.kind !== 'once');
   openSheet(
-    headHTML('Gjøremål som går igjen', true) +
-    '<div class="sh-body"><section class="grp"><h3>Gjøremål</h3>' +
-      '<div class="list">' + (state.tasks.length ? state.tasks.map(t =>
+    headHTML('Gjøremål', true) +
+    '<div class="sh-body">' +
+      (pending.length ? '<section class="grp"><h3>Huskeliste</h3><div class="list">' + pending.map(t =>
+        '<button type="button" class="row" data-task="' + esc(t.id) + '"><span class="grow">' + esc(t.text) + '<span class="m">' + esc(ruleText(t.rule)) + ', ' + esc(slotLabel(t)) + '</span></span><span class="r">›</span></button>').join('') + '</div></section>' : '') +
+      '<section class="grp"><h3>Går igjen</h3>' +
+      '<div class="list">' + (recurring.length ? recurring.map(t =>
         '<button type="button" class="row" data-task="' + esc(t.id) + '"><span class="grow">' + esc(t.text) + '<span class="m">' + esc(ruleText(t.rule)) + ', ' + esc(slotLabel(t)) + '</span></span><span class="r">›</span></button>').join('')
         : '<div><span class="hint">Ingen ennå.</span></div>') +
       '</div><button type="button" class="btn wide" data-new-task>Nytt gjøremål</button>' +
-    '</section></div>',
+    '</section><button type="button" class="btn wide" data-add-husk>Husk noe</button></div>',
     sheet => {
       sheet.querySelectorAll('[data-task]').forEach(b => b.addEventListener('click', () => openTaskSheet(b.dataset.task)));
       sheet.querySelector('[data-new-task]').addEventListener('click', () => openTaskSheet(null));
+      sheet.querySelector('[data-add-husk]').addEventListener('click', () => openAddSheet('husk'));
     });
 }
 
@@ -1629,7 +1707,7 @@ function openTaskSheet(id) {
       '</section>' +
       '<section class="grp"><h3>Hvor ofte</h3>' +
         '<label for="t-kind" class="vh">Hvor ofte</label><select id="t-kind">' +
-          [['daily', 'Hver dag'], ['interval', 'Med fast mellomrom'], ['weekdays', 'Faste ukedager']].map(([k, v]) => '<option value="' + k + '"' + (t.rule.kind === k ? ' selected' : '') + '>' + v + '</option>').join('') +
+          [['once', 'Én gang'], ['daily', 'Hver dag'], ['interval', 'Med fast mellomrom'], ['weekdays', 'Faste ukedager']].map(([k, v]) => '<option value="' + k + '"' + (t.rule.kind === k ? ' selected' : '') + '>' + v + '</option>').join('') +
         '</select>' +
         '<div class="field" id="t-every-f"><label for="t-every">Antall dager mellom hver gang</label><input id="t-every" type="number" inputmode="numeric" min="1" max="60" value="' + t.rule.every + '">' +
           '<p class="hint">Telleren starter på nytt når du krysser av. Blir det ikke gjort, står det igjen til neste dag.' + (prev ? ' Sist gjort ' + fmtDateShort(prev) + '.' : '') + '</p></div>' +
@@ -1653,7 +1731,7 @@ function openTaskSheet(id) {
         const k = q('#t-kind').value;
         q('#t-every-f').hidden = k !== 'interval';
         q('#t-days-f').hidden = k !== 'weekdays';
-        q('#t-start-l').textContent = k === 'interval' ? 'Første gang' : 'Gjelder fra';
+        q('#t-start-l').textContent = k === 'interval' ? 'Første gang' : k === 'once' ? 'Dato' : 'Gjelder fra';
       };
       sync();
       q('#t-kind').addEventListener('change', sync);
@@ -2168,6 +2246,9 @@ function openProfileSheet(firstRun) {
         '<div class="field"><label for="p-ls">Første dag</label><input type="date" id="p-ls" value="' + state.leave.start + '"></div>' +
         '<div class="field"><label for="p-le">Siste dag</label><input type="date" id="p-le" value="' + state.leave.end + '"></div>' +
       '</div></section>' +
+      (firstRun ? '' : '<section class="grp"><h3>Visning</h3><div class="chips">' +
+        [['nowbar', 'Nå-kort'], ['tomorrow', 'I morgen i Nullstilling'], ['gear', 'Klær og pakkeliste']].map(([k, l]) => '<button type="button" class="chip" data-show="' + k + '" aria-pressed="' + showOn(k) + '">' + l + '</button>').join('') +
+        '</div><p class="hint">Slå av det du ikke bruker. Endringen lagres med en gang.</p></section>') +
       (firstRun ? '<section class="grp"><h3>Dagsrytme</h3><label for="p-tpl" class="vh">Antall lurer</label><select id="p-tpl">' +
           Object.values(state.templates).map(t => '<option value="' + esc(t.id) + '">' + esc(t.name) + '</option>').join('') +
         '</select><p class="hint">Tidene i malen er et utgangspunkt. Juster dem i tidslinjen og lagre i malen.</p></section>' +
@@ -2209,6 +2290,12 @@ function openProfileSheet(firstRun) {
           () => toast('Fikk ikke tilgang til posisjonen. Søk etter stedet i stedet.'),
           { timeout: 10000 });
       });
+      sheet.querySelectorAll('[data-show]').forEach(c => c.addEventListener('click', () => {
+        const k = c.dataset.show, on = !showOn(k);
+        state.settings.show = Object.assign({}, state.settings.show, { [k]: on });
+        c.setAttribute('aria-pressed', on);
+        persist(); render();
+      }));
       let pOn = false;
       const pBtn = q('[data-p-on]');
       if (pBtn) pBtn.addEventListener('click', () => { pOn = !pOn; pBtn.setAttribute('aria-pressed', pOn); pBtn.textContent = pOn ? 'Ja' : 'Nei'; q('#p-pn-f').hidden = !pOn; });
@@ -2569,11 +2656,18 @@ function openActivitiesSheet() {
       '<section class="grp"><h3>Inne</h3><div class="list">' + list('inne') + '</div></section>' +
       '<section class="grp"><h3>Ute</h3><div class="list">' + list('ute') + '</div></section>' +
       '<button type="button" class="btn primary wide" data-new>Ny aktivitet</button>' +
+      '<section class="grp"><h3>Pakkeliste</h3><label for="pk-list" class="vh">Pakkeliste, ett punkt per linje</label>' +
+        '<textarea id="pk-list" rows="6">' + esc(((state.settings.packList && state.settings.packList.length) ? state.settings.packList : DEFAULT_PACK).join('\n')) + '</textarea>' +
+        '<p class="hint">Ett punkt per linje. Listen dukker opp i bolken når du velger en aktivitet utenfor huset.</p></section>' +
       '<p class="hint">Forslagene i våkenbolkene velges ut fra været, dagslyset, faste tider og hva dere har gjort nylig. Værdata fra <a class="lnk" href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> og MET Norge (CC BY 4.0).</p>' +
     '</div>',
     sheet => {
       sheet.querySelectorAll('[data-aid]').forEach(b => b.addEventListener('click', () => openActivitySheet(b.dataset.aid)));
       sheet.querySelector('[data-new]').addEventListener('click', () => openActivitySheet(null));
+      sheet.querySelector('#pk-list').addEventListener('change', e => {
+        const list = e.target.value.split('\n').map(x => x.trim()).filter(Boolean);
+        mutate('Pakkeliste lagret', () => { state.settings.packList = list; });
+      });
     });
 }
 
@@ -2644,6 +2738,264 @@ function openActivitySheet(id) {
     });
 }
 
+/* ---------- visningsvalg ---------- */
+const showOn = k => !(state.settings && state.settings.show && state.settings.show[k] === false);
+const DEFAULT_PACK = ['Bleier, fire per barn', 'Våtservietter og stelleunderlag', 'Skift til alle', 'Mat, vann og smekker', 'Regntrekk og ullteppe', 'Ekstra lue og votter'];
+
+/* ---------- nå-kort ---------- */
+function lastWake(date) {
+  let w = null;
+  getLog(date).sleep.forEach(e => { if (e.end && (!w || e.end > w)) w = e.end; });
+  if (!w) {
+    const N = getLog(addDays(date, -1)).night;
+    Object.values(N).forEach(n => { if (n && n.wake && (!w || n.wake > w)) w = n.wake; });
+  }
+  return w;
+}
+function nowModel() {
+  const date = todayISO();
+  if (view !== date || !showOn('nowbar')) return null;
+  const blocks = blocksFor(date), now = nowMin();
+  if (!blocks.length) return null;
+  let cur = -1;
+  blocks.forEach((b, i) => { if (toMin(b.start) <= now) cur = i; });
+  if (cur >= 0 && now >= endOf(blocks, cur)) return null;
+  const b = cur >= 0 ? blocks[cur] : null;
+  const next = cur >= 0 ? blocks[cur + 1] : blocks[0];
+  const ids = state.kids.map(k => k.id);
+  const nb = nightBlock(blocks);
+  let act = null;
+  const napState = blk => ids.map(k => { const e = napEntry(date, k, blk.id); return !e ? 'none' : (!e.end ? 'open' : 'done'); });
+  const who = list => list.length > 1 && list.length === ids.length ? groupWord() : list.map(kidName).join(' og ');
+  if (b && b.type === 'sleep') {
+    const st = napState(b);
+    const open = ids.filter((k, i) => st[i] === 'open'), none = ids.filter((k, i) => st[i] === 'none');
+    if (open.length) act = { kind: 'sleep', block: b.id, kids: open, label: who(open) + ' våknet' };
+    else if (none.length && !st.includes('done')) act = { kind: 'sleep', block: b.id, kids: none, label: who(none) + ' sovnet' };
+  }
+  if (!act && b && nb && b.id === nb.id) {
+    const N = getLog(date).night;
+    const none = ids.filter(k => !(N[k] && N[k].asleep));
+    if (none.length) act = { kind: 'night', block: b.id, kids: none, label: who(none) + ' sovnet' };
+  }
+  if (!act && next && next.type === 'sleep' && toMin(next.start) - now <= 45 && napState(next).every(x => x === 'none')) {
+    act = { kind: 'sleep', block: next.id, kids: ids, label: groupWord() + ' sovnet' };
+  }
+  if (!act && next) act = { kind: 'start', block: next.id, label: (next.title || TYPES[next.type]) + ' starter nå' };
+  let line1 = b ? (b.title || TYPES[b.type]) + ', ' + fmtDur(Math.max(1, endOf(blocks, cur) - now)) + ' igjen' : 'Dagen starter ' + blocks[0].start;
+  if (b && b.type !== 'sleep') {
+    const w = lastWake(date);
+    if (w && toMin(w) <= now) line1 += ', våken ' + fmtDurShort(now - toMin(w));
+  }
+  return { line1, line2: next ? 'neste ' + next.start + ' ' + (next.title || TYPES[next.type]) : 'siste bolk i dag', act };
+}
+function renderNowbar() {
+  const el = $('#nowbar');
+  if (!el || !state) return;
+  const m = nowModel();
+  if (!m) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = '<button type="button" class="nb-txt" data-nb="scroll"><span class="nb-1">' + esc(m.line1) + '</span><span class="nb-2">' + esc(m.line2) + '</span></button>' +
+    (m.act ? '<button type="button" class="btn small primary nb-act" data-nb="act">' + esc(m.act.label) + '</button>' : '');
+  el._act = m.act;
+}
+function nowbarAction(act) {
+  if (!act) return;
+  if (act.kind === 'sleep') mutate('', () => logSleepNow(view, act.block, act.kids));
+  else if (act.kind === 'night') mutate('', () => logNightNow(view, act.block, act.kids));
+  else if (act.kind === 'start') {
+    const b = blocksFor(view).find(x => x.id === act.block);
+    if (!b) return;
+    const delta = nowMin() - toMin(b.start);
+    if (!delta) { toast(b.title + ' starter allerede nå'); return; }
+    mutate((b.title || 'Bolken') + ' starter nå, resten av dagen flyttet ' + (delta > 0 ? '+' : '−') + fmtDur(Math.abs(delta)), () => shiftFrom(b.id, delta));
+  }
+  scrollToNow();
+}
+
+/* ---------- klær og pakkeliste ---------- */
+function clothesFor(w, pram) {
+  if (!w) return '';
+  const t = w.tmin;
+  let base;
+  if (t >= 16) base = 'lett tøy og solhatt';
+  else if (t >= 10) base = 'ull eller bomull innerst, fleece og tynn lue';
+  else if (t >= 5) base = 'ull innerst, fleece, vindtett dress og lue';
+  else if (t >= 0) base = 'ull innerst, ullgenser, vinterdress, lue, votter og ullsokker';
+  else base = 'to lag ull, vinterdress, varm lue, votter og vognpose';
+  const extra = [];
+  if (isWet(w)) extra.push(t < 1 ? 'vanntette votter og støvler' : 'regndress og støvler');
+  if (isWet(w) && pram) extra.push('regntrekk på vogna');
+  if (w.wind >= 8 && t < 10) extra.push('vindtett ytterlag');
+  return base + (extra.length ? ', ' + extra.join(', ') : '');
+}
+function packRows(date, blocks) {
+  const map = {};
+  const d = state.days[date];
+  if (!d || !d.picks || !showOn('gear')) return map;
+  const list = (state.settings.packList && state.settings.packList.length) ? state.settings.packList : DEFAULT_PACK;
+  blocks.forEach(b => {
+    const a = d.picks[b.id] && state.activities.find(x => x.id === d.picks[b.id]);
+    if (!a || a.travel === 'hjemme') return;
+    map[b.id] = list.map((txt, i) => ({ id: 'gen-pack-' + b.id + '-' + i, text: txt, sub: i === 0 ? 'Pakkeliste for ' + a.name : '', gen: true }));
+  });
+  return map;
+}
+
+/* ---------- i morgen ---------- */
+function tomorrowHTML(date) {
+  const t = addDays(date, 1);
+  const tb = blocksFor(t);
+  const rows = [];
+  const kv = (k, v) => rows.push('<dt>' + k + '</dt><dd>' + esc(v) + '</dd>');
+  const w = wxFor(t, 9 * 60, 15 * 60);
+  const sun = sunTimes(t);
+  if (w) kv('vær', wxText(w) + (sun.rise != null ? ', lyst ' + toHM(sun.rise) + '–' + toHM(sun.set) : ''));
+  else if (sun.rise != null) kv('lyst', toHM(sun.rise) + '–' + toHM(sun.set));
+  if (w && showOn('gear')) kv('klær', clothesFor(w, true));
+  const ps = partnerStatus(t);
+  if (ps && ps.code) { const ph = partnerHome(t); kv(partnerName().toLowerCase(), shiftText(ps) + (ph.home ? ', spiser middag med dere' : ', ikke hjemme til middag')); }
+  const din = dishFor(t, 'dinner'), lun = dishFor(t, 'lunch');
+  if (lun) kv('lunsj', lun.name);
+  if (din) kv('middag', din.name + (din.dayBefore ? '. ' + din.dayBefore + ' i kveld' : ''));
+  const firstNap = tb.find(b => b.type === 'sleep');
+  if (firstNap) kv('første lur', firstNap.start);
+  const fixed = state.activities.filter(a => a.days && a.days.includes(isoWd(t)));
+  if (fixed.length) kv('faste tilbud', fixed.map(a => a.name + (a.from ? ' ' + a.from : '')).join('; '));
+  (state.appts || []).filter(a => a.date === t).forEach(a => kv('avtale', a.start + ' ' + a.title + (a.where ? ', ' + a.where : '')));
+  const tasks = Object.values(placeTasks(t, tb)).flat().filter(x => !x.st.done).map(x => x.task.text);
+  if (tasks.length) kv('gjøremål', tasks.slice(0, 6).join(', ') + (tasks.length > 6 ? ' med flere' : ''));
+  return '<div class="tomorrow"><span class="tm-h">i morgen, ' + fmtDateTiny(t) + '</span><dl>' + rows.join('') + '</dl></div>';
+}
+
+/* ---------- dagsrapport ---------- */
+function dayReport(date) {
+  const L = getLog(date), blocks = blocksFor(date);
+  const out = ['Døgn, ' + fmtDateLong(date).toLowerCase()];
+  state.kids.forEach(k => {
+    const naps = L.sleep.filter(e => e.kid === k.id && e.start).sort((a, b) => a.start.localeCompare(b.start));
+    const n = L.night[k.id] || {};
+    const parts = naps.map(e => e.end ? e.start + '–' + e.end + ' (' + fmtDurShort(toMin(e.end) - toMin(e.start)) + ')' : 'fra ' + e.start + ', sover fortsatt');
+    out.push(k.name + ': ' + (parts.length ? 'lur ' + parts.join(', ') : 'ingen lur logget') + (n.asleep ? '. Sovnet ' + n.asleep : '') + '.');
+  });
+  const meals = blocks.filter(b => L.meals[b.id]).map(b => b.title + ' ' + state.kids.map(k => k.name.charAt(0) + ' ' + (L.meals[b.id][k.id] || '–')).join(', '));
+  if (meals.length) out.push('Mat: ' + meals.join('; ') + '.');
+  const d = state.days[date];
+  const did = d && d.picks ? Object.values(d.picks).map(id => (state.activities.find(a => a.id === id) || {}).name).filter(Boolean) : [];
+  if (did.length) out.push('Gjorde: ' + did.join(', ') + '.');
+  const din = dishFor(date, 'dinner');
+  if (din) out.push('Middag: ' + din.name + '.');
+  const ap = (state.appts || []).filter(a => a.date === date);
+  if (ap.length) out.push('Avtaler: ' + ap.map(a => a.start + ' ' + a.title).join(', ') + '.');
+  if (L.note) out.push('Notat: ' + L.note);
+  return out.join('\n');
+}
+async function shareReport(date) {
+  const text = dayReport(date);
+  try { if (navigator.share) { await navigator.share({ title: 'Døgn ' + fmtDateTiny(date), text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text); toast('Dagsrapporten er kopiert'); } catch (e) { openSheet(headHTML('Dagsrapport') + '<div class="sh-body"><section class="grp"><p class="hint">Kopier teksten:</p><textarea rows="10" readonly>' + esc(text) + '</textarea></section></div>'); }
+}
+
+/* ---------- avtaler ---------- */
+function apptsFor(date) { return (state.appts || []).filter(a => a.date === date).sort((a, b) => a.start.localeCompare(b.start)); }
+function apptHTML(a) {
+  const end = a.minutes ? toHM(toMin(a.start) + Number(a.minutes)) : '';
+  return '<div class="appt-row"><span class="rail"></span><button type="button" class="appt" data-act="appt" data-appt="' + esc(a.id) + '">' +
+    '<span class="ap-h"><span class="ap-t">' + a.start + (end ? '–' + end : '') + '</span><span class="ap-n">' + esc(a.title) + '</span><span class="tag">avtale</span></span>' +
+    (a.where ? '<span class="sm">' + esc(a.where) + '</span>' : '') + (a.note ? '<span class="sm">' + esc(a.note) + '</span>' : '') + '</button></div>';
+}
+
+/* ---------- legg til (husk, avtale, rubrikk) ---------- */
+function reminderTarget(when) {
+  const today = todayISO(), now = nowMin();
+  if (when === 'kveld') { const bl = blocksFor(today); const k = bl.find(b => b.slot === 'kveld') || bl[bl.length - 1]; return { date: today, slot: k ? k.slot : 'kveld', type: k ? k.type : 'routine', label: 'i kveld' }; }
+  const bl = blocksFor(today);
+  if (when === 'lur') {
+    const i = bl.findIndex((b, j) => b.type === 'sleep' && endOf(bl, j) > now);
+    if (i >= 0) return { date: today, slot: bl[i].slot, type: 'sleep', label: 'i luren kl. ' + bl[i].start };
+  }
+  const t = addDays(today, 1);
+  const tb = blocksFor(t).find(b => b.type === 'sleep') || blocksFor(t)[0];
+  return { date: t, slot: tb ? tb.slot : 'lur1', type: tb ? tb.type : 'sleep', label: 'i morgen' + (tb ? ' kl. ' + tb.start : '') };
+}
+function openAddSheet(mode) {
+  mode = mode || 'husk';
+  reopen = null;
+  const tab = (m, l) => '<button type="button" class="chip" data-mode="' + m + '" aria-pressed="' + (m === mode) + '">' + l + '</button>';
+  openSheet(
+    headHTML('Legg til') +
+    '<form class="sh-body" id="qa" novalidate>' +
+      '<div class="chips">' + tab('husk', 'Husk') + tab('avtale', 'Avtale') + tab('bolk', 'Bolk i dag') + '</div>' +
+      (mode === 'husk' ?
+        '<section class="grp"><h3>Husk</h3>' +
+          '<label for="q-text" class="vh">Hva skal du huske</label><input id="q-text" type="text" placeholder="For eksempel Kjøp bleier" autocomplete="off">' +
+          '<div class="field"><label for="q-when">Når</label><select id="q-when"><option value="lur">Neste lur</option><option value="kveld">I kveld</option><option value="morgen">I morgen</option></select></div>' +
+          '<p class="hint">Står som gjøremål til det er krysset av. Ligger også under Meny › Gjøremål.</p>' +
+        '</section>' : '') +
+      (mode === 'avtale' ? apptFormHTML({ date: view, start: '10:00', minutes: 60, title: '', where: '', note: '' }) : '') +
+      (mode === 'bolk' ? '<section class="grp"><p class="hint">Legger til en ny bolk i tidslinjen for ' + (view === todayISO() ? 'i dag' : fmtDateTiny(view)) + '.</p><button type="button" class="btn primary wide" data-bolk>Ny bolk</button></section>' : '') +
+    '</form>' +
+    (mode === 'bolk' ? '' : '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>' + (mode === 'husk' ? 'Legg til' : 'Lagre avtale') + '</button></div>'),
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      q('#qa').addEventListener('submit', e => e.preventDefault());
+      sheet.querySelectorAll('[data-mode]').forEach(c => c.addEventListener('click', () => openAddSheet(c.dataset.mode)));
+      if (mode === 'bolk') { q('[data-bolk]').addEventListener('click', () => openBlockSheet(null)); return; }
+      if (mode === 'husk') {
+        setTimeout(() => q('#q-text').focus(), 300);
+        q('#q-text').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); q('[data-save]').click(); } });
+        q('[data-save]').addEventListener('click', () => {
+          const text = q('#q-text').value.trim();
+          if (!text) { q('#q-text').focus(); return; }
+          const tg = reminderTarget(q('#q-when').value);
+          closeSheet();
+          mutate('Husk «' + text + '» ' + tg.label, () => { state.tasks.push({ id: 't-' + uid(), text, slot: tg.slot, type: tg.type, rule: { kind: 'once', start: tg.date } }); });
+        });
+      }
+      if (mode === 'avtale') bindApptForm(sheet, null);
+    });
+}
+function apptFormHTML(a) {
+  return '<section class="grp"><h3>Avtale</h3>' +
+    '<div class="field"><label for="ap-title">Hva</label><input id="ap-title" type="text" value="' + esc(a.title) + '" placeholder="For eksempel Helsestasjonen" autocomplete="off"></div>' +
+    '<div class="row2"><div class="field"><label for="ap-date">Dato</label><input id="ap-date" type="date" value="' + a.date + '"></div>' +
+    '<div class="field"><label for="ap-start">Klokken</label><input id="ap-start" type="time" value="' + a.start + '"></div></div>' +
+    '<div class="field"><label for="ap-min">Varighet (min)</label><input id="ap-min" type="number" inputmode="numeric" min="0" max="600" value="' + (a.minutes || 0) + '"></div>' +
+    '<div class="field"><label for="ap-where">Sted</label><input id="ap-where" type="text" value="' + esc(a.where) + '" autocomplete="off"></div>' +
+    '<div class="field"><label for="ap-note">Notat</label><textarea id="ap-note" rows="2">' + esc(a.note) + '</textarea></div>' +
+    '<p class="hint">Avtalen vises i tidslinjen og i «I morgen», uten å endre dagens bolker.</p></section>';
+}
+function bindApptForm(sheet, id) {
+  const q = s => sheet.querySelector(s);
+  q('[data-save]').addEventListener('click', () => {
+    const title = q('#ap-title').value.trim(), date = q('#ap-date').value, start = q('#ap-start').value;
+    if (!title) { q('#ap-title').focus(); return; }
+    if (!date || !start) { toast('Velg dato og klokkeslett.'); return; }
+    const a = { id: id || 'ap-' + uid(), title, date, start, minutes: Math.max(0, parseInt(q('#ap-min').value, 10) || 0), where: q('#ap-where').value.trim(), note: q('#ap-note').value.trim() };
+    closeSheet();
+    mutate('Avtale ' + fmtDateTiny(date) + ' kl. ' + start, () => {
+      state.appts = state.appts || [];
+      const i = state.appts.findIndex(x => x.id === a.id);
+      if (i >= 0) state.appts[i] = a; else state.appts.push(a);
+    });
+  });
+}
+function openApptSheet(id) {
+  const a = (state.appts || []).find(x => x.id === id);
+  if (!a) return;
+  reopen = null;
+  openSheet(
+    headHTML('Avtale') +
+    '<form class="sh-body" id="apf" novalidate>' + apptFormHTML(a) +
+      '<section class="grp quiet"><button type="button" class="btn link" data-del>Slett avtalen</button></section></form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>Lagre avtale</button></div>',
+    sheet => {
+      sheet.querySelector('#apf').addEventListener('submit', e => e.preventDefault());
+      bindApptForm(sheet, id);
+      sheet.querySelector('[data-del]').addEventListener('click', () => { closeSheet(); mutate('Avtale slettet', () => { state.appts = state.appts.filter(x => x.id !== id); }); });
+    });
+}
+
 /* ---------- melding med angre ---------- */
 let toastTimer = null;
 function toast(msg, undo) {
@@ -2653,20 +3005,18 @@ function toast(msg, undo) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), undo ? 7000 : 2600);
 }
-$('#toast').addEventListener('click', e => {
-  if (e.target.id !== 'undo' || !undoSnap) return;
-  state = JSON.parse(undoSnap);
-  undoSnap = null;
-  persist();
-  render();
-  if (sheetOpen() && reopen) reopen();
-  toast('Angret');
-});
+$('#toast').addEventListener('click', e => { if (e.target.id === 'undo') undoLast(); });
 
 /* ---------- hendelser ---------- */
 $('#prev').addEventListener('click', () => go(-1));
 $('#next').addEventListener('click', () => go(1));
 $('#menu').addEventListener('click', openMenu);
+$('#fab').addEventListener('click', () => openAddSheet());
+$('#nowbar').addEventListener('click', e => {
+  const t = e.target.closest('[data-nb]');
+  if (!t) return;
+  if (t.dataset.nb === 'scroll') scrollToNow(); else nowbarAction($('#nowbar')._act);
+});
 $('#sub').addEventListener('click', e => { if (e.target.id === 'go-today') go(0); });
 $('#timeline').addEventListener('click', e => {
   const qs = e.target.closest('[data-qshift]');
@@ -2690,6 +3040,10 @@ $('#timeline').addEventListener('click', e => {
   else if (a === 'new') openBlockSheet(null);
   else if (a === 'export') exportData();
   else if (a === 'log') openLogSheet(view);
+  else if (a === 'appt') openApptSheet(el.dataset.appt);
+  else if (a === 'week') openWeekSheet();
+  else if (a === 'acts') openActivitiesSheet();
+  else if (a === 'report') shareReport(view);
   else if (a === 'dish') openSwapSheet(view, el.dataset.meal, null);
   else if (a === 'wife') {
     const ph = partnerHome(view);
@@ -2705,15 +3059,11 @@ $('#timeline').addEventListener('click', e => {
   else if (a === 'rate') cycleRate(view, blk.dataset.id, el.dataset.kid);
   else if (a === 'sleep-now') {
     const kids = el.dataset.kid === 'all' ? state.kids.map(k => k.id) : [el.dataset.kid];
-    let msg = '';
-    mutate('…', () => { msg = logSleepNow(view, blk.dataset.id, kids); });
-    toast(msg, true);
+    mutate('', () => logSleepNow(view, blk.dataset.id, kids));
   }
   else if (a === 'night-now') {
     const kids = el.dataset.kid === 'all' ? state.kids.map(k => k.id) : [el.dataset.kid];
-    let msg = '';
-    mutate('…', () => { msg = logNightNow(view, blk.dataset.id, kids); });
-    toast(msg, true);
+    mutate('', () => logNightNow(view, blk.dataset.id, kids));
   }
   else if (a === 'sleep-edit') openNapSheet(view, blk.dataset.id, el.dataset.kid, null);
 });
