@@ -2,7 +2,7 @@
    Appfilene hentes fra nettet når det er mulig (slik at oppdateringer kommer
    automatisk), og fra lageret når telefonen er uten dekning.
    Dataene dine ligger ikke her, men i nettleserens database. */
-const CACHE = 'dogn-v9';
+const CACHE = 'dogn-v10';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

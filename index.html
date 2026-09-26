@@ -200,6 +200,8 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
 .tbl .faint{color:var(--faint)}
 .tbl .acc{color:var(--accent)}
 .endrow .btn{flex:1}
+.list .row[class*="tb-"]{border-left:3px solid var(--line)}
+.list .tb-prep{border-left-color:var(--c-prep)!important}.list .tb-meal{border-left-color:var(--c-meal)!important}.list .tb-sleep{border-left-color:var(--c-sleep)!important}.list .tb-awake{border-left-color:var(--c-awake)!important}.list .tb-routine{border-left-color:var(--c-routine)!important}
 .wx{margin:12px 0 0;font-size:13.5px;color:var(--ink)}
 .wx-k{color:var(--c-awake);margin-right:8px}
 .sugg{display:flex;flex-direction:column;gap:8px;margin-top:12px}
@@ -276,7 +278,7 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
    Datastrukturen har versjonsnummer (DATA_VERSION) slik at
    nye versjoner av appen kan oppgradere lagrede data trygt.
    ============================================================ */
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 const DATA_VERSION = 4;
 const DAY_END = 22 * 60;                      // siste rubrikk varer til kl. 22
 
@@ -1063,23 +1065,27 @@ function itemRow(it) {
     '<button type="button" class="icon-btn sm" data-rm aria-label="Fjern punkt">' + ICON_X + '</button></div>';
 }
 
-function openBlockSheet(id) {
+function openBlockSheet(id, tplId) {
   const isNew = !id;
-  const blocks = blocksFor(view);
+  const inTpl = !!tplId;
+  const blocks = inTpl ? sortBlocks(state.templates[tplId].blocks) : blocksFor(view);
+  const lastStart = blocks.length ? toMin(blocks[blocks.length - 1].start) : 11 * 60;
   const src = isNew
-    ? { id: 'b-' + uid(), slot: '', type: 'awake', title: '', start: toHM(Math.min(23 * 60, Math.ceil(nowMin() / 15) * 15)), items: [], boys: '', adults: '', note: '', link: '' }
+    ? { id: 'b-' + uid(), slot: '', type: 'awake', title: '', start: inTpl ? toHM(Math.min(23 * 60, lastStart + 30)) : toHM(Math.min(23 * 60, Math.ceil(nowMin() / 15) * 15)), items: [], boys: '', adults: '', note: '', link: '' }
     : blocks.find(b => b.id === id);
   if (!src) return;
   const b = clone(src);
   b.link = b.link || '';
   const isToday = view === todayISO();
   const dayLbl = isToday ? 'i dag' : 'denne dagen';
-  const tasksHere = isNew ? [] : (placeTasks(view, blocks)[b.id] || []);
-  const tplName = state.templates[templateFor(view)].name;
+  const tasksHere = isNew || inTpl ? [] : (placeTasks(view, blocks)[b.id] || []);
+  const tplName = state.templates[inTpl ? tplId : templateFor(view)].name;
   reopen = null;
+  const back = () => openTemplateEditor(tplId);
 
   openSheet(
-    headHTML(isNew ? 'Ny rubrikk' : 'Rediger rubrikk') +
+    (inTpl ? '<div class="sh-head"><h2>' + (isNew ? 'Ny bolk i malen' : 'Bolk i malen') + '</h2><button type="button" class="btn ghost" data-goback>Tilbake</button></div>'
+      : headHTML(isNew ? 'Ny rubrikk' : 'Rediger rubrikk')) +
     '<form class="sh-body" id="bf" novalidate>' +
       '<section class="grp"><h3>Rubrikk</h3>' +
         '<div class="field"><label for="f-title">Navn</label><input id="f-title" type="text" value="' + esc(b.title) + '" placeholder="' + esc(TYPES[b.type]) + '" autocomplete="off"></div>' +
@@ -1106,7 +1112,11 @@ function openBlockSheet(id) {
       '<section class="grp"><h3>Notat</h3>' +
         '<label for="f-note" class="vh">Notat</label><textarea id="f-note" rows="3">' + esc(b.note) + '</textarea>' +
       '</section>' +
-      (isNew ? '' :
+      (isNew ? '' : inTpl ?
+        '<section class="grp quiet"><button type="button" class="btn link" data-del>Slett bolken</button>' +
+          '<div class="confirm" id="f-confirm" hidden><p class="hint">Slette «' + esc(b.title) + '» fra malen «' + esc(tplName) + '»?</p>' +
+          '<div class="btnrow"><button type="button" class="btn small danger" data-del-scope="tpl">Slett fra malen</button></div></div>' +
+        '</section>' :
         '<section class="grp"><h3>Flytt denne og resten av ' + dayLbl + '</h3><div class="shift">' +
           [-30, -15, 15, 30].map(d => '<button type="button" class="btn small" data-shift="' + d + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</button>').join('') +
           '</div>' +
@@ -1119,9 +1129,12 @@ function openBlockSheet(id) {
           '<button type="button" class="btn small danger" data-del-scope="perm">Slett fra malen</button></div></div>' +
         '</section>') +
     '</form>' +
-    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save="day">Lagre for ' + dayLbl + '</button><button type="button" class="btn grow" data-save="perm">Lagre i malen</button></div>',
+    (inTpl ? '<div class="sh-foot"><button type="button" class="btn primary grow" data-save="tpl">Lagre i malen</button></div>'
+      : '<div class="sh-foot"><button type="button" class="btn primary grow" data-save="day">Lagre for ' + dayLbl + '</button><button type="button" class="btn grow" data-save="perm">Lagre i malen</button></div>'),
     sheet => {
       const q = s => sheet.querySelector(s);
+      const gb = q('[data-goback]');
+      if (gb) gb.addEventListener('click', back);
       q('#f-type').addEventListener('change', e => { q('#f-meal').hidden = e.target.value !== 'meal'; q('#f-title').placeholder = TYPES[e.target.value]; });
       q('[data-add]').addEventListener('click', () => {
         q('#f-items').insertAdjacentHTML('beforeend', itemRow({ id: 'i-' + uid(), text: '' }));
@@ -1141,12 +1154,14 @@ function openBlockSheet(id) {
       if (del) del.addEventListener('click', () => { q('#f-confirm').hidden = false; del.hidden = true; });
       sheet.querySelectorAll('[data-del-scope]').forEach(btn => btn.addEventListener('click', () => {
         const scope = btn.dataset.delScope;
+        if (scope === 'tpl') { mutate('Slettet fra malen', () => deleteBlock(b.id, scope, tplId)); back(); return; }
         closeSheet();
         mutate(scope === 'day' ? 'Slettet ' + dayLbl : 'Slettet fra malen', () => deleteBlock(b.id, scope));
       }));
       sheet.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', () => {
         readBlock(sheet, b);
         const scope = btn.dataset.save;
+        if (scope === 'tpl') { mutate('Lagret i malen «' + tplName + '»', () => saveBlock(b, scope, tplId)); back(); return; }
         closeSheet();
         mutate(scope === 'day' ? 'Lagret for ' + dayLbl : 'Lagret i malen «' + tplName + '»', () => saveBlock(b, scope));
       }));
@@ -1173,14 +1188,16 @@ function upsert(arr, b) {
   if (i >= 0) arr[i] = clone(b); else arr.push(clone(b));
   sortBlocks(arr);
 }
-function saveBlock(b, scope) {
+function saveBlock(b, scope, tplId) {
+  if (scope === 'tpl') { upsert(state.templates[tplId].blocks, b); return; }
   if (scope === 'day') { upsert(ensureDayBlocks(view), b); return; }
   upsert(state.templates[templateFor(view)].blocks, b);
   const d = state.days[view];
   if (d && d.blocks) upsert(d.blocks, b);
 }
-function deleteBlock(id, scope) {
+function deleteBlock(id, scope, tplId) {
   const rm = arr => { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr.splice(i, 1); };
+  if (scope === 'tpl') { rm(state.templates[tplId].blocks); return; }
   if (scope === 'day') { rm(ensureDayBlocks(view)); return; }
   rm(state.templates[templateFor(view)].blocks);
   const d = state.days[view];
@@ -1215,7 +1232,8 @@ function openMenu() {
           '<option value="">Følg planen (' + esc(state.templates[follow].name) + ')</option>' +
           tpls.map(t => '<option value="' + esc(t.id) + '"' + (d && d.templateId === t.id ? ' selected' : '') + '>' + esc(t.name) + ' bare denne dagen</option>').join('') +
         '</select></div>' +
-        (d && d.blocks ? '<button type="button" class="btn wide" data-m="reset">Tilbakestill dagen til malen</button><p class="hint">Dagen har egne endringer i rubrikkene. Avkrysninger og logg beholdes.</p>' : '') +
+        '<button type="button" class="btn wide" data-m="saveday">Lagre dagen som mal</button>' +
+        (d && d.blocks ? '<button type="button" class="btn wide" data-m="reset">Tilbakestill dagen til malen</button><p class="hint">Dagen har egne endringer i rubrikkene. Lagre dem som mal, eller tilbakestill. Avkrysninger og logg beholdes uansett.</p>' : '') +
       '</section>' +
       '<section class="grp"><h3>Mat</h3><div class="list">' +
         navRow('week', 'Ukemeny', din ? 'I dag: ' + esc(din.name) : '') +
@@ -1249,6 +1267,7 @@ function openMenu() {
         }
         if (!m) return;
         if (m.dataset.m === 'new') openBlockSheet(null);
+        else if (m.dataset.m === 'saveday') openSaveDaySheet();
         else if (m.dataset.m === 'reset') { closeSheet(); mutate('Dagen følger malen igjen', () => { delete state.days[view].blocks; }); }
       });
       q('#m-daytpl').addEventListener('change', e => {
@@ -1673,25 +1692,64 @@ function openTaskSheet(id) {
 }
 
 /* ---------- maler ---------- */
+/* ---------- maler ---------- */
+function tplUse(id) {
+  const sch = state.schedule.filter(s => s.templateId === id).map(s => s.from).sort();
+  const days = Object.values(state.days).filter(d => d.templateId === id).length;
+  return { sch, days };
+}
+function makeTemplate(name, blocks) {
+  const id = 'tpl-' + uid();
+  const used = new Set();
+  const t = { id, name, blocks: blocks.map(b => {
+    const nb = clone(b);
+    nb.slot = b.slot || b.id;
+    nb.id = id + '.' + nb.slot;
+    if (used.has(nb.id)) nb.id += '-' + uid();
+    used.add(nb.id);
+    nb.items = (nb.items || []).map(it => ({ id: nb.id + '.' + uid(), text: it.text }));
+    return nb;
+  }) };
+  sortBlocks(t.blocks);
+  state.templates[id] = t;
+  return t;
+}
+function scheduleFrom(from, templateId) {
+  state.schedule = state.schedule.filter(s => s.from !== from);
+  state.schedule.push({ from, templateId });
+  state.schedule.sort((a, b) => a.from.localeCompare(b.from));
+}
+const tplMeta = t => {
+  const u = tplUse(t.id);
+  return plural(t.blocks.length, 'bolk', 'bolker') + (u.sch.length ? ', i planen fra ' + u.sch.map(fmtDateShort).join(' og ') : ', ikke i planen') + (u.days ? ', ' + plural(u.days, 'enkeltdag', 'enkeltdager') : '');
+};
+
 function openTemplatesSheet() {
   reopen = openTemplatesSheet;
   const follow = scheduledTemplate(view);
-  const tpls = Object.values(state.templates);
+  const tpls = Object.values(state.templates).sort((a, b) => a.name.localeCompare(b.name));
   const sch = [...state.schedule].sort((a, b) => a.from.localeCompare(b.from));
   openSheet(
     headHTML('Maler', true) +
     '<div class="sh-body">' +
       '<section class="grp"><h3>Plan</h3>' +
-        '<div class="list">' + sch.map((s, i) =>
-          '<div><span class="grow">' + esc(state.templates[s.templateId] ? state.templates[s.templateId].name : '?') + '<span class="m">Fra ' + fmtDateShort(s.from) + ' ' + s.from.slice(0, 4) + '</span></span>' +
-          (i > 0 ? '<button type="button" class="btn small ghost" data-rm-sched="' + esc(s.from) + '">Fjern</button>' : '') + '</div>').join('') +
+        '<div class="list">' + sch.map((s, i) => {
+          const next = sch[i + 1];
+          return '<div><span class="grow">' + esc(state.templates[s.templateId] ? state.templates[s.templateId].name : '?') +
+            '<span class="m">' + fmtDateShort(s.from) + (next ? ' til ' + fmtDateShort(addDays(next.from, -1)) : ' og utover') + '</span></span>' +
+            (i > 0 ? '<button type="button" class="btn small ghost" data-rm-sched="' + esc(s.from) + '">Fjern</button>' : '') + '</div>';
+        }).join('') + '</div>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="m-stpl">Bytt til</label><select id="m-stpl">' + tpls.map(t => '<option value="' + esc(t.id) + '"' + (t.id !== follow ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') + '</select></div>' +
+          '<div class="field"><label for="m-sfrom">Fra dato</label><input type="date" id="m-sfrom" value="' + addDays(todayISO(), 1) + '"></div>' +
         '</div>' +
-      '</section>' +
-      '<section class="grp"><h3>Bytt mal fra en dato</h3>' +
-        '<div class="field"><label for="m-stpl">Mal</label><select id="m-stpl">' + tpls.map(t => '<option value="' + esc(t.id) + '"' + (t.id !== follow ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') + '</select></div>' +
-        '<div class="field"><label for="m-sfrom">Fra dato</label><input type="date" id="m-sfrom" value="' + addDays(todayISO(), 1) + '"></div>' +
         '<button type="button" class="btn wide" data-add-sched>Legg til bytte</button>' +
-        '<p class="hint">Endringer du lagrer i malen, gjelder malen som brukes den dagen du ser på.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Maler</h3><div class="list">' +
+        tpls.map(t => '<button type="button" class="row" data-tpl="' + esc(t.id) + '"><span class="grow">' + esc(t.name) + '<span class="m">' + esc(tplMeta(t)) + '</span></span><span class="r">›</span></button>').join('') +
+      '</div>' +
+      '<button type="button" class="btn primary wide" data-new-tpl>Ny mal</button>' +
+      '<p class="hint">Vil du heller ta utgangspunkt i en dag du allerede har justert, bruk «Lagre dagen som mal» i menyen for den dagen.</p>' +
       '</section>' +
     '</div>',
     sheet => {
@@ -1703,12 +1761,162 @@ function openTemplatesSheet() {
       q('[data-add-sched]').addEventListener('click', () => {
         const from = q('#m-sfrom').value, tid = q('#m-stpl').value;
         if (!from) return;
-        mutate(state.templates[tid].name + ' fra ' + fmtDateShort(from), () => {
-          state.schedule = state.schedule.filter(s => s.from !== from);
-          state.schedule.push({ from, templateId: tid });
-          state.schedule.sort((a, b) => a.from.localeCompare(b.from));
-        });
+        mutate(state.templates[tid].name + ' fra ' + fmtDateShort(from), () => scheduleFrom(from, tid));
         openTemplatesSheet();
+      });
+      sheet.querySelectorAll('[data-tpl]').forEach(b => b.addEventListener('click', () => openTemplateEditor(b.dataset.tpl)));
+      q('[data-new-tpl]').addEventListener('click', openNewTemplateSheet);
+    });
+}
+
+function openNewTemplateSheet() {
+  reopen = null;
+  const tpls = Object.values(state.templates);
+  const cur = templateFor(view);
+  openSheet(
+    '<div class="sh-head"><h2>Ny mal</h2><button type="button" class="btn ghost" data-goback>Tilbake</button></div>' +
+    '<form class="sh-body" id="nt" novalidate>' +
+      '<section class="grp"><h3>Mal</h3>' +
+        '<div class="field"><label for="nt-name">Navn</label><input id="nt-name" type="text" autocomplete="off" placeholder="For eksempel To lurer uten morgen-MME"></div>' +
+        '<div class="field"><label for="nt-base">Start med</label><select id="nt-base">' +
+          tpls.map(t => '<option value="' + esc(t.id) + '"' + (t.id === cur ? ' selected' : '') + '>Kopi av ' + esc(t.name) + '</option>').join('') +
+          '<option value="">Tom mal</option>' +
+        '</select></div>' +
+        '<p class="hint">Malen påvirker ingen dager før du legger den inn i planen. Du kan jobbe med den i ro og mak.</p>' +
+      '</section>' +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-create>Lag mal</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      q('[data-goback]').addEventListener('click', openTemplatesSheet);
+      q('#nt').addEventListener('submit', e => e.preventDefault());
+      q('[data-create]').addEventListener('click', () => {
+        const name = q('#nt-name').value.trim();
+        if (!name) { q('#nt-name').focus(); return; }
+        const base = q('#nt-base').value;
+        let t;
+        mutate('Mal «' + name + '» laget', () => { t = makeTemplate(name, base ? state.templates[base].blocks : []); });
+        openTemplateEditor(t.id);
+      });
+      setTimeout(() => q('#nt-name').focus(), 300);
+    });
+}
+
+function openTemplateEditor(id) {
+  const t = state.templates[id];
+  if (!t) { openTemplatesSheet(); return; }
+  reopen = () => openTemplateEditor(id);
+  const u = tplUse(id);
+  const only = Object.keys(state.templates).length === 1;
+  const canDelete = !only && !u.sch.length && !u.days;
+  const blocks = sortBlocks(t.blocks);
+  openSheet(
+    '<div class="sh-head"><h2>' + esc(t.name) + '</h2><button type="button" class="btn ghost" data-goback>Tilbake</button></div>' +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Navn</h3><label for="te-name" class="vh">Navn</label><input id="te-name" type="text" value="' + esc(t.name) + '" autocomplete="off"></section>' +
+      '<section class="grp"><h3>Bolker</h3>' +
+        (blocks.length ? '<div class="list">' + blocks.map(b => '<button type="button" class="row tb-' + b.type + '" data-blk="' + esc(b.id) + '"><span class="grow"><span class="wd">' + b.start + '</span> ' + esc(b.title) +
+          '<span class="m">' + esc(TYPES[b.type].toLowerCase()) + (b.items.length ? ', ' + plural(b.items.length, 'punkt', 'punkter') : '') + (b.link ? ', rett fra banken' : '') + '</span></span><span class="r">›</span></button>').join('') + '</div>'
+          : '<p class="hint">Malen er tom. Legg til den første bolken.</p>') +
+        '<button type="button" class="btn wide" data-new-blk>Ny bolk</button>' +
+        '<p class="hint">Endringer her lagres rett i malen og gjelder alle dager som bruker den.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Bruk malen</h3>' +
+        '<p class="hint">' + (u.sch.length ? 'I planen fra ' + u.sch.map(fmtDateShort).join(' og ') + '.' : 'Ikke i planen ennå.') + '</p>' +
+        '<div class="field"><label for="te-from">Fra dato</label><input id="te-from" type="date" value="' + addDays(todayISO(), 1) + '"></div>' +
+        '<button type="button" class="btn primary wide" data-use>Bruk fra denne datoen</button>' +
+        '<button type="button" class="btn wide" data-try>Se malen på en dag</button>' +
+        '<p class="hint">«Se malen på en dag» viser malen i tidslinjen for datoen over, bare den dagen. Du kan angre med Meny › Mal for dagen.</p>' +
+      '</section>' +
+      '<section class="grp quiet">' +
+        '<button type="button" class="btn small" data-copy>Kopier malen</button>' +
+        (canDelete ? '<button type="button" class="btn link" data-del>Slett malen</button>' : '<p class="hint">' + (only ? 'Den eneste malen kan ikke slettes.' : 'Malen er i bruk og kan ikke slettes. Fjern den fra planen først.') + '</p>') +
+      '</section>' +
+    '</div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      q('[data-goback]').addEventListener('click', openTemplatesSheet);
+      q('#te-name').addEventListener('change', e => { const v = e.target.value.trim(); if (v) { mutate('Navn lagret', () => { state.templates[id].name = v; }); openTemplateEditor(id); } });
+      sheet.querySelectorAll('[data-blk]').forEach(b => b.addEventListener('click', () => openBlockSheet(b.dataset.blk, id)));
+      q('[data-new-blk]').addEventListener('click', () => openBlockSheet(null, id));
+      q('[data-use]').addEventListener('click', () => {
+        const from = q('#te-from').value;
+        if (!from) return;
+        mutate(t.name + ' fra ' + fmtDateShort(from), () => scheduleFrom(from, id));
+        openTemplateEditor(id);
+      });
+      q('[data-try]').addEventListener('click', () => {
+        const d = q('#te-from').value || todayISO();
+        closeSheet();
+        mutate(t.name + ' ' + fmtDateTiny(d), () => { const r = dayRec(d); r.templateId = id; delete r.blocks; });
+        go(0, d);
+      });
+      q('[data-copy]').addEventListener('click', () => {
+        let c;
+        mutate('Kopi laget', () => { c = makeTemplate('Kopi av ' + t.name, t.blocks); });
+        openTemplateEditor(c.id);
+      });
+      const del = q('[data-del]');
+      if (del) del.addEventListener('click', () => { mutate('Mal slettet', () => { delete state.templates[id]; }); openTemplatesSheet(); });
+    });
+}
+
+/* Lagre en justert dag som mal: endre malen dagen bruker, eller lag en ny mal fra en dato. */
+function openSaveDaySheet() {
+  const date = view;
+  const curId = templateFor(date);
+  const cur = state.templates[curId];
+  const blocks = blocksFor(date);
+  const defFrom = date >= todayISO() ? (date === todayISO() ? addDays(date, 1) : date) : addDays(todayISO(), 1);
+  reopen = null;
+  openSheet(
+    '<div class="sh-head"><h2>Lagre dagen som mal</h2><button type="button" class="btn ghost" data-back>Tilbake</button></div>' +
+    '<form class="sh-body" id="sd" novalidate>' +
+      '<section class="grp"><h3>' + fmtDateLong(date) + '</h3><p class="hint">' + plural(blocks.length, 'bolk', 'bolker') + ' med tidene, sjekklistene og notatene slik de står denne dagen.</p>' +
+        '<div class="chips" role="radiogroup">' +
+          '<button type="button" class="chip" data-mode="new" aria-pressed="true">Ny mal fra en dato</button>' +
+          '<button type="button" class="chip" data-mode="replace" aria-pressed="false">Erstatt «' + esc(cur.name) + '»</button>' +
+        '</div>' +
+      '</section>' +
+      '<section class="grp" id="sd-new"><h3>Ny mal</h3>' +
+        '<div class="field"><label for="sd-name">Navn</label><input id="sd-name" type="text" value="' + esc(cur.name + ' fra ' + fmtDateShort(defFrom)) + '" autocomplete="off"></div>' +
+        '<div class="field"><label for="sd-from">Gjelder fra</label><input id="sd-from" type="date" value="' + defFrom + '"></div>' +
+        '<p class="hint">Dager før denne datoen beholder den gamle rytmen. Står det et senere bytte i planen, gjelder den nye malen fram til dit.</p>' +
+      '</section>' +
+      '<section class="grp" id="sd-rep" hidden><h3>Erstatt malen</h3>' +
+        '<p class="hint">«' + esc(cur.name) + '» får dagens oppsett. Det gjelder alle dager som bruker malen, også tidligere dager uten egne endringer. Vil du beholde tidligere dager som de var, velg «Ny mal fra en dato».</p>' +
+      '</section>' +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>Lagre mal</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      let mode = 'new';
+      q('#sd').addEventListener('submit', e => e.preventDefault());
+      sheet.querySelectorAll('[data-mode]').forEach(c => c.addEventListener('click', () => {
+        mode = c.dataset.mode;
+        sheet.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', x === c));
+        q('#sd-new').hidden = mode !== 'new';
+        q('#sd-rep').hidden = mode !== 'replace';
+      }));
+      q('#sd-from').addEventListener('change', e => {
+        const n = q('#sd-name');
+        if (/ fra \d+\. \w+$/.test(n.value)) n.value = cur.name + ' fra ' + fmtDateShort(e.target.value);
+      });
+      q('[data-save]').addEventListener('click', () => {
+        if (mode === 'replace') {
+          closeSheet();
+          mutate('«' + cur.name + '» oppdatert', () => {
+            state.templates[curId].blocks = clone(blocks);
+            const d = state.days[date];
+            if (d) delete d.blocks;
+          });
+          return;
+        }
+        const name = q('#sd-name').value.trim(), from = q('#sd-from').value;
+        if (!name) { q('#sd-name').focus(); return; }
+        if (!from) { q('#sd-from').focus(); return; }
+        closeSheet();
+        mutate('«' + name + '» gjelder fra ' + fmtDateShort(from), () => { const t = makeTemplate(name, blocks); scheduleFrom(from, t.id); });
       });
     });
 }

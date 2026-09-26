@@ -72,6 +72,14 @@ Stedet i **Meny → Profil** brukes til værmelding. Været hentes fra Open-Mete
 
 Hver våkenbolk viser været for tidsrommet og tre forslag fra **Meny → Aktivitetsbibliotek**. Forslagene tar hensyn til regn og vind, dagslys, faste tider (for eksempel babysang onsdager 11:00) og hva dere har gjort nylig. Trykk på et forslag for å velge det. Legg til egne aktiviteter med sted, lenke og faste tider i biblioteket.
 
+## 6. Maler og varige endringer
+
+En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder når, og alle malene dine.
+
+- **Lagre en dag som mal:** Juster en dag i tidslinjen (flytt bolker, endre tekst), og velg **Meny → Lagre dagen som mal**. Velg **Ny mal fra en dato** for å la dager før datoen beholde den gamle rytmen, eller **Erstatt** for å endre malen for alle dager.
+- **Planlegge en mal i ro og mak:** **Meny → Maler → Ny mal**. Start med en kopi eller en tom mal, og rediger bolkene. Malen påvirker ingen dager før du trykker **Bruk fra denne datoen**. **Se malen på en dag** viser den i tidslinjen for én dag.
+- Trinnvise overganger, som å fase ut MME eller gå over til én lur, gjøres som flere maler etter hverandre i planen.
+
 ## Oppdateringer
 
 Last opp ny `index.html` (og eventuelt `sw.js`) i det offentlige repoet med **Upload files**. Appen henter ny versjon neste gang den åpnes med nett. Dataene dine berøres ikke.
