@@ -20,7 +20,22 @@ const SEED_INGREDIENTS = {
   'd-omelett': ['Egg', 'Melk', 'Paprika', 'Spinat', 'Revet ost', 'Grovbrød'],
   'd-tomatsuppe': ['Tomatsuppe', 'Makaroni', 'Egg'],
   'd-pannekaker': ['Hvetemel', 'Melk', 'Egg', 'Blåbær', 'Smør'],
-  'l-risgrot': ['Grøtris', 'Helmelk', 'Kanel', 'Smør']
+  'l-risgrot': ['Grøtris', 'Helmelk', 'Kanel', 'Smør'],
+  // Lagt til i v9
+  'd-laksepasta': ['Laksefilet', 'Pasta', 'Spinat', 'Matfløte', 'Hvitløk', 'Sitron'],
+  'd-fiskesuppe': ['Torskefilet', 'Poteter', 'Gulrøtter', 'Purre', 'Melk', 'Fiskebuljong'],
+  'd-sei': ['Seifilet', 'Poteter', 'Melk', 'Smør', 'Erter'],
+  'd-fiskegryte': ['Torsk eller sei', 'Kokosmelk', 'Paprika', 'Ris', 'Hvitløk', 'Ingefær'],
+  'd-orret': ['Ørretfilet', 'Poteter', 'Agurk', 'Rømme', 'Dill'],
+  'd-kyllingsuppe': ['Kyllingfilet', 'Gulrøtter', 'Purre', 'Stangselleri', 'Pasta', 'Kyllingbuljong'],
+  'd-kyllingboller': ['Kyllingkjøttdeig', 'Egg', 'Havregryn', 'Hakkede tomater', 'Pasta', 'Løk'],
+  'd-kyllingcurry': ['Kyllingfilet', 'Kokosmelk', 'Mild karri', 'Brokkoli', 'Ris', 'Løk'],
+  'd-karbonader': ['Karbonadedeig', 'Løk', 'Poteter', 'Brokkoli'],
+  'd-svinefilet': ['Svinefilet', 'Søtpotet', 'Aspargesbønner', 'Smør'],
+  'd-burger': ['Kjøttdeig', 'Grove hamburgerbrød', 'Agurk', 'Tomat', 'Salat'],
+  'd-linsesuppe': ['Røde linser', 'Gulrøtter', 'Løk', 'Hakkede tomater', 'Grønnsaksbuljong', 'Grovbrød'],
+  'd-kikertgryte': ['Kikerter', 'Spinat', 'Hakkede tomater', 'Kokosmelk', 'Ris'],
+  'd-pytt': ['Poteter', 'Løk', 'Paprika', 'Brokkoli', 'Egg'],
 };
 
 function seedDishes() {
@@ -41,6 +56,21 @@ function seedDishes() {
     D('d-omelett',     'Grønnsaksomelett med grovbrød',           'dinner', 15, 'vegetar', { kids: 'Stek eggene helt gjennom.' }),
     D('d-tomatsuppe',  'Tomatsuppe med makaroni og egg',          'dinner', 20, 'vegetar', { kids: 'La suppen kjøle seg. Kutt egget i biter.' }),
     D('d-pannekaker',  'Pannekaker med blåbær',                   'dinner', 30, 'vegetar', { kids: 'Lite sukker. Blåbærene moses eller deles.', prep: 'Rør røren og la den svelle' }),
+    // Lagt til i v9: raske, sunne og gode, og lette å tilpasse små barn
+    D('d-laksepasta',  'Pasta med laks, spinat og fløtesaus',     'dinner', 20, 'fisk',    { kids: 'Sjekk laksen for bein og kutt pastaen. Sitron og pepper på de voksnes porsjon.', prep: 'Kutt laksen i terninger' }),
+    D('d-fiskesuppe',  'Fiskesuppe med torsk og grønnsaker',      'dinner', 25, 'fisk',    { kids: 'Lite buljong, så suppen blir mild. La den kjøle seg og sjekk for bein.', prep: 'Kutt potet, gulrot og purre' }),
+    D('d-sei',         'Stekt sei med potetmos og erter',         'dinner', 25, 'fisk',    { kids: 'Mos seien inn i potetmosen. Knus ertene lett.', prep: 'Skrell poteter' }),
+    D('d-fiskegryte',  'Mild fiskegryte med kokos og ris',        'dinner', 25, 'fisk',    { kids: 'Ta ut barnenes porsjon før eventuell chili. Del fisken i små biter.', prep: 'Kutt paprika og fisk' }),
+    D('d-orret',       'Ørret i ovn med potet og agurksalat',     'dinner', 30, 'fisk',    { kids: 'Sjekk for bein. Agurk i staver er fint å holde.', prep: 'Skrell poteter' }),
+    D('d-kyllingsuppe','Kyllingsuppe med grønnsaker og pasta',    'dinner', 30, 'kylling', { kids: 'Kutt kylling og grønnsaker smått. Lite buljong.', prep: 'Kutt kylling og grønnsaker' }),
+    D('d-kyllingboller','Kyllingkjøttboller i tomatsaus med pasta','dinner', 30, 'kylling', { kids: 'Lag små boller. Lite salt i farsen.', prep: 'Lag farsen' }),
+    D('d-kyllingcurry','Mild kyllingcurry med kokos og ris',      'dinner', 25, 'kylling', { kids: 'Bruk mild karri. Kutt kyllingen i små biter.', prep: 'Kutt kylling, løk og brokkoli' }),
+    D('d-karbonader',  'Karbonader med løk, potet og brokkoli',   'dinner', 25, 'kjott',   { kids: 'Stek noen uten salt til barnene og kutt i biter.', prep: 'Skrell poteter og skjær løk' }),
+    D('d-svinefilet',  'Svinefilet med søtpotetmos og bønner',    'dinner', 30, 'kjott',   { kids: 'Skjær kjøttet tynt og smått. Mos søtpoteten.', prep: 'Skrell søtpotet' }),
+    D('d-burger',      'Hjemmelagde burgere med grovbrød',        'dinner', 25, 'kjott',   { kids: 'Små, flate burgere uten salt, godt gjennomstekt. Brød og grønnsaker i biter.', prep: 'Form burgerne' }),
+    D('d-linsesuppe',  'Rød linsesuppe med gulrot og grovbrød',   'dinner', 25, 'vegetar', { kids: 'Kjør suppen glatt og bruk lite buljong.', prep: 'Kutt løk og gulrot' }),
+    D('d-kikertgryte', 'Kikertgryte med spinat og ris',           'dinner', 25, 'vegetar', { kids: 'Mos kikertene lett.', prep: 'Kutt løk' }),
+    D('d-pytt',        'Grønnsakspytt med stekt egg',             'dinner', 25, 'vegetar', { kids: 'Kutt i små biter. Stek eggene helt gjennom.', prep: 'Kutt poteter og grønnsaker i terninger' }),
     D('l-risgrot',     'Risgrynsgrøt',                            'lunch',  60, 'vegetar', { weekday: 6, kids: 'Lite eller ikke sukker og kanel på barnenes porsjon.', prep: 'Sett på grøten, den koker i ca. 45 min og må røres i' }),
   ];
 }
@@ -59,6 +89,24 @@ function seedActivities() {
     A('a-handel',  'Handletur med vogn',           'inne', 45, { travel: 'gange', note: 'Fint på regnværsdager.' }),
     A('a-bibl',    'Biblioteket',                  'inne', 45, { travel: 'gange', note: 'Bildebøker og lekekrok. Sjekk åpningstider.' }),
     A('a-besok',   'Besøk eller lekeavtale',       'inne', 90, { sickOk: false }),
+    // Lagt til i v9: mest lek hjemme, som passer når barnene er rundt ett år
+    A('a-bobler',  'Såpebobler',                   'inne', 15, { note: 'Blås over gulvet og la barnene jakte. Tørk opp etterpå, det blir glatt.' }),
+    A('a-ball',    'Ballek',                       'inne', 20, { note: 'Rull, kast og samle baller i en kurv.' }),
+    A('a-titt',    'Titt-tei og gjemmelek',        'inne', 15, { note: 'Gjem en leke under et håndkle eller bak en pute.' }),
+    A('a-esker',   'Pappesker å krype i',          'inne', 20, { note: 'Store esker å krype gjennom og putte ting i.' }),
+    A('a-sanse',   'Sansekurv',                    'inne', 20, { note: 'Trygge ting med ulike overflater: børste, stoff, tresleiv, kongle. Sitt ved siden av.' }),
+    A('a-tromme',  'Trommer av kjeler',            'inne', 15, { note: 'Kjeler, lokk og tresleiver.' }),
+    A('a-putte',   'Putte i boks',                 'inne', 15, { note: 'Store klosser eller baller i en boks med hull i lokket. Ingenting som kan svelges.' }),
+    A('a-stable',  'Stable og velte',              'inne', 15, { note: 'Bygg tårn av kopper eller bokser som barnene kan velte.' }),
+    A('a-maling',  'Fingermaling med yoghurt',     'inne', 20, { note: 'Yoghurt med litt matfarge på et brett. Rett i badet etterpå.' }),
+    A('a-lese',    'Lesestund med pekebøker',      'inne', 15, { note: 'Bøker med store bilder og ting å kjenne på.' }),
+    A('a-badelek', 'Badelek',                      'inne', 20, { note: 'Kopper og baller i badekaret. Gå aldri fra barnene.' }),
+    A('a-kjokken', 'Være med på matlagingen',      'inne', 20, { note: 'Barnene i stolen med en skål, en skje og litt mat å smake på.' }),
+    A('a-laken',   'Viftelek med laken',           'inne', 10, { note: 'Vift et laken over barnene, eller la en ball trille på det.' }),
+    A('a-teip',    'Teip på gulvet',               'inne', 10, { note: 'Maskeringsteip i striper som barnene kan dra av.' }),
+    A('a-speil',   'Speillek',                     'inne', 10, { note: 'Pek og si navnet på øyne, nese og munn.' }),
+    A('a-skog',    'Rusletur i skogen',            'ute',  60, { weather: 'dry', travel: 'gange', note: 'Kjenne på mose, kongler og blader. Bæreseler er lettere enn vogn.' }),
+    A('a-blader',  'Lek med høstblader',           'ute',  30, { weather: 'dry', note: 'Samle blader og kast dem i lufta, like utenfor døren.' }),
   ];
 }
 

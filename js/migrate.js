@@ -4,7 +4,12 @@
    for trinn, og sanitize() retter eller fjerner verdier som ikke har riktig
    form (for eksempel fra en fil som er redigert for hånd). Gyldige data
    endres ikke. */
-const DATA_VERSION = 8;
+const DATA_VERSION = 9;
+/* Startdata som kom til senere, og som legges til hos eksisterende brukere */
+const ADDED_V9 = {
+  dishes: ['d-laksepasta', 'd-fiskesuppe', 'd-sei', 'd-fiskegryte', 'd-orret', 'd-kyllingsuppe', 'd-kyllingboller', 'd-kyllingcurry', 'd-karbonader', 'd-svinefilet', 'd-burger', 'd-linsesuppe', 'd-kikertgryte', 'd-pytt'],
+  activities: ['a-bobler', 'a-ball', 'a-titt', 'a-esker', 'a-sanse', 'a-tromme', 'a-putte', 'a-stable', 'a-maling', 'a-lese', 'a-badelek', 'a-kjokken', 'a-laken', 'a-teip', 'a-speil', 'a-skog', 'a-blader'],
+};
 const TYPE_KEYS = Object.keys(T.types);
 const ROLE_KEYS = Object.keys(T.roles);
 
@@ -89,6 +94,13 @@ function migrate(s) {
     Object.values(s.templates).forEach(t => setWake(t && t.blocks));
     Object.values(s.days).forEach(d => setWake(d && d.blocks));
     s.version = 8;
+  }
+  if (s.version < 9) {
+    // v9: flere middager og aktiviteter. Legges til hos alle som ikke allerede har dem (samme id).
+    const addNew = (list, fresh, ids) => { const have = new Set(list.map(x => x && x.id)); fresh.filter(x => ids.includes(x.id) && !have.has(x.id)).forEach(x => list.push(x)); };
+    addNew(s.dishes, seedDishes(), ADDED_V9.dishes);
+    addNew(s.activities, seedActivities(), ADDED_V9.activities);
+    s.version = 9;
   }
   (s.dishes || []).forEach(d => { if (d && !Array.isArray(d.ingredients)) d.ingredients = []; });
   s.shop = Object.assign({ checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() }, s.shop || {});

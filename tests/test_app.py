@@ -391,6 +391,27 @@ class DognTest(unittest.TestCase):
         self.assertEqual(pg.evaluate('state.settings.kidsWord'), 'guttene')
         self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'mme-morgen').role"), 'wake')
 
+    def test_new_dishes_and_activities_are_added_once(self):
+        pg = self.open(setup=False)
+        pg.evaluate("""() => {
+          const s = seed(); s.version = 8; s.meta.setupDone = true;
+          s.dishes = s.dishes.filter(d => !ADDED_V9.dishes.includes(d.id));
+          s.activities = s.activities.filter(a => !ADDED_V9.activities.includes(a.id) && a.id !== 'a-gulv');
+          s.activities.push({ id: 'a-bobler', name: 'Mine bobler', kind: 'inne', minutes: 5 });
+          localStorage.setItem('dogn-state', JSON.stringify(s)); indexedDB.deleteDatabase('dogn');
+        }""")
+        pg.reload()
+        pg.wait_for_function(READY)
+        ids = pg.evaluate('state.dishes.map(d => d.id)')
+        acts = pg.evaluate('state.activities.map(a => a.id)')
+        for d in ['d-laksepasta', 'd-linsesuppe', 'd-karbonader']:
+            self.assertEqual(ids.count(d), 1)
+        self.assertEqual(acts.count('a-bobler'), 1)
+        self.assertEqual(pg.evaluate("state.activities.find(a => a.id === 'a-bobler').name"), 'Mine bobler')   # egne endringer beholdes
+        self.assertNotIn('a-gulv', acts)                                   # slettede aktiviteter kommer ikke tilbake
+        self.assertIn('a-sanse', acts)
+        self.assertTrue(pg.evaluate("state.dishes.find(d => d.id === 'd-sei').ingredients.length > 0"))
+
     def test_export_import_roundtrip(self):
         pg = self.open()
         data = pg.evaluate('JSON.stringify(state)')
