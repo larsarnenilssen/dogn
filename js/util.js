@@ -21,6 +21,7 @@ const fmtDateLong = s => { const d = parseISO(s); return cap(T.date.wd[d.getDay(
 const fmtDateShort = s => { const d = parseISO(s); return d.getDate() + '. ' + T.date.moShort[d.getMonth()]; };
 const fmtDateTiny = s => { const d = parseISO(s); return T.date.wdShort[isoWd(s) - 1].toLowerCase() + ' ' + d.getDate() + '.' + (d.getMonth() + 1); };
 const wdShort = n => T.date.wdShort[n - 1];
+const isoWeek = s => { const d = parseISO(s); d.setDate(d.getDate() + 4 - (d.getDay() || 7)); return Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 86400000 + 1) / 7); };
 const fmtDur = m => m < 60 ? m + ' ' + T.unit.min : (m % 60 ? Math.floor(m / 60) + ' ' + T.unit.hour + ' ' + (m % 60) + ' ' + T.unit.min : (m / 60) + ' ' + T.unit.hour);
 const fmtDurShort = m => m < 60 ? m + T.unit.minShort : Math.floor(m / 60) + T.unit.hour + pad(m % 60);
 const signed = m => (m > 0 ? '+' : '−') + fmtDur(Math.abs(m));

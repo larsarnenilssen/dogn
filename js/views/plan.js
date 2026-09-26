@@ -71,7 +71,7 @@ function openMenu() {
 }
 
 /* ---------- rediger bolk (for en dag, eller i en mal) ---------- */
-const itemRow = it => h`<div class="item" data-iid="${it.id}"><input type="text" value="${it.text}" aria-label="${T.block.itemAria}"><button type="button" class="icon-btn sm" data-rm aria-label="${T.block.removeItem}">${ICON_X}</button></div>`;
+const itemRow = it => h`<div class="item" data-iid="${it.id}" data-sort="${it.id}">${dragHandle(it.text || T.block.itemAria)}<input type="text" value="${it.text}" aria-label="${T.block.itemAria}"><button type="button" class="icon-btn sm" data-rm aria-label="${T.block.removeItem}">${ICON_X}</button></div>`;
 const shiftButtons = attr => [-30, -15, 15, 30].map(d => h`<button type="button" class="btn small" ${raw(attr)}="${d}">${(d > 0 ? '+' : '−') + Math.abs(d)}</button>`);
 
 function openBlockSheet(id, tplId) {
@@ -143,6 +143,7 @@ function openBlockSheet(id, tplId) {
         q('#f-items').lastElementChild.querySelector('input').focus();
       });
       q('#f-items').addEventListener('click', e => { const rm = e.target.closest('[data-rm]'); if (rm) rm.closest('.item').remove(); });
+      sortable(q('#f-items'));   // rekkefølgen lagres når bolken lagres
       q('#f-items').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); q('[data-add]').click(); } });
       sheet.querySelectorAll('[data-shift]').forEach(btn => btn.addEventListener('click', () => {
         const v = btn.dataset.shift;
@@ -378,17 +379,20 @@ function openTasksSheet() {
   const slotLabel = t => { const s = slots.find(x => x.slot === t.slot); return s ? s.label : T.types[t.type] || ''; };
   const pending = state.tasks.filter(t => t.rule && t.rule.kind === 'once' && !completions(t.id).length);
   const recurring = state.tasks.filter(t => !t.rule || t.rule.kind !== 'once');
-  const row = t => h`<button type="button" class="row" data-task="${t.id}"><span class="grow">${t.text}<span class="m">${ruleText(t.rule) + ', ' + slotLabel(t)}</span></span><span class="r">›</span></button>`;
+  const row = t => h`<div class="row sortrow" data-sort="${t.id}">${dragHandle(t.text)}<button type="button" class="row-main" data-task="${t.id}"><span class="grow">${t.text}<span class="m">${ruleText(t.rule) + ', ' + slotLabel(t)}</span></span><span class="r">›</span></button></div>`;
   openSheet(h`${headHTML(G.title, true)}
     <div class="sh-body">
-      ${pending.length ? h`<section class="grp"><h3>${G.pending}</h3><div class="list">${pending.map(row)}</div></section>` : ''}
+      ${pending.length ? h`<section class="grp"><h3>${G.pending}</h3><div class="list" data-sortlist>${pending.map(row)}</div></section>` : ''}
       <section class="grp"><h3>${G.recurring}</h3>
-      <div class="list">${recurring.length ? recurring.map(row) : emptyRow(T.common.noneYet)}</div>
+      <div class="list" data-sortlist>${recurring.length ? recurring.map(row) : emptyRow(T.common.noneYet)}</div>
+      ${pending.length + recurring.length > 1 ? hint(G.orderHint) : ''}
       <button type="button" class="btn wide" data-new-task>${G.new}</button>
       </section><button type="button" class="btn wide" data-add-husk>${G.remember}</button>
     </div>`,
     (sheet, q) => {
       sheet.querySelectorAll('[data-task]').forEach(b => b.addEventListener('click', () => openTaskSheet(b.dataset.task)));
+      sheet.querySelectorAll('[data-sortlist]').forEach(list => sortable(list, ids =>
+        commit(T.common.orderSaved, () => { state.tasks = reorderSubset(state.tasks, ids); }, 'timeline')));
       q('[data-new-task]').addEventListener('click', () => openTaskSheet(null));
       q('[data-add-husk]').addEventListener('click', () => openAddSheet('husk'));
     });

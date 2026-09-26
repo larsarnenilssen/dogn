@@ -186,7 +186,7 @@ function openShopSheet(from) {
   const S = state.shop, P = T.shop;
   const items = shopItems(from, 7);
   const missing = missingIngredients(from, 7);
-  const row = (key, name, sub, extra) => h`<li><label><input type="checkbox" data-shop="${key}"${S.checked[key] ? raw(' checked') : ''}><span class="txt"><span class="main">${name}</span>${sub ? h`<small>${sub}</small>` : ''}</span></label>
+  const row = (key, name, sub, extra) => h`<li${extra ? h` data-sort="${extra}"` : ''}>${extra ? dragHandle(name) : ''}<label><input type="checkbox" data-shop="${key}"${S.checked[key] ? raw(' checked') : ''}><span class="txt"><span class="main">${name}</span>${sub ? h`<small>${sub}</small>` : ''}</span></label>
     ${extra ? h`<button type="button" class="icon-btn sm" data-rm-extra="${extra}" aria-label="${P.removeAria(name)}">${ICON_X}</button>` : ''}</li>`;
   openSheet(h`${headHTML(P.title, true)}
     <div class="sh-body">
@@ -196,7 +196,7 @@ function openShopSheet(from) {
         ${missing.length ? hint(P.missing(missing.join(', '))) : ''}
       </section>
       <section class="grp"><h3>${P.other}</h3>
-        ${S.extra.length ? h`<ul class="checks shop">${S.extra.map(x => row('x:' + x.id, x.text, '', x.id))}</ul>` : ''}
+        ${S.extra.length ? h`<ul class="checks shop" id="sh-extra">${S.extra.map(x => row('x:' + x.id, x.text, '', x.id))}</ul>` : ''}
         <div class="item"><input type="text" id="sh-add" placeholder="${P.addPh}" autocomplete="off" aria-label="${P.addAria}"><button type="button" class="btn small" data-add-extra>${T.common.add}</button></div>
       </section>
       <div class="row2"><button type="button" class="btn primary" data-share>${P.share}</button><button type="button" class="btn" data-clear>${P.clear}</button></div>
@@ -209,6 +209,7 @@ function openShopSheet(from) {
         const cb = e.target.closest('[data-shop]');
         if (cb) commit(null, () => { if (cb.checked) state.shop.checked[cb.dataset.shop] = true; else delete state.shop.checked[cb.dataset.shop]; }, 'none');
       });
+      if (q('#sh-extra')) sortable(q('#sh-extra'), ids => commit(T.common.orderSaved, () => { state.shop.extra = reorderSubset(state.shop.extra, ids); }, 'none'));
       sheet.querySelectorAll('[data-rm-extra]').forEach(b => b.addEventListener('click', () => {
         const id = b.dataset.rmExtra;
         commit(null, () => { state.shop.extra = state.shop.extra.filter(x => x.id !== id); delete state.shop.checked['x:' + id]; }, 'none');

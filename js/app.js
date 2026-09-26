@@ -3,11 +3,13 @@
 $('#prev').setAttribute('aria-label', T.top.prev);
 $('#next').setAttribute('aria-label', T.top.next);
 $('#menu').setAttribute('aria-label', T.top.menu);
+$('#date').setAttribute('aria-label', T.top.pickDay);
 $('#fab').setAttribute('aria-label', T.top.fab);
 
 $('#prev').addEventListener('click', () => go(-1));
 $('#next').addEventListener('click', () => go(1));
 $('#menu').addEventListener('click', openMenu);
+$('#date').addEventListener('click', () => openCalendarSheet());
 $('#fab').addEventListener('click', () => openAddSheet());
 $('#nowbar').addEventListener('click', e => {
   const t = e.target.closest('[data-nb]');

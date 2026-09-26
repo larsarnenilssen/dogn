@@ -93,6 +93,8 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 ## 7. Daglig bruk
 
 - **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge barna har vært våkne, og en knapp for sovnet eller våknet når det er aktuelt. Ved siden av neste bolk står en liten «start nå» som krever to trykk, fordi den flytter resten av dagen. Trykk på teksten for å hoppe til bolken.
+- **Hopp til en dag:** Trykk på datoen i toppen. Kalenderen viser ukenummer, partnerens vakter, avtaler og huskepunkter (prikk) og dager med egne endringer (stjerne). Pilene og sveiping går fortsatt én dag om gangen.
+- **Rekkefølge:** Sjekklister i bolkene, gjøremål, huskelisten, barna i Profil og «Andre varer» i handlelisten kan sorteres. Dra i grepet (⋮⋮) til venstre, eller velg grepet og bruk pil opp og ned. Gjøremålene står i bolkene i samme rekkefølge, etter sjekklisten. Retter, aktiviteter og vaktkoder sorteres automatisk.
 - **Pluss-knappen** nede til høyre legger til noe å huske (i neste lur, i kveld eller i morgen), en avtale eller en bolk.
 - **Nullstilling** viser «i morgen»: vær, klær, vakt, middag, første lur, faste tilbud, avtaler og gjøremål. Der kan du også dele en kort dagsrapport.
 - **Klær og pakkeliste** vises når dere skal ut. Pakkelisten redigeres under Meny → Aktivitetsbibliotek.

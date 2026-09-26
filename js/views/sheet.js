@@ -58,6 +58,60 @@ function bindDelete(sheet, fn) {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#sheet-root').hidden) closeSheet(); });
 
+/* ---------- endre rekkefølge ----------
+   Hvert element i listen har data-sort="id" og et grep (dragHandle).
+   Dra i grepet, eller bruk pil opp/ned når grepet har fokus.
+   onDone(ids) får den nye rekkefølgen når noe er flyttet. */
+const ICON_GRIP = raw('<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>');
+const dragHandle = name => h`<button type="button" class="handle" data-handle aria-label="${T.common.moveAria(name)}">${ICON_GRIP}</button>`;
+function sortable(list, onDone) {
+  const items = () => [...list.children].filter(x => x.dataset.sort != null);
+  const done = () => { if (onDone) onDone(items().map(x => x.dataset.sort)); };
+  list.addEventListener('pointerdown', e => {
+    const hd = e.target.closest('[data-handle]');
+    if (!hd || e.button > 0) return;
+    const item = hd.closest('[data-sort]');
+    if (!item || item.parentElement !== list) return;
+    e.preventDefault();
+    try { hd.setPointerCapture(e.pointerId); } catch (err) {}
+    item.classList.add('dragging');
+    let moved = false;
+    const mid = el => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; };
+    const move = ev => {
+      const all = items(), i = all.indexOf(item);
+      const next = all[i + 1], prev = all[i - 1];
+      if (next && ev.clientY > mid(next)) { next.after(item); moved = true; }
+      else if (prev && ev.clientY < mid(prev)) { prev.before(item); moved = true; }
+    };
+    const up = () => {
+      hd.removeEventListener('pointermove', move); hd.removeEventListener('pointerup', up); hd.removeEventListener('pointercancel', up);
+      item.classList.remove('dragging');
+      if (moved) done();
+    };
+    hd.addEventListener('pointermove', move); hd.addEventListener('pointerup', up); hd.addEventListener('pointercancel', up);
+  });
+  list.addEventListener('keydown', e => {
+    const hd = e.target.closest('[data-handle]');
+    if (!hd || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    const item = hd.closest('[data-sort]');
+    const all = items(), i = all.indexOf(item);
+    const other = all[e.key === 'ArrowUp' ? i - 1 : i + 1];
+    e.preventDefault();
+    if (!other) return;
+    if (e.key === 'ArrowUp') other.before(item); else other.after(item);
+    hd.focus();
+    done();
+  });
+}
+/* Setter en delmengde av en liste i ny rekkefølge og lar resten stå der de står */
+function reorderSubset(arr, ids) {
+  const byId = new Map(arr.map(x => [x.id, x]));
+  const order = ids.filter(id => byId.has(id));
+  const set = new Set(order);
+  let k = 0;
+  return arr.map(x => set.has(x.id) ? byId.get(order[k++]) : x);
+}
+
 /* ---------- melding nederst, med «Angre» ---------- */
 let toastTimer = null;
 function toast(msg, undo) {

@@ -353,6 +353,60 @@ class DognTest(unittest.TestCase):
                 self.assertTrue(os.path.exists(os.path.join(ROOT, f)), f + ' finnes ikke')
         self.assertIn("importScripts('js/version.js')", _read('sw.js'))
 
+    def test_calendar_jumps_to_a_day(self):
+        pg = self.open()
+        pg.click('#date')
+        pg.wait_for_selector('#sheet-root.open .cal')
+        self.assertEqual(pg.get_attribute('.cal [aria-current="date"]', 'data-go'), '2026-10-07')
+        self.assertEqual(pg.inner_text('.cal .day[data-go="2026-10-08"] .c'), 'A')       # partnerens vakt
+        pg.click('[data-month="2026-11"]')
+        pg.click('.cal .day[data-go="2026-11-20"]')
+        pg.wait_for_timeout(300)
+        self.assertEqual(pg.evaluate('view'), '2026-11-20')
+        self.assertIn('20. nov', pg.inner_text('#date'))
+
+    def test_reorder_tasks_by_drag_and_keyboard(self):
+        pg = self.open()
+        pg.evaluate('openTasksSheet()')
+        pg.wait_for_selector('#sheet-root.open [data-sortlist]')
+        pg.wait_for_timeout(400)                          # vent til arket har glidd på plass
+        order = lambda: pg.evaluate("state.tasks.map(t => t.id)")
+        before = order()
+        first, second = before[0], before[1]
+        # Dra det andre gjøremålet over det første
+        h2 = pg.locator('[data-sort="%s"] [data-handle]' % second).bounding_box()
+        h1 = pg.locator('[data-sort="%s"] [data-handle]' % first).bounding_box()
+        pg.mouse.move(h2['x'] + h2['width'] / 2, h2['y'] + h2['height'] / 2)
+        pg.mouse.down()
+        for i in range(1, 6):
+            pg.mouse.move(h2['x'] + h2['width'] / 2, h2['y'] + h2['height'] / 2 - (h2['y'] - h1['y'] + 10) * i / 5)
+        pg.mouse.up()
+        after = order()
+        self.assertEqual(after[:2], [second, first])
+        self.assertEqual(sorted(after), sorted(before))
+        # Tastatur: pil ned flytter det tilbake
+        pg.focus('[data-sort="%s"] [data-handle]' % second)
+        pg.keyboard.press('ArrowDown')
+        self.assertEqual(order(), before)
+        pg.click('#undo')
+        self.assertEqual(order()[:2], [second, first])
+
+    def test_reorder_checklist_in_block_editor(self):
+        pg = self.open()
+        pg.evaluate("openBlockSheet('to-lurer.kveld')")
+        pg.wait_for_selector('#sheet-root.open #f-items')
+        texts = lambda: pg.eval_on_selector_all('#f-items input', 'els => els.map(e => e.value)')
+        before = texts()
+        pg.focus('#f-items .item:nth-child(3) [data-handle]')
+        pg.keyboard.press('ArrowUp')
+        pg.keyboard.press('ArrowUp')
+        moved = texts()
+        self.assertEqual(moved[0], before[2])
+        pg.click('.sh-foot [data-save="day"]')
+        pg.wait_for_timeout(200)
+        self.assertEqual(pg.evaluate("blocksFor('2026-10-07').find(b => b.slot === 'kveld').items.map(i => i.text)"), moved)
+        self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'kveld').items[0].text"), before[0])
+
 
 if __name__ == '__main__':
     unittest.main()

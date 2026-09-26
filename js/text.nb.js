@@ -42,6 +42,7 @@ const T = {
     name: 'Navn', type: 'Type', note: 'Notat', from: 'Fra', to: 'Til', date: 'Dato', time: 'Klokken', none: 'Ingen', noneYet: 'Ingen ennå.',
     yes: 'Ja', no: 'Nei', fromDate: 'Fra dato', minutes: 'Varighet (min)', nameSaved: 'Navn lagret', saved: 'Lagret',
     undone: label => 'Angret: ' + label,
+    moveAria: name => 'Flytt «' + name + '». Dra, eller bruk pil opp og ned.', orderSaved: 'Ny rekkefølge lagret',
   },
 
   kids: {
@@ -53,7 +54,7 @@ const T = {
   },
 
   top: {
-    prev: 'Forrige dag', next: 'Neste dag', menu: 'Meny', fab: 'Legg til husk, avtale eller bolk',
+    prev: 'Forrige dag', next: 'Neste dag', menu: 'Meny', pickDay: 'Velg dag', fab: 'Legg til husk, avtale eller bolk',
     startsIn: 'start om', leave: 'perm', leaveDone: 'ferdig', day: 'dag', template: 'mal', sun: 'sol', today: 'Til i dag',
   },
 
@@ -97,6 +98,11 @@ const T = {
   },
 
   sheet: { dialog: 'Ark' },
+
+  cal: {
+    title: 'Velg dag', prev: 'Forrige måned', next: 'Neste måned', week: 'uke', today: 'I dag', tomorrow: 'I morgen',
+    hint: partner => 'Prikk: avtale eller noe å huske. Stjerne: dagen har egne endringer.' + (partner ? ' Koden under datoen er vakten til ' + partner + '.' : '') + ' Dager utenfor permisjonen er nedtonet.',
+  },
 
   block: {
     newInTpl: 'Ny bolk i malen', inTpl: 'Bolk i malen', new: 'Ny rubrikk', edit: 'Rediger rubrikk', group: 'Rubrikk',
@@ -198,7 +204,8 @@ const T = {
   },
 
   tasks: {
-    title: 'Gjøremål', pending: 'Huskeliste', recurring: 'Går igjen', new: 'Nytt gjøremål', remember: 'Husk noe',
+    title: 'Gjøremål', pending: 'Huskeliste',
+    orderHint: 'Dra i grepet til venstre for å endre rekkefølgen. Gjøremålene står i denne rekkefølgen i bolkene, etter sjekklisten.', recurring: 'Går igjen', new: 'Nytt gjøremål', remember: 'Husk noe',
     once: d => 'Én gang, ' + d, daily: 'Hver dag', noDays: 'Ingen dager valgt', weekly: 'Hver uke', biweekly: 'Annenhver uke', every: n => 'Hver ' + n + '. dag',
     edit: 'Rediger gjøremål', group: 'Gjøremål', ph: 'For eksempel Skifte sengetøy', often: 'Hvor ofte',
     kinds: { once: 'Én gang', daily: 'Hver dag', interval: 'Med fast mellomrom', weekdays: 'Faste ukedager' },

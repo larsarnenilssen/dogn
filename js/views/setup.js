@@ -8,7 +8,7 @@ function openProfileSheet(firstRun) {
   reopen = firstRun ? null : () => openProfileSheet(false);
   const P = T.profile;
   let place = state.place ? clone(state.place) : null;
-  const kidRow = k => h`<div class="item" data-kid="${k.id}"><input type="text" value="${k.name}" aria-label="${T.common.name}" autocomplete="off"><button type="button" class="icon-btn sm" data-rm aria-label="${T.common.remove}">${ICON_X}</button></div>`;
+  const kidRow = k => h`<div class="item" data-kid="${k.id}" data-sort="${k.id}">${dragHandle(k.name || T.common.name)}<input type="text" value="${k.name}" aria-label="${T.common.name}" autocomplete="off"><button type="button" class="icon-btn sm" data-rm aria-label="${T.common.remove}">${ICON_X}</button></div>`;
   const display = firstRun ? '' : h`<section class="grp"><h3>${P.display}</h3><div class="chips">${chipSet('data-show', Object.entries(P.show), showOn)}</div>
       ${hint(P.showHint)}
       <span class="lbl">${P.theme}</span><div class="chips">${chipSet('data-theme-set', Object.entries(P.themes), k => (state.settings.theme || 'dark') === k)}</div>
@@ -50,6 +50,7 @@ function openProfileSheet(firstRun) {
         q('#p-kids').insertAdjacentHTML('beforeend', toHtml(kidRow({ id: 'b-' + uid(), name: '' })));
         q('#p-kids').lastElementChild.querySelector('input').focus();
       });
+      sortable(q('#p-kids'));   // rekkefølgen lagres med profilen
       q('#p-kids').addEventListener('click', e => { const rm = e.target.closest('[data-rm]'); if (rm && q('#p-kids').children.length > 1) rm.closest('.item').remove(); });
       const search = async () => {
         const term = q('#p-q').value.trim();
