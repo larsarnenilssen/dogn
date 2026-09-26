@@ -30,3 +30,12 @@ tokens.css, text.nb.js, h`` og commit(). Felleskjønn (-en) i all ny tekst.
 - Golden-sammenligning (tekst i alle visninger) og skjermbilder mørkt/lyst, 100/120 %.
 - Alle tester grønne; nye tester for kompakt forside, dagstripe og navigasjonslinje.
 - Migrering av siste backup fra dogn-data uten endringer i data.
+
+## Tillegg: sveiping
+- Dag: sveip finnes allerede (over 70 px vannrett). Gjør den synlig: tidslinjen følger
+  fingeren og glir over til neste dag, med nabodagens dato i kanten. Kort gliding
+  (under 0,2 s), ingen animasjon ved «reduser bevegelse».
+- Kalender: sveip mellom måneder. Dagstripen: sveip bytter dag.
+- Ark: dra ned for å lukke; sveip fra venstre kant = «Tilbake» der arket har det.
+- Konflikter: loddrett blaing, dra-grep i lister og vannrett rulling i tabeller skal
+  ikke utløse sveip. Test med berøring i Playwright.
