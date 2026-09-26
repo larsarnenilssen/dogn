@@ -1,0 +1,2566 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Døgn</title>
+<meta name="theme-color" content="#1B2127">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Døgn">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Døgn – mørkt, terminalaktig uttrykk. Bevisst bare ett (mørkt) tema. */
+:root{
+  --ground:#151A1F; --bar:#1B2127; --panel:#1F262D; --panel-hi:#252E36; --field:#13181C;
+  --night:#1B2533; --night-line:#314560; --night-bar:#5479A0;
+  --line:#37434D; --line-soft:#2C363F;
+  --ink:#E8ECEF; --muted:#A3AEB7; --faint:#66737D;
+  --accent:#E2AA4F; --accent-ink:#141008; --accent-dim:rgba(226,170,79,.14);
+  --late:#E58A6E; --danger:#E0705E;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --rcol:18px; --gap:14px; --head-h:110px;
+  --c-prep:#B8A0EE; --c-meal:#6FC2AF; --c-sleep:#80A9DE; --c-awake:#A7CC7D; --c-routine:#A3B6C7;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;background:var(--ground);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--mono);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums}
+body.locked{overflow:hidden}
+button{font:inherit;color:inherit}
+.wrap{max-width:40rem;margin:0 auto;padding-inline:16px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bar);border-bottom:1px solid rgba(226,170,79,.45);box-shadow:0 12px 20px -14px rgba(0,0,0,.95)}
+.top .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 12px;padding-block:20px 14px;align-items:center}
+.date{font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.date::before{content:"› ";color:var(--accent);font-weight:500}
+.nav{display:flex;gap:6px}
+.sub{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;font-size:13.5px;color:var(--ink);border-top:1px solid var(--line-soft);padding-top:12px}
+.sub>span:first-child{color:var(--accent)}
+.sub .k{color:var(--muted);margin-right:6px}
+.sub .today{border:1px solid var(--accent);background:none;color:var(--accent);font-size:12px;border-radius:4px;padding:2px 8px;cursor:pointer}
+.icon-btn{width:40px;height:40px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn.sm{width:44px;height:44px;border:none;background:none;color:var(--muted)}
+
+/* Timeline */
+#timeline{padding-block:22px 64px;touch-action:pan-y;display:flex;flex-direction:column;gap:var(--gap)}
+.blk{position:relative;display:grid;grid-template-columns:var(--rcol) minmax(0,1fr);scroll-margin-top:calc(var(--head-h) + 14px)}
+.hrow{display:flex;align-items:flex-start;gap:12px}
+.tbtn{flex:none;font:600 15px/1 var(--mono);letter-spacing:.02em;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:8px 7px 7px;cursor:pointer;min-height:34px;font-variant-numeric:tabular-nums}
+.tbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tbtn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.blk.now .tbtn{border-color:var(--accent);color:var(--accent)}
+.blk.past .tbtn{color:var(--muted);background:transparent}
+.shiftbar{display:flex;flex-direction:column;gap:10px;margin:12px 0 2px;padding:12px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-dim)}
+.shiftbar .sb-l{font-size:13px;color:var(--accent)}
+.sb-btns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sb-btns .btn,.shiftbar .btn{padding-inline:4px;background:var(--panel)}
+.shiftbar .btn.primary{background:var(--accent)}
+.blk .rail{position:relative}
+.blk .rail::before{content:"";position:absolute;left:50%;top:calc(var(--gap) / -2 - 1px);bottom:calc(var(--gap) / -2 - 1px);width:1px;background:var(--line);transform:translateX(-50%)}
+.blk:first-of-type .rail::before{top:26px}
+.blk.ty-prep{--type:var(--c-prep)} .blk.ty-meal{--type:var(--c-meal)} .blk.ty-sleep{--type:var(--c-sleep)} .blk.ty-awake{--type:var(--c-awake)} .blk.ty-routine{--type:var(--c-routine)}
+.blk .node{position:absolute;left:50%;top:26px;margin-left:-4px;width:8px;height:8px;background:var(--type,var(--faint));transform:translateX(-50%)}
+.panel{margin-left:6px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--type,var(--line));border-radius:6px;padding:12px 14px 14px;min-width:0;position:relative;overflow:hidden}
+
+.blk.ty-sleep .panel{background:var(--night);border-color:var(--night-line);border-top-color:var(--type)}
+.blk.ty-sleep .rail::before{width:3px;background:var(--night-bar)}
+
+
+.blk.now .t{color:var(--accent)}
+.blk.now .node{background:var(--accent)}
+.blk.now .panel{border-color:var(--accent);background:var(--panel-hi);box-shadow:0 0 0 1px var(--accent),0 8px 24px -12px rgba(226,170,79,.35)}
+.blk.ty-sleep.now .panel{background:var(--night)}
+.prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent-dim)}
+.prog span{display:block;height:100%;background:var(--accent)}
+
+.blk.past .t{color:var(--muted)}
+.blk.past .panel{background:transparent;border-style:dashed;border-color:var(--line);border-top-width:1px;padding-block:8px}
+.blk.past .hrow{align-items:center}
+.blk.past .node{background:var(--faint)}
+.blk.past .title{color:var(--muted)}
+
+.head{all:unset;box-sizing:border-box;flex:1;min-width:0;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:34px}
+.hl{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.sl{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.head:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+.head .title{font-size:16px;font-weight:600;line-height:1.3;min-width:0;overflow-wrap:anywhere;padding-top:1px}
+.head .tag{font-size:12px;color:var(--type);border:1px solid color-mix(in srgb,var(--type) 45%,transparent);border-radius:3px;padding:0 6px;line-height:1.6;align-self:center}
+.blk.past .head .tag{color:var(--muted);border-color:var(--line)}
+.head .meta{color:var(--muted);font-size:13px;white-space:nowrap}
+.head>.meta{margin-left:auto}
+.blk.now .head .meta{color:var(--accent)}
+.head .edit{align-self:flex-start;margin-top:4px;color:var(--muted);display:grid}
+.head .edit svg{width:15px;height:15px}
+
+.meal{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin:12px 0 2px;font-size:14.5px}
+.meal dt{color:var(--muted)}
+.meal dd{margin:0}
+.note{color:var(--muted);margin:12px 0 2px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px}
+.note::before{content:"# ";color:var(--faint)}
+
+.checks{list-style:none;margin:10px 0 0;padding:4px 0 0;border-top:1px solid var(--line-soft)}
+.blk.ty-sleep .checks{border-top-color:var(--night-line)}
+.checks label{display:flex;gap:12px;align-items:flex-start;padding:8px 0 4px;cursor:pointer}
+.checks input{appearance:none;-webkit-appearance:none;flex:none;width:20px;height:20px;margin:1px 0 0;border:1.5px solid var(--muted);border-radius:3px;background:transparent;display:grid;place-items:center;cursor:pointer}
+.checks input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.checks input:checked{border-color:var(--accent);background:var(--accent-dim)}
+.checks input:checked::after{content:"";width:9px;height:5px;border-left:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:translateY(-1px) rotate(-45deg)}
+.checks .txt{min-width:0;overflow-wrap:anywhere;line-height:1.45;font-size:15px}
+.checks input:checked + .txt .main{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.checks small{display:block;color:var(--muted);font-size:13px}
+.checks small.late{color:var(--late)}
+.checks li.rec .main::after{content:" ↻";color:var(--faint);font-size:12.5px}
+
+.sun{display:grid;grid-template-columns:var(--rcol) minmax(0,1fr);align-items:center;font-size:13px;min-height:22px;margin-block:-2px}
+.sun .rail{position:relative;align-self:stretch}
+.sun .rail::before{content:"";position:absolute;left:50%;top:calc(var(--gap) / -2 - 1px);bottom:calc(var(--gap) / -2 - 1px);width:1px;background:var(--line);transform:translateX(-50%)}
+.sun .lbl{padding-left:10px;color:var(--accent)}
+
+.endrow{display:flex;gap:10px;padding-top:10px;margin-left:calc(var(--rcol) + 6px)}
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--accent);border-radius:6px;padding:10px 12px;font-size:13.5px}
+.banner.warn{border-color:var(--danger);color:var(--danger)}
+
+/* Buttons and fields */
+.btn{font-size:14px;font-weight:500;border-radius:6px;padding:10px 14px;min-height:44px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
+.btn:focus-visible,.icon-btn:focus-visible,.sub .today:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.small{min-height:38px;padding:7px 12px;font-size:13px}
+.btn.grow{flex:1}
+.btn.ghost{border:none;background:none;color:var(--muted);padding-inline:6px}
+.btn.danger{color:var(--danger)}
+.btn.link{border:none;background:none;color:var(--danger);padding:6px 0;min-height:36px;justify-content:flex-start}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.field>label,.lbl{font-size:13px;color:var(--muted)}
+input[type=text],input[type=password],input[type=time],input[type=date],input[type=number],select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid #46535E;border-radius:6px;padding:10px 12px;width:100%;min-height:46px;min-width:0}
+input[type=time],input[type=date]{-webkit-appearance:none;appearance:none;display:block}
+select{-webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+textarea{resize:vertical;line-height:1.45}
+::placeholder{color:var(--faint);opacity:1}
+input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.items{display:flex;flex-direction:column;gap:8px}
+.items:empty{display:none}
+.item{display:flex;gap:4px;align-items:center}
+.shift{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.shift .btn{padding-inline:4px}
+.btn.wide{width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;border:1px solid var(--line);background:var(--field);border-radius:4px;padding:7px 11px;min-height:36px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.hint{color:var(--muted);font-size:13px;line-height:1.55;margin:0}
+/* Middag */
+.dish{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;width:100%;margin:12px 0 2px;padding:11px 12px;border:1px solid color-mix(in srgb,var(--c-meal) 45%,transparent);border-radius:6px;background:color-mix(in srgb,var(--c-meal) 7%,transparent);cursor:pointer}
+.dish:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dish .dh{display:flex;gap:10px;align-items:baseline}
+.dish .dn{font-weight:600;flex:1;min-width:0;overflow-wrap:anywhere}
+.dish .swap{font-size:12px;color:var(--c-meal)}
+.dish .dm,.dish .dk{font-size:13px;color:var(--muted);line-height:1.45}
+.pick{margin-top:6px;padding-inline:0;color:var(--c-meal)}
+.rowline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+.rowline .rl{font-size:13px;color:var(--muted);margin-right:2px}
+.chip.sm{min-height:36px;padding:5px 11px;font-size:13px}
+.chip.rate.r-godt{border-color:var(--c-meal);color:var(--c-meal)}
+.chip.rate.r-middels{border-color:var(--accent);color:var(--accent)}
+.chip.rate.r-lite{border-color:var(--late);color:var(--late)}
+.checks li.gen .main{color:var(--c-meal)}
+.checks li.gen input:checked + .txt .main{color:var(--muted)}
+/* Søvnlogg */
+.log{margin-top:12px;padding-top:12px;border-top:1px solid var(--night-line);display:flex;flex-direction:column;gap:10px}
+.lg-h{font-size:13px;color:var(--c-sleep)}
+.log.night{border-top-color:var(--line-soft)}
+.lg-row{display:grid;grid-template-columns:4.6rem minmax(0,1fr) auto;gap:10px;align-items:center;min-height:38px}
+.kn{font-size:13.5px}
+.lg-t{all:unset;cursor:pointer;font-size:13px;color:var(--ink);justify-self:start;border-bottom:1px dashed var(--faint);padding-block:2px}
+.lg-t:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lg-sum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.lg-sum .m{color:var(--muted);font-size:12.5px}
+/* Lister og tabeller i ark */
+.list .row.cur{background:var(--accent-dim)}
+.list .wd{color:var(--accent);margin-right:4px}
+.list .rates{display:flex;gap:6px;margin-left:auto}
+.dcard{display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45}
+.dcard .m{color:var(--muted);font-size:12.5px}
+.tblwrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
+.tbl th{color:var(--muted);font-weight:500;text-align:left;padding:6px 8px 8px 0}
+.tbl td{padding:9px 8px 9px 0;border-top:1px solid var(--line-soft)}
+.tbl tr[data-day]{cursor:pointer}
+.tbl .faint{color:var(--faint)}
+.tbl .acc{color:var(--accent)}
+.endrow .btn{flex:1}
+.wx{margin:12px 0 0;font-size:13.5px;color:var(--ink)}
+.wx-k{color:var(--c-awake);margin-right:8px}
+.sugg{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.sugg .rl{font-size:13px;color:var(--muted)}
+.sg{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;width:100%;padding:9px 12px;border:1px solid color-mix(in srgb,var(--c-awake) 40%,transparent);border-radius:6px;background:color-mix(in srgb,var(--c-awake) 6%,transparent);cursor:pointer}
+.sg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sg .sn,.pick .sn{font-weight:600;overflow-wrap:anywhere}
+.sg .sm,.pick .sm{font-size:13px;color:var(--muted);line-height:1.45}
+.sugg .more{align-self:flex-start;padding-inline:0;color:var(--c-awake)}
+.pick{display:flex;flex-direction:column;gap:3px;margin-top:12px;padding:10px 12px;border:1px solid var(--c-awake);border-radius:6px;background:color-mix(in srgb,var(--c-awake) 10%,transparent)}
+.pk-h{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.pk-h .btn{min-height:32px;padding:4px 6px;color:var(--c-awake)}
+.lnk{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.sel-sm{width:auto;min-width:6.5rem;min-height:40px;padding-block:6px}
+.warn-text{color:var(--danger)}
+.grp .chip{align-self:flex-start}
+
+/* Sheet */
+#sheet-root{position:fixed;inset:0;z-index:50}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:opacity .2s}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;max-width:40rem;margin:0 auto;background:var(--ground);border:1px solid var(--line);border-bottom:none;border-radius:10px 10px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
+#sheet-root.open .scrim{opacity:1}
+#sheet-root.open .sheet{transform:none}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 12px 14px 20px;border-bottom:1px solid rgba(226,170,79,.45);background:var(--bar);border-radius:10px 10px 0 0}
+.sh-head h2{font-size:17px;font-weight:600;margin:0}
+.sh-head h2::before{content:"› ";color:var(--accent)}
+.sh-body{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 14px 28px;display:flex;flex-direction:column;gap:14px}
+.sh-foot{display:flex;gap:10px;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--bar)}
+.grp{display:flex;flex-direction:column;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+.grp.quiet{background:transparent;border-style:dashed;border-color:var(--line);padding-block:10px}
+.grp h3{font-size:13.5px;font-weight:600;margin:0;color:var(--accent)}
+.grp h3::before{content:"## ";color:var(--faint)}
+.list{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--field)}
+.list>*{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:none;border-top:1px solid var(--line-soft);background:none;text-align:left;min-height:52px}
+.list>*:first-child{border-top:none}
+.list button.row{cursor:pointer}
+.list .grow{flex:1;min-width:0}
+.list .m{display:block;color:var(--muted);font-size:13px}
+.list .r{margin-left:auto;color:var(--muted);font-size:13px;white-space:nowrap}
+.confirm{display:flex;flex-direction:column;gap:8px;border:1px solid var(--danger);border-radius:6px;padding:12px}
+
+/* Toast */
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;background:var(--panel-hi);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 8px 8px 14px;display:flex;gap:10px;align-items:center;z-index:60;width:min(calc(100% - 32px),30rem);justify-content:space-between;font-size:13.5px;min-height:44px;box-shadow:0 10px 24px rgba(0,0,0,.5)}
+#toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast button{border:none;background:none;color:var(--accent);font-weight:600;padding:6px 8px;cursor:pointer;min-height:36px}
+#toast:not(:has(button)){padding-right:14px}
+
+@media (prefers-reduced-motion: reduce){
+  .sheet,.scrim,#toast{transition:none}
+}
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <div class="wrap">
+    <h1 class="date" id="date">Døgn</h1>
+    <div class="nav">
+      <button class="icon-btn" id="prev" type="button" aria-label="Forrige dag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="icon-btn" id="next" type="button" aria-label="Neste dag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      <button class="icon-btn" id="menu" type="button" aria-label="Meny"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+    </div>
+    <div class="sub" id="sub"></div>
+  </div>
+</header>
+<main class="wrap" id="timeline" aria-live="off"></main>
+<div id="sheet-root" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   Døgn – dagsplan for permisjonen
+   Data ligger i IndexedDB (med localStorage som reserve).
+   Datastrukturen har versjonsnummer (DATA_VERSION) slik at
+   nye versjoner av appen kan oppgradere lagrede data trygt.
+   ============================================================ */
+const APP_VERSION = '1.5.0';
+const DATA_VERSION = 4;
+const DAY_END = 22 * 60;                      // siste rubrikk varer til kl. 22
+
+const TYPES = { prep: 'Forberedelse', meal: 'Måltid', sleep: 'Søvn', awake: 'Våkentid', routine: 'Rutine' };
+const CATS = { fisk: 'fisk', kjott: 'kjøtt', kylling: 'kylling', vegetar: 'vegetar', annet: 'annet' };
+const MEALS = { dinner: 'Middag', lunch: 'Lunsj' };
+const RATES = ['', 'godt', 'middels', 'lite'];
+const WD = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+const WD_SHORT = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];   // ISO 1–7
+const MO = ['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember'];
+const MO_SHORT = ['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+
+/* ---------- hjelpefunksjoner ---------- */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+const toHM = m => { m = Math.max(0, Math.min(24 * 60 - 1, Math.round(m))); return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
+const fmtT = s => s;
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parseISO(s); d.setDate(d.getDate() + n); return iso(d); };
+const diffDays = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 86400000);   // b − a
+const todayISO = () => iso(new Date());
+const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+const isoWd = s => ((parseISO(s).getDay() + 6) % 7) + 1;
+const uid = () => Math.random().toString(36).slice(2, 9);
+const clone = o => JSON.parse(JSON.stringify(o));
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtDateLong = s => { const d = parseISO(s); return cap(WD[d.getDay()]) + ' ' + d.getDate() + '. ' + MO[d.getMonth()]; };
+const fmtDateShort = s => { const d = parseISO(s); return d.getDate() + '. ' + MO_SHORT[d.getMonth()]; };
+const fmtDateTiny = s => { const d = parseISO(s); return WD_SHORT[isoWd(s) - 1].toLowerCase() + ' ' + d.getDate() + '.' + (d.getMonth() + 1); };
+const fmtDur = m => m < 60 ? m + ' min' : (m % 60 ? Math.floor(m / 60) + ' t ' + (m % 60) + ' min' : (m / 60) + ' t');
+const fmtDurShort = m => m < 60 ? m + 'm' : Math.floor(m / 60) + 't' + pad(m % 60);
+const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+
+/* ---------- startdata ---------- */
+function seedDishes() {
+  const D = (id, name, meal, minutes, cat, x = {}) => ({ id, name, meal, minutes, cat, weekday: x.weekday || 0, kids: x.kids || '', prep: x.prep || '', dayBefore: x.dayBefore || '' });
+  return [
+    D('d-pizza',       'Pizza',                                   'dinner', 40, 'annet',   { weekday: 5, kids: 'Mindre ost og skinke på guttenes del. Skjær i strimler.', prep: 'Lag deigen og la den heve' }),
+    D('d-taco',        'Taco',                                    'dinner', 25, 'kjott',   { weekday: 6, kids: 'Ta ut guttenes kjøttdeig før tacokrydderet. Grønnsaker i små biter, lefse i strimler.', prep: 'Kutt grønnsaker' }),
+    D('d-fiskekaker',  'Fiskekaker med potet og gulrot',          'dinner', 25, 'fisk',    { kids: 'Velg fiskekaker med lite salt. Mos potet og gulrot.', prep: 'Skrell potet og gulrot' }),
+    D('d-fiskeboller', 'Fiskeboller i hvit saus med potet',       'dinner', 25, 'fisk',    { kids: 'Del fiskebollene i små biter.', prep: 'Skrell potet og gulrot' }),
+    D('d-laks',        'Laks i ovn med potet og brokkoli',        'dinner', 30, 'fisk',    { kids: 'Sjekk for bein. Mos laks og potet med litt smør.', prep: 'Skrell potet', dayBefore: 'Tin laks i kjøleskapet' }),
+    D('d-torsk',       'Torsk i ovn med ris og grønnsaker',       'dinner', 30, 'fisk',    { kids: 'Sjekk for bein.', prep: 'Kutt grønnsaker', dayBefore: 'Tin torsk i kjøleskapet' }),
+    D('d-fiskegrateng','Fiskegrateng med revet gulrot',           'dinner', 50, 'fisk',    { kids: 'Passer godt som den er.', prep: 'Kok makaroni og gjør gratengen klar til ovnen' }),
+    D('d-kjottkaker',  'Kjøttkaker med potet og ertestuing',      'dinner', 40, 'kjott',   { kids: 'Lite salt i farsen. Lag noen små kaker til guttene.', prep: 'Skrell potet, lag farse' }),
+    D('d-bolognese',   'Spaghetti bolognese med revet gulrot',    'dinner', 30, 'kjott',   { kids: 'Kutt spaghettien i biter. Lite salt.', prep: 'Riv gulrot og hakk løk' }),
+    D('d-kyllinggryte','Mild kyllinggryte med ris',               'dinner', 30, 'kylling', { kids: 'Kutt kyllingen i små biter.', prep: 'Kutt kylling og grønnsaker' }),
+    D('d-kyllingovn',  'Kyllinglår i ovn med søtpotet',           'dinner', 45, 'kylling', { kids: 'Fjern skinn og bein. Mos søtpoteten.', prep: 'Skrell og kutt søtpotet' }),
+    D('d-kyllingwok',  'Mild kyllingwok med nudler',              'dinner', 20, 'kylling', { kids: 'Klipp nudlene. Ta ut guttenes porsjon før soyasaus.', prep: 'Kutt grønnsaker' }),
+    D('d-omelett',     'Grønnsaksomelett med grovbrød',           'dinner', 15, 'vegetar', { kids: 'Stek eggene helt gjennom.' }),
+    D('d-tomatsuppe',  'Tomatsuppe med makaroni og egg',          'dinner', 20, 'vegetar', { kids: 'La suppa kjøle seg. Kutt egget i biter.' }),
+    D('d-pannekaker',  'Pannekaker med blåbær',                   'dinner', 30, 'vegetar', { kids: 'Lite sukker. Blåbærene moses eller deles.', prep: 'Rør røren og la den svelle' }),
+    D('l-risgrot',     'Risgrynsgrøt',                            'lunch',  60, 'vegetar', { weekday: 6, kids: 'Lite eller ikke sukker og kanel på guttenes porsjon.', prep: 'Sett på grøten, den koker i ca. 45 min og må røres i' }),
+  ];
+}
+
+function seed() {
+  const L0 = todayISO();
+  const T = (key, name, rows) => ({
+    id: key, name,
+    blocks: rows.map(([slot, type, start, title, x = {}]) => ({
+      id: key + '.' + slot, slot, type, start, title,
+      items: (x.items || []).map((t, i) => ({ id: key + '.' + slot + '.' + i, text: t })),
+      boys: x.boys || '', adults: x.adults || '', note: x.note || '', link: x.link || ''
+    }))
+  });
+  const toLurer = T('to-lurer', 'To lurer', [
+    ['morgen',     'prep',    '06:30', 'Forberedelser',     { items: ['Trakte kaffe', 'Varme melk', 'Lage havregrøt til frokost'] }],
+    ['mme-morgen', 'meal',    '07:00', 'Henting og MME',    { boys: 'MME (flaske)', items: ['Bleieskift', 'Påkledning'] }],
+    ['vaken1',     'awake',   '07:15', 'Våkentid',          { note: 'Aktivitet inne' }],
+    ['frokost',    'meal',    '08:15', 'Frokost',           { boys: 'Havregrøt', adults: 'Havregrøt' }],
+    ['vaken-kort', 'awake',   '08:45', 'Våkentid',          { note: 'Stell og rolig lek' }],
+    ['lur1',       'sleep',   '09:15', 'Lur',               { items: ['Dusj'] }],
+    ['opp1',       'routine', '10:45', 'Opp',               { items: ['Bleieskift'] }],
+    ['lunsj',      'meal',    '11:00', 'Lunsj',             { boys: 'Ferdiglaget', adults: 'Egen lunsj', link: 'lunch' }],
+    ['vaken2',     'awake',   '11:30', 'Våkentid',          { note: 'Ute eller tur mens det er lyst' }],
+    ['middag',     'meal',    '13:30', 'Middag',            { boys: 'Ferdiglaget' }],
+    ['lur2',       'sleep',   '14:15', 'Lur',               {}],
+    ['vaken3',     'awake',   '15:30', 'Våkentid',          {}],
+    ['kvelds',     'meal',    '17:30', 'Kvelds og middag',  { boys: 'Ferdiglaget', adults: 'Middag', link: 'dinner' }],
+    ['vaken4',     'awake',   '18:00', 'Våkentid',          { note: 'Rolig inne' }],
+    ['legg',       'routine', '18:30', 'Leggeforberedelse', { items: ['Tannpuss', 'Pysj'] }],
+    ['legging',    'meal',    '19:00', 'MME og legging',    { boys: 'MME (flaske)' }],
+    ['kveld',      'routine', '19:30', 'Nullstilling',      { items: ['Blande MME til i morgen', 'Rydde spisestuen', 'Ta oppvask', 'Se over morgendagen'] }],
+  ]);
+  const enLur = T('en-lur', 'Én lur', [
+    ['morgen',     'prep',    '06:30', 'Forberedelser',     { items: ['Trakte kaffe', 'Varme melk', 'Lage havregrøt til frokost'] }],
+    ['mme-morgen', 'meal',    '07:00', 'Henting og MME',    { boys: 'MME (flaske)', items: ['Bleieskift', 'Påkledning'] }],
+    ['vaken1',     'awake',   '07:15', 'Våkentid',          { note: 'Aktivitet inne' }],
+    ['frokost',    'meal',    '08:15', 'Frokost',           { boys: 'Havregrøt', adults: 'Havregrøt' }],
+    ['vaken2',     'awake',   '08:45', 'Våkentid',          { note: 'Ute eller tur mens det er lyst' }],
+    ['lunsj',      'meal',    '11:15', 'Lunsj',             { boys: 'Ferdiglaget', adults: 'Egen lunsj', link: 'lunch' }],
+    ['lur1',       'sleep',   '12:00', 'Lur',               { items: ['Dusj'] }],
+    ['opp1',       'routine', '14:30', 'Opp',               { items: ['Bleieskift'] }],
+    ['middag',     'meal',    '14:45', 'Middag',            { boys: 'Ferdiglaget' }],
+    ['vaken3',     'awake',   '15:15', 'Våkentid',          {}],
+    ['kvelds',     'meal',    '17:30', 'Kvelds og middag',  { boys: 'Ferdiglaget', adults: 'Middag', link: 'dinner' }],
+    ['vaken4',     'awake',   '18:00', 'Våkentid',          { note: 'Rolig inne' }],
+    ['legg',       'routine', '18:30', 'Leggeforberedelse', { items: ['Tannpuss', 'Pysj'] }],
+    ['legging',    'meal',    '19:00', 'MME og legging',    { boys: 'MME (flaske)' }],
+    ['kveld',      'routine', '19:30', 'Nullstilling',      { items: ['Blande MME til i morgen', 'Rydde spisestuen', 'Ta oppvask', 'Se over morgendagen'] }],
+  ]);
+  return {
+    version: DATA_VERSION,
+    leave: { start: L0, end: addDays(L0, 91) },
+    kids: [{ id: 'b1', name: 'Barn 1' }, { id: 'b2', name: 'Barn 2' }],
+    place: null,
+    partner: defaultPartner(),
+    templates: { 'to-lurer': toLurer, 'en-lur': enLur },
+    schedule: [{ from: L0, templateId: 'to-lurer' }],
+    tasks: [
+      { id: 't-stov-oppe', text: 'Støvsuge oppe',    slot: 'lur1', type: 'sleep',   rule: { kind: 'interval', every: 7,  start: addDays(L0, 0) } },
+      { id: 't-stov-nede', text: 'Støvsuge nede',    slot: 'lur1', type: 'sleep',   rule: { kind: 'interval', every: 7,  start: addDays(L0, 2) } },
+      { id: 't-bad-oppe',  text: 'Vaske badet oppe', slot: 'lur1', type: 'sleep',   rule: { kind: 'interval', every: 14, start: addDays(L0, 1) } },
+      { id: 't-bad-nede',  text: 'Vaske badet nede', slot: 'lur1', type: 'sleep',   rule: { kind: 'interval', every: 14, start: addDays(L0, 8) } },
+      { id: 't-bad',       text: 'Bad',              slot: 'legg', type: 'routine', rule: { kind: 'interval', every: 6,  start: addDays(L0, 3) } },
+    ],
+    dishes: seedDishes(),
+    activities: seedActivities(),
+    menu: {},
+    menuWeeks: {},
+    settings: { fishPerWeek: 2 },
+    days: {},
+    meta: { created: todayISO(), lastExport: null, setupDone: false }
+  };
+}
+
+function migrate(s) {
+  if (!s || typeof s !== 'object' || !s.templates || typeof s.templates !== 'object') throw new Error('Filen er ikke en backup fra Døgn.');
+  const base = seed();
+  s.version = s.version || 1;
+  if (s.version > DATA_VERSION) throw new Error('Backupen er laget med en nyere versjon av Døgn.');
+  s.leave = s.leave || base.leave;
+  s.schedule = Array.isArray(s.schedule) && s.schedule.length ? s.schedule : [{ from: s.leave.start, templateId: Object.keys(s.templates)[0] }];
+  s.tasks = Array.isArray(s.tasks) ? s.tasks : [];
+  s.days = s.days || {};
+  s.meta = Object.assign({ created: todayISO(), lastExport: null }, s.meta || {});
+  if (s.version < 2) {
+    // v2: middagsbank, ukemeny og logg. Måltidsrubrikkene kobles til banken,
+    // og det faste punktet «Forberede voksenmiddag» erstattes av rettens egen forberedelse.
+    const fix = blocks => blocks.forEach(b => {
+      if (b.link === undefined) b.link = b.slot === 'kvelds' ? 'dinner' : b.slot === 'lunsj' ? 'lunch' : '';
+      b.items = (b.items || []).filter(it => it.text !== 'Forberede voksenmiddag');
+    });
+    Object.values(s.templates).forEach(t => fix(t.blocks));
+    Object.values(s.days).forEach(d => { if (d.blocks) fix(d.blocks); });
+    s.version = 2;
+  }
+  s.kids = Array.isArray(s.kids) && s.kids.length ? s.kids : base.kids;
+  s.dishes = Array.isArray(s.dishes) ? s.dishes : base.dishes;
+  s.menu = s.menu || {};
+  s.menuWeeks = s.menuWeeks || {};
+  s.settings = Object.assign({ fishPerWeek: 2 }, s.settings || {});
+  if (s.version < 3) {
+    // v3: generisk app. Data fra før v3 er satt opp for Nesttun og er ferdig oppsatt.
+    if (s.place === undefined) s.place = { name: 'Nesttun', lat: 60.3197, lon: 5.3536 };
+    s.meta.setupDone = true;
+    s.version = 3;
+  }
+  if (s.place === undefined) s.place = null;
+  s.partner = Object.assign(defaultPartner(), s.partner || {});
+  s.partner.codes = s.partner.codes || {};
+  s.partner.shifts = s.partner.shifts || {};
+  if (s.meta.setupDone === undefined) s.meta.setupDone = true;
+  if (s.version < 4) { if (!Array.isArray(s.activities)) s.activities = seedActivities(); s.version = 4; }
+  if (!Array.isArray(s.activities)) s.activities = seedActivities();
+  // (Fremtidige oppgraderinger: if (s.version < 4) { … ; s.version = 4; })
+  return s;
+}
+
+/* ---------- lagring ---------- */
+const store = {
+  db: null, ok: true,
+  async init() {
+    try {
+      this.db = await new Promise((res, rej) => {
+        const r = indexedDB.open('dogn', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    } catch (e) { this.db = null; }
+  },
+  async get() {
+    if (this.db) {
+      try {
+        const v = await new Promise((res, rej) => {
+          const q = this.db.transaction('kv').objectStore('kv').get('state');
+          q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
+        });
+        if (v) return JSON.parse(v);
+      } catch (e) {}
+    }
+    try { const s = localStorage.getItem('dogn-state'); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+  },
+  async getKey(key) {
+    if (this.db) {
+      try {
+        const v = await new Promise((res, rej) => { const q = this.db.transaction('kv').objectStore('kv').get(key); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+        if (v) return JSON.parse(v);
+      } catch (e) {}
+    }
+    try { const v = localStorage.getItem('dogn-' + key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+  },
+  async setKey(key, obj) {
+    const json = JSON.stringify(obj);
+    if (this.db) { try { const t = this.db.transaction('kv', 'readwrite'); t.objectStore('kv').put(json, key); } catch (e) {} }
+    try { localStorage.setItem('dogn-' + key, json); } catch (e) {}
+  },
+  async set(obj) {
+    const json = JSON.stringify(obj);
+    let okAny = false;
+    if (this.db) {
+      try {
+        await new Promise((res, rej) => {
+          const t = this.db.transaction('kv', 'readwrite');
+          t.objectStore('kv').put(json, 'state');
+          t.oncomplete = res; t.onerror = () => rej(t.error);
+        });
+        okAny = true;
+      } catch (e) {}
+    }
+    try { localStorage.setItem('dogn-state', json); okAny = true; } catch (e) {}
+    if (okAny !== this.ok) { this.ok = okAny; renderTimeline(); }
+  }
+};
+let saveTimer = null;
+function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { store.set(state); markDirty(); }, 250); }
+function flush() { clearTimeout(saveTimer); if (state) store.set(state); }
+
+/* ---------- tilstand ---------- */
+let state = null;
+let view = todayISO();
+let lastToday = todayISO();
+const expanded = new Set();
+let shiftOpen = null;   // id til bolken som har flyttelinjen åpen
+let undoSnap = null;
+let reopen = null;      // arket som skal vises igjen etter «Angre»
+
+function dayRec(date) { return (state.days[date] ??= { done: {} }); }
+function logRec(date) { const d = dayRec(date); return (d.log ??= { sleep: [], night: {}, meals: {}, note: '' }); }
+function getLog(date) { const d = state.days[date]; return (d && d.log) || { sleep: [], night: {}, meals: {}, note: '' }; }
+function scheduledTemplate(date) {
+  const sch = [...state.schedule].sort((a, b) => a.from.localeCompare(b.from));
+  let t = sch[0].templateId;
+  for (const s of sch) if (s.from <= date) t = s.templateId;
+  return state.templates[t] ? t : Object.keys(state.templates)[0];
+}
+function templateFor(date) {
+  const d = state.days[date];
+  if (d && d.templateId && state.templates[d.templateId]) return d.templateId;
+  return scheduledTemplate(date);
+}
+function sortBlocks(arr) { arr.sort((a, b) => toMin(a.start) - toMin(b.start)); return arr; }
+function blocksFor(date) {
+  const d = state.days[date];
+  return sortBlocks(d && d.blocks ? d.blocks : state.templates[templateFor(date)].blocks);
+}
+function ensureDayBlocks(date) {
+  const d = dayRec(date);
+  if (!d.blocks) d.blocks = clone(blocksFor(date));
+  return d.blocks;
+}
+function endOf(blocks, i) {
+  return i + 1 < blocks.length ? toMin(blocks[i + 1].start) : Math.max(toMin(blocks[i].start) + 30, DAY_END);
+}
+function isDone(date, id) { return !!(state.days[date] && state.days[date].done && state.days[date].done[id]); }
+function kidName(id) { const k = state.kids.find(x => x.id === id); return k ? k.name : id; }
+
+function mutate(msg, fn) {
+  undoSnap = JSON.stringify(state);
+  fn();
+  persist();
+  render();
+  toast(msg, true);
+}
+
+/* ---------- gjentakende gjøremål ---------- */
+function ruleText(r) {
+  if (r.kind === 'daily') return 'Hver dag';
+  if (r.kind === 'weekdays') return (r.days || []).slice().sort().map(d => WD_SHORT[d - 1]).join(', ') || 'Ingen dager valgt';
+  if (r.every === 7) return 'Hver uke';
+  if (r.every === 14) return 'Annenhver uke';
+  if (r.every === 1) return 'Hver dag';
+  return 'Hver ' + r.every + '. dag';
+}
+function completions(taskId) {
+  return Object.keys(state.days).filter(d => state.days[d].done && state.days[d].done[taskId]).sort();
+}
+function taskStatus(task, date) {
+  const done = isDone(date, task.id);
+  const r = task.rule || { kind: 'daily' };
+  const start = r.start || '0000-01-01';
+  if (date < start) return { show: done, done, late: 0 };
+  if (r.kind === 'daily') return { show: true, done, late: 0 };
+  if (r.kind === 'weekdays') return { show: done || (r.days || []).includes(isoWd(date)), done, late: 0 };
+  const every = Math.max(1, Number(r.every) || 1);
+  const prev = completions(task.id).filter(d => d < date).pop();
+  const dueFrom = prev ? addDays(prev, every) : start;
+  return { show: done || date >= dueFrom, done, late: done ? 0 : Math.max(0, diffDays(dueFrom, date)), prev };
+}
+function placeTasks(date, blocks) {
+  const map = {};
+  for (const t of state.tasks) {
+    const st = taskStatus(t, date);
+    if (!st.show) continue;
+    const b = blocks.find(x => x.slot === t.slot) || blocks.find(x => x.type === t.type) || blocks[blocks.length - 1];
+    if (!b) continue;
+    (map[b.id] ??= []).push({ task: t, st });
+  }
+  return map;
+}
+function allSlots() {
+  const first = templateFor(view);
+  const ids = [first, ...Object.keys(state.templates).filter(k => k !== first)];
+  const seen = new Map();
+  for (const id of ids) for (const b of sortBlocks([...state.templates[id].blocks])) {
+    if (!seen.has(b.slot)) seen.set(b.slot, { slot: b.slot, type: b.type, label: b.title + ' ' + fmtT(b.start), min: toMin(b.start) });
+  }
+  return [...seen.values()].sort((a, b) => a.min - b.min);
+}
+
+/* ---------- middagsbank og ukemeny ---------- */
+const weekStart = d => addDays(d, 1 - isoWd(d));
+function dishById(id) { return state.dishes.find(x => x.id === id); }
+function setMenu(d, meal, dish, manual) { (state.menu[d] ??= {})[meal] = { dish, manual }; }
+function lastServed(dishId, before) {
+  let last = null;
+  for (const [d, m] of Object.entries(state.menu)) {
+    if (d >= before) continue;
+    for (const k of ['dinner', 'lunch']) if (m[k] && m[k].dish === dishId && (!last || d > last)) last = d;
+  }
+  return last;
+}
+/* Lager meny for én uke. Faste ukedager først, så fisk spredt utover uka,
+   deretter rettene som er spist for lengst siden. Manuelle valg røres ikke. */
+function generateWeek(ws, from) {
+  for (const meal of ['dinner', 'lunch']) {
+    const week = [...Array(7)].map((_, i) => addDays(ws, i));
+    const days = week.filter(d => !from || d >= from);
+    const used = new Set();
+    week.forEach(d => { const m = state.menu[d] && state.menu[d][meal]; if (m && m.dish && (m.manual || (from && d < from))) used.add(m.dish); });
+    const free = [];
+    for (const d of days) {
+      const cur = state.menu[d] && state.menu[d][meal];
+      if (cur && cur.manual) continue;
+      const fixed = state.dishes.find(x => x.meal === meal && Number(x.weekday) === isoWd(d));
+      if (fixed) { setMenu(d, meal, fixed.id, false); used.add(fixed.id); }
+      else { if (state.menu[d]) delete state.menu[d][meal]; if (meal === 'dinner') free.push(d); }
+    }
+    if (!free.length) continue;
+    const pool = state.dishes.filter(x => x.meal === meal && !Number(x.weekday));
+    if (!pool.length) continue;
+    const stale = arr => arr.map(x => ({ x, l: lastServed(x.id, ws) || '' }))
+      .sort((a, b) => a.l.localeCompare(b.l) || a.x.name.localeCompare(b.x.name)).map(o => o.x);
+    let fishHave = 0;
+    week.forEach(d => { if (free.includes(d)) return; const m = state.menu[d] && state.menu[d][meal]; const di = m && dishById(m.dish); if (di && di.cat === 'fisk') fishHave++; });
+    const fishN = Math.max(0, Math.min(free.length, (Number(state.settings.fishPerWeek) || 0) - fishHave));
+    const fish = stale(pool.filter(x => x.cat === 'fisk' && !used.has(x.id))).slice(0, fishN);
+    const others = stale(pool.filter(x => x.cat !== 'fisk' && !used.has(x.id)));
+    const slots = new Array(free.length).fill(null);
+    fish.forEach((f, i) => { let p = Math.floor((i + 0.5) * free.length / fish.length); while (slots[p]) p = (p + 1) % free.length; slots[p] = f; });
+    // Fyll resten med retten som er spist for lengst siden, men unngå samme type to dager på rad.
+    let queue = others.length ? others.slice() : stale(pool);
+    const catOf = i => { if (i < 0) { const m = state.menu[addDays(free[0], -1)]; const di = m && m[meal] && dishById(m[meal].dish); return di ? di.cat : ''; } return slots[i] ? slots[i].cat : ''; };
+    for (let i = 0; i < slots.length; i++) {
+      if (slots[i]) continue;
+      if (!queue.length) queue = others.length ? others.slice() : stale(pool);
+      const prevCat = catOf(i - 1), nextCat = i + 1 < slots.length && slots[i + 1] ? slots[i + 1].cat : '';
+      let j = queue.findIndex(x => x.cat !== prevCat && x.cat !== nextCat);
+      if (j < 0) j = queue.findIndex(x => x.cat !== prevCat);
+      if (j < 0) j = 0;
+      slots[i] = queue.splice(j, 1)[0];
+    }
+    free.forEach((d, i) => setMenu(d, meal, slots[i].id, false));
+  }
+}
+function ensureWeek(date) {
+  const ws = weekStart(date);
+  if (state.menuWeeks[ws]) return;
+  generateWeek(ws, null);
+  state.menuWeeks[ws] = true;
+  persist();
+}
+function regenerateFrom(from) {
+  const weeks = new Set(Object.keys(state.menuWeeks).filter(ws => addDays(ws, 6) >= from));
+  weeks.add(weekStart(from));
+  [...weeks].sort().forEach(ws => { generateWeek(ws, from); state.menuWeeks[ws] = true; });
+}
+function dishFor(date, meal) {
+  ensureWeek(date);
+  const m = state.menu[date] && state.menu[date][meal];
+  return m && m.dish ? dishById(m.dish) || null : null;
+}
+function dishMeta(d) {
+  return d.minutes + ' min, ' + CATS[d.cat] + (Number(d.weekday) ? ', fast ' + WD_SHORT[d.weekday - 1].toLowerCase() : '');
+}
+/* Forberedelser som følger av menyen: i luren før måltidet, og kvelden før. */
+function genRows(date, blocks) {
+  const map = {};
+  const add = (b, row) => { if (b) (map[b.id] ??= []).push(row); };
+  blocks.forEach(b => {
+    if (!b.link) return;
+    const dish = dishFor(date, b.link);
+    if (!dish) return;
+    const start = toMin(b.start);
+    const before = blocks.filter(x => toMin(x.start) < start);
+    const target = before.filter(x => x.type === 'sleep').pop() || before.pop();
+    add(target, { id: 'gen-prep-' + b.link, text: 'Forberede ' + MEALS[b.link].toLowerCase() + ': ' + dish.name, sub: dish.prep || '', gen: true });
+  });
+  const tomorrow = addDays(date, 1);
+  const eve = blocks.find(x => x.slot === 'kveld') || blocks[blocks.length - 1];
+  if (!syncOn() && isoWd(date) === 7) add(eve, { id: 'gen-backup', text: 'Ta backup', sub: 'Eksporter fil og lagre den i iCloud Drive eller Filer', gen: true });
+  blocksFor(tomorrow).forEach(b => {
+    if (!b.link) return;
+    const dish = dishFor(tomorrow, b.link);
+    if (dish && dish.dayBefore) add(eve, { id: 'gen-ahead-' + b.link, text: 'Til i morgen: ' + dish.dayBefore, sub: MEALS[b.link] + ': ' + dish.name, gen: true });
+  });
+  return map;
+}
+
+/* ---------- logg ---------- */
+function napEntry(date, kid, blockId) { return getLog(date).sleep.find(e => e.kid === kid && e.blockId === blockId); }
+function napTotal(date, kid) {
+  return getLog(date).sleep.filter(e => e.kid === kid && e.start && e.end)
+    .reduce((s, e) => s + Math.max(0, toMin(e.end) - toMin(e.start)), 0);
+}
+const MAX_AUTO_SHIFT = 180;   // større avvik enn 3 timer antas å være feiltrykk
+function shiftNote(oldMin, b) {
+  const delta = toMin(b.start) - oldMin;
+  if (!delta) return '';
+  return ' ' + (b.title || 'Neste bolk') + ' starter ' + b.start + ' (' + (delta > 0 ? '+' : '−') + fmtDur(Math.abs(delta)) + ').';
+}
+/* Flytter bare starten på én bolk. Bolken før blir kortere eller lengre, resten av dagen står.
+   Kolliderer den med bolkene etter, skyves de akkurat nok til å få 15 minutter hver. */
+function moveStart(id, newMin) {
+  const arr = ensureDayBlocks(view);
+  sortBlocks(arr);
+  const i = arr.findIndex(x => x.id === id);
+  if (i < 0) return null;
+  if (i > 0) newMin = Math.max(newMin, toMin(arr[i - 1].start) + 5);
+  arr[i].start = toHM(newMin);
+  for (let k = i + 1; k < arr.length; k++) {
+    if (toMin(arr[k].start) >= toMin(arr[k - 1].start) + 15) break;
+    arr[k].start = toHM(toMin(arr[k - 1].start) + 15);
+  }
+  return arr[i];
+}
+/* Søvnklokken for lurer. Første «sovnet» setter lurens start til nå.
+   Når siste gutt våkner, starter neste bolk nå. Resten av dagen står der den står. */
+function logSleepNow(date, blockId, kids) {
+  const L = logRec(date), now = nowMin(), t = toHM(now);
+  const had = L.sleep.some(x => x.blockId === blockId);
+  let ended = false;
+  const msgs = [];
+  kids.forEach(kid => {
+    let e = L.sleep.find(x => x.kid === kid && x.blockId === blockId);
+    if (!e) { L.sleep.push({ id: 's-' + uid(), kid, blockId, start: t, end: '' }); msgs.push('sovnet'); }
+    else if (!e.end) { e.end = t; ended = true; msgs.push('våknet'); }
+  });
+  let msg = (kids.length > 1 ? groupWord() : kidName(kids[0])) + ' ' + (msgs[0] || '') + ' ' + t + '.';
+  const blocks = blocksFor(date);
+  const i = blocks.findIndex(b => b.id === blockId);
+  if (i < 0) return msg;
+  if (!had) {
+    const delta = now - toMin(blocks[i].start);
+    if (delta && Math.abs(delta) <= MAX_AUTO_SHIFT) { const old = toMin(blocks[i].start); const nb = moveStart(blockId, now); if (nb) msg += shiftNote(old, nb); }
+  } else if (ended) {
+    const entries = L.sleep.filter(x => x.blockId === blockId);
+    const allAwake = state.kids.every(k => entries.some(x => x.kid === k.id && x.end));
+    const next = blocks[i + 1];
+    if (allAwake && next) {
+      const delta = now - toMin(next.start);
+      if (delta && Math.abs(delta) <= MAX_AUTO_SHIFT) { const old = toMin(next.start); const nb = moveStart(next.id, now); if (nb) msg += shiftNote(old, nb); }
+    }
+  }
+  return msg;
+}
+/* Nattesøvn: når siste gutt har sovnet, starter bolken etter leggingen nå. */
+function nightBlock(blocks) {
+  const k = blocks.findIndex(b => b.slot === 'kveld');
+  return blocks.find(b => b.slot === 'legging') || (k > 0 ? blocks[k - 1] : null);
+}
+function logNightNow(date, blockId, kids) {
+  const L = logRec(date), now = nowMin(), t = toHM(now);
+  const allBefore = state.kids.every(k => L.night[k.id] && L.night[k.id].asleep);
+  kids.forEach(kid => { (L.night[kid] ??= {}).asleep = t; });
+  let msg = (kids.length > 1 ? groupWord() : kidName(kids[0])) + ' sovnet ' + t + '.';
+  const allNow = state.kids.every(k => L.night[k.id] && L.night[k.id].asleep);
+  const blocks = blocksFor(date);
+  const i = blocks.findIndex(b => b.id === blockId);
+  const next = blocks[i + 1];
+  if (!allBefore && allNow && next) {
+    const delta = now - toMin(next.start);
+    if (delta && Math.abs(delta) <= MAX_AUTO_SHIFT) {
+      // Sovnet før leggebolken skulle starte: flytt leggingen tidligere også.
+      if (now < toMin(blocks[i].start) + 5) moveStart(blockId, now - 15);
+      const old = toMin(next.start);
+      const nb = moveStart(next.id, now);
+      if (nb) msg += shiftNote(old, nb);
+    }
+  }
+  return msg;
+}
+
+/* ---------- sol ---------- */
+function sunTimes(date) {
+  const LOC = state && state.place;
+  if (!LOC || typeof LOC.lat !== 'number') return { rise: null, set: null };
+  const [y, m, d] = date.split('-').map(Number);
+  const rad = Math.PI / 180;
+  const jd = Date.UTC(y, m - 1, d, 12) / 86400000 + 2440587.5;
+  const n = Math.round(jd - 2451545.0);
+  const Js = n - LOC.lon / 360;
+  const M = (357.5291 + 0.98560028 * Js) % 360;
+  const C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const L = (M + C + 180 + 102.9372) % 360;
+  const Jt = 2451545 + Js + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * L * rad);
+  const dec = Math.asin(Math.sin(L * rad) * Math.sin(23.4397 * rad));
+  const cw = (Math.sin(-0.833 * rad) - Math.sin(LOC.lat * rad) * Math.sin(dec)) / (Math.cos(LOC.lat * rad) * Math.cos(dec));
+  if (cw < -1 || cw > 1) return { rise: null, set: null };
+  const w = Math.acos(cw) / rad;
+  const loc = J => { const t = new Date((J - 2440587.5) * 86400000); return t.getHours() * 60 + t.getMinutes() + (t.getSeconds() >= 30 ? 1 : 0); };
+  return { rise: loc(Jt - w / 360), set: loc(Jt + w / 360) };
+}
+
+/* ---------- visning ---------- */
+const ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+function render() { renderHeader(); renderTimeline(); refreshWeather(); }
+
+function renderHeader() {
+  const today = todayISO();
+  { const dd = parseISO(view); $('#date').textContent = WD[dd.getDay()] + ' ' + dd.getDate() + '. ' + MO_SHORT[dd.getMonth()]; }
+  const L = state.leave, parts = [];
+  const kv = (k, v) => '<span class="k">' + k + '</span>' + v;
+  if (view < L.start) parts.push(kv('start om', plural(diffDays(view, L.start), 'dag', 'dager')));
+  else if (view > L.end) parts.push(kv('perm', 'ferdig'));
+  else parts.push(kv('dag', (diffDays(L.start, view) + 1) + '/' + (diffDays(L.start, L.end) + 1)));
+  const d = state.days[view];
+  if (d && (d.blocks || d.templateId)) parts.push(kv('mal', esc(state.templates[templateFor(view)].name.toLowerCase()) + '*'));
+  const ps = partnerStatus(view);
+  if (ps && ps.code) parts.push(kv(esc(partnerName().toLowerCase()), esc(shiftText(ps))));
+  const sun = sunTimes(view);
+  if (sun.rise != null) parts.push(kv('sol', fmtT(toHM(sun.rise)) + '–' + fmtT(toHM(sun.set))));
+  $('#sub').innerHTML = parts.map(p => '<span>' + p + '</span>').join('') +
+    (view !== today ? '<button type="button" class="today" id="go-today">Til i dag</button>' : '');
+  const h = $('#top').offsetHeight;
+  document.documentElement.style.setProperty('--head-h', h + 'px');
+}
+
+function bannerHTML() {
+  let out = '';
+  if (!store.ok) out += '<div class="banner warn">Lagring er ikke tilgjengelig i denne nettleseren. Endringer forsvinner når siden lukkes.</div>';
+  const today = todayISO();
+  if (view === today && syncOn()) {
+    const c = sync.cfg;
+    if (c.lastError) out += '<div class="banner warn"><span>Automatisk backup: ' + esc(c.lastError) + '</span><button type="button" class="btn small" data-act="sync">Prøv igjen</button></div>';
+    else if (c.dirty && c.lastPush && Date.now() - Date.parse(c.lastPush) > 2 * 864e5) out += '<div class="banner"><span>Siste backup til GitHub ' + fmtStamp(c.lastPush) + '.</span><button type="button" class="btn small" data-act="sync">Lagre nå</button></div>';
+  } else if (view === today) {
+    const le = state.meta.lastExport;
+    const since = le ? diffDays(le, today) : null;
+    const need = le ? since >= 8 : diffDays(state.meta.created, today) >= 8;
+    if (need) out += '<div class="banner"><span>' + (le ? 'Siste backup for ' + plural(since, 'dag', 'dager') + ' siden.' : 'Ingen backup ennå.') +
+      '</span><button type="button" class="btn small" data-act="export">Eksporter</button></div>';
+  }
+  return out;
+}
+
+function renderTimeline() {
+  if (!state) return;
+  const date = view, today = todayISO(), isToday = date === today, now = nowMin();
+  const blocks = blocksFor(date);
+  const placed = placeTasks(date, blocks);
+  const gen = genRows(date, blocks);
+  let cur = -1;
+  if (isToday) {
+    blocks.forEach((b, i) => { if (toMin(b.start) <= now) cur = i; });
+    if (cur >= 0 && now >= endOf(blocks, cur)) cur = -1;
+  }
+  const sun = sunTimes(date);
+  const marks = [{ m: sun.rise, up: true }, { m: sun.set, up: false }].filter(k => k.m != null);
+  const sunRow = k => '<div class="sun" aria-label="' + (k.up ? 'Soloppgang' : 'Solnedgang') + ' ' + toHM(k.m) + '"><span class="rail"></span><span class="lbl">' + (k.up ? '↑ soloppgang ' : '↓ solnedgang ') + toHM(k.m) + '</span></div>';
+
+  let html = bannerHTML();
+  if (blocks.length) marks.filter(k => k.m < toMin(blocks[0].start)).forEach(k => html += sunRow(k));
+  blocks.forEach((b, i) => {
+    const s = toMin(b.start), e = endOf(blocks, i);
+    const phase = !isToday ? (date < today ? 'done-day' : 'future') : (i === cur ? 'now' : (e <= now ? 'past' : 'future'));
+    html += blockHTML(b, i, blocks, placed[b.id] || [], gen[b.id] || [], phase, now, date);
+    marks.filter(k => k.m >= s && k.m < e).forEach(k => html += sunRow(k));
+  });
+  if (blocks.length) marks.filter(k => k.m >= endOf(blocks, blocks.length - 1)).forEach(k => html += sunRow(k));
+  if (!blocks.length) html += '<p class="hint" style="padding:24px 0">Dagen har ingen rubrikker. Legg til den første.</p>';
+  html += '<div class="endrow"><button type="button" class="btn small" data-act="new">Ny rubrikk</button><button type="button" class="btn small" data-act="log">Dagslogg</button></div>';
+  $('#timeline').innerHTML = html;
+}
+
+function blockHTML(b, i, blocks, tasks, gen, phase, now, date) {
+  const s = toMin(b.start), e = endOf(blocks, i);
+  const today = todayISO();
+  const rows = [
+    ...b.items.map(it => ({ id: it.id, text: it.text, sub: '', rec: false })),
+    ...gen,
+    ...tasks.map(({ task, st }) => {
+      let sub = task.rule && task.rule.kind === 'interval' ? ruleText(task.rule) : '';
+      if (st.late > 0) sub = (sub ? sub + ', ' : '') + plural(st.late, 'dag', 'dager') + ' på etterskudd';
+      return { id: task.id, text: task.text, sub, late: st.late > 0, rec: true };
+    })
+  ];
+  const doneN = rows.filter(r => isDone(date, r.id)).length;
+  const collapsed = phase === 'past' && !expanded.has(b.id);
+  const last = i === blocks.length - 1;
+  const title = b.title || TYPES[b.type];
+  const tag = title.toLowerCase() === TYPES[b.type].toLowerCase() ? '' : TYPES[b.type].toLowerCase();
+  let meta = '';
+  if (collapsed) meta = rows.length ? (doneN === rows.length ? 'alt gjort' : doneN + '/' + rows.length) : '';
+  else if (phase === 'now') meta = fmtDur(Math.max(1, e - now)) + ' igjen';
+  else if (!last) meta = fmtDur(e - s);
+
+  const started = date < today || (date === today && (phase === 'now' || phase === 'past'));
+  let inner = '';
+  if (!collapsed) {
+    const dish = b.link ? dishFor(date, b.link) : null;
+    if (dish) {
+      inner += '<button type="button" class="dish" data-act="dish" data-meal="' + b.link + '" aria-label="' + esc(MEALS[b.link]) + ': ' + esc(dish.name) + '. Trykk for å bytte">' +
+        '<span class="dh"><span class="dn">' + esc(dish.name) + '</span><span class="swap">bytt</span></span>' +
+        '<span class="dm">' + esc(dishMeta(dish)) + '</span>' +
+        (dish.kids ? '<span class="dk">Til guttene: ' + esc(dish.kids) + '</span>' : '') +
+      '</button>';
+    } else if (b.type === 'meal' && (b.boys || b.adults)) {
+      inner += '<dl class="meal">' +
+        (b.boys ? '<dt>Guttene</dt><dd>' + esc(b.boys) + '</dd>' : '') +
+        (b.adults ? '<dt>Voksne</dt><dd>' + esc(b.adults) + '</dd>' : '') + '</dl>';
+      if (b.link) inner += '<button type="button" class="btn small ghost pick" data-act="dish" data-meal="' + b.link + '">Velg rett fra banken</button>';
+    }
+    if (b.link === 'dinner') {
+      const ph = partnerHome(date);
+      const st = ph.ps && ph.ps.code ? ' (' + shiftText(ph.ps) + ')' : '';
+      inner += '<div class="rowline"><button type="button" class="chip sm" data-act="wife" aria-pressed="' + ph.home + '">' + esc(partnerName()) + (ph.home ? ' spiser med' : ' spiser ikke med') + esc(st) + (ph.manual ? ' *' : '') + '</button></div>';
+    }
+    if (b.note) inner += '<p class="note">' + esc(b.note) + '</p>';
+    if (b.type === 'awake') inner += activityHTML(date, b, s, e, phase);
+    if (b.type === 'meal' && (b.boys || dish) && started) {
+      const r = getLog(date).meals[b.id] || {};
+      inner += '<div class="rowline"><span class="rl">spiste</span>' + state.kids.map(k =>
+        '<button type="button" class="chip sm rate' + (r[k.id] ? ' r-' + r[k.id] : '') + '" data-act="rate" data-kid="' + k.id + '">' + esc(k.name) + ' ' + (r[k.id] || '–') + '</button>').join('') + '</div>';
+    }
+    if (b.type === 'sleep' && (date < today || (date === today && (started || s - now <= 60 || getLog(date).sleep.some(x => x.blockId === b.id))))) {
+      inner += sleepLogHTML(date, b);
+    }
+    const nb = nightBlock(blocks);
+    if (nb && nb.id === b.id && (date < today || (date === today && (started || s - now <= 60)))) inner += nightLogHTML(date, b);
+    if (rows.length) {
+      inner += '<ul class="checks">' + rows.map(r =>
+        '<li' + (r.rec ? ' class="rec"' : r.gen ? ' class="gen"' : '') + '><label><input type="checkbox" data-done="' + esc(r.id) + '"' + (isDone(date, r.id) ? ' checked' : '') + '>' +
+        '<span class="txt"><span class="main">' + esc(r.text) + '</span>' +
+        (r.sub ? '<small class="' + (r.late ? 'late' : '') + '">' + esc(r.sub) + '</small>' : '') +
+        '</span></label></li>').join('') + '</ul>';
+    }
+    if (b.slot === 'kveld') inner += '<div class="rowline"><button type="button" class="btn small" data-act="log">Åpne dagslogg</button>' +
+      (!syncOn() && isoWd(date) === 7 ? '<button type="button" class="btn small" data-act="export">Eksporter backup</button>' : '') + '</div>';
+  }
+  let prog = '';
+  if (phase === 'now') {
+    const frac = Math.min(1, Math.max(0, (now - s) / Math.max(1, e - s)));
+    prog = '<div class="prog" aria-hidden="true"><span style="width:' + (frac * 100).toFixed(1) + '%"></span></div>';
+  }
+  const cls = phase === 'done-day' ? 'future' : phase;
+  return '<section class="blk ty-' + b.type + ' ' + cls + '" data-id="' + esc(b.id) + '">' +
+    '<div class="rail"><span class="node"></span></div>' +
+    '<div class="panel">' +
+      '<div class="hrow">' +
+        '<button type="button" class="tbtn" data-act="time" aria-expanded="' + (shiftOpen === b.id) + '" aria-label="Flytt ' + esc(title) + ', starter ' + b.start + '">' + fmtT(b.start) + '</button>' +
+        '<button type="button" class="head" data-act="' + (collapsed ? 'expand' : 'edit') + '"' + (collapsed ? ' aria-label="Vis ' + esc(title) + '"' : ' aria-label="Rediger ' + esc(title) + '"') + '>' +
+          '<span class="hl"><span class="title">' + esc(title) + '</span>' +
+          ((tag || meta) && !collapsed ? '<span class="sl">' + (tag ? '<span class="tag">' + tag + '</span>' : '') + (meta ? '<span class="meta">' + meta + '</span>' : '') + '</span>' : '') +
+          '</span>' +
+          (collapsed ? '<span class="meta">' + meta + '</span>' : '<span class="edit" aria-hidden="true">' + ICON_EDIT + '</span>') +
+        '</button>' +
+      '</div>' + (shiftOpen === b.id ? shiftBarHTML(date) : '') + inner + prog +
+    '</div></section>';
+}
+
+function nightLogHTML(date, b) {
+  const isToday = date === todayISO();
+  const N = getLog(date).night;
+  const rowsH = state.kids.map(k => {
+    const a = N[k.id] && N[k.id].asleep;
+    return '<div class="lg-row"><span class="kn">' + esc(k.name) + '</span>' +
+      '<button type="button" class="lg-t" data-act="log">' + (a ? 'sovnet ' + a : 'ikke logget') + '</button>' +
+      (isToday && !a ? '<button type="button" class="btn small" data-act="night-now" data-kid="' + k.id + '">Sovnet</button>' : '') + '</div>';
+  }).join('');
+  const none = state.kids.every(k => !(N[k.id] && N[k.id].asleep));
+  return '<div class="log night"><span class="lg-h">nattesøvn</span>' + rowsH +
+    (isToday && none && state.kids.length > 1 ? '<button type="button" class="btn small wide" data-act="night-now" data-kid="all">' + groupWord() + ' sovnet nå</button>' : '') + '</div>';
+}
+
+function sleepLogHTML(date, b) {
+  const isToday = date === todayISO();
+  const st = k => { const e = napEntry(date, k, b.id); return !e ? 'none' : (!e.end ? 'open' : 'done'); };
+  const rowsH = state.kids.map(k => {
+    const e = napEntry(date, k.id, b.id), s = st(k.id);
+    const times = e ? e.start + '–' + (e.end || '…') + (e.end ? ' (' + fmtDurShort(toMin(e.end) - toMin(e.start)) + ')' : '') : 'ikke logget';
+    let act = '';
+    if (isToday && s === 'none') act = '<button type="button" class="btn small" data-act="sleep-now" data-kid="' + k.id + '">Sovnet</button>';
+    else if (isToday && s === 'open') act = '<button type="button" class="btn small primary" data-act="sleep-now" data-kid="' + k.id + '">Våknet</button>';
+    return '<div class="lg-row"><span class="kn">' + esc(k.name) + '</span>' +
+      '<button type="button" class="lg-t" data-act="sleep-edit" data-kid="' + k.id + '">' + times + '</button>' + act + '</div>';
+  }).join('');
+  const states = state.kids.map(k => st(k.id));
+  let both = '';
+  if (isToday && states.every(x => x === states[0]) && states[0] !== 'done' && state.kids.length > 1) {
+    both = '<button type="button" class="btn small wide' + (states[0] === 'open' ? ' primary' : '') + '" data-act="sleep-now" data-kid="all">' + groupWord() + ' ' + (states[0] === 'open' ? 'våknet' : 'sovnet') + ' nå</button>';
+  }
+  return '<div class="log"><span class="lg-h">søvnlogg</span>' + rowsH + both + '</div>';
+}
+
+function shiftBarHTML(date) {
+  const isToday = date === todayISO();
+  return '<div class="shiftbar"><span class="sb-l">Flytt denne og resten av ' + (isToday ? 'i dag' : 'dagen') + ' (min)</span>' +
+    '<div class="sb-btns">' + [-30, -15, 15, 30].map(d => '<button type="button" class="btn small" data-qshift="' + d + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</button>').join('') + '</div>' +
+    (isToday ? '<button type="button" class="btn small primary" data-qshift="now">Starter nå</button>' : '') +
+    '</div>';
+}
+
+function scrollToNow() {
+  const el = document.querySelector('.blk.now') || [...document.querySelectorAll('.blk.future')][0];
+  if (el && view === todayISO()) el.scrollIntoView({ block: 'start' });
+  else window.scrollTo(0, 0);
+}
+
+function go(n, date) {
+  view = date || (n === 0 ? todayISO() : addDays(view, n));
+  expanded.clear();
+  shiftOpen = null;
+  render();
+  scrollToNow();
+}
+
+/* ---------- avkrysning ---------- */
+function toggleDone(date, id, on) {
+  const d = dayRec(date);
+  d.done = d.done || {};
+  if (on) d.done[id] = true; else delete d.done[id];
+  persist();
+  renderTimeline();
+}
+
+/* ---------- ark (bottom sheet) ---------- */
+function openSheet(html, mount) {
+  const root = $('#sheet-root');
+  const wasOpen = root.classList.contains('open');
+  root.innerHTML = '<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true">' + html + '</div>';
+  root.hidden = false;
+  document.body.classList.add('locked');
+  if (wasOpen) root.classList.add('open');
+  else requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('open')));
+  const sheet = root.querySelector('.sheet');
+  root.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeSheet));
+  const back = sheet.querySelector('[data-back]');
+  if (back) back.addEventListener('click', openMenu);
+  if (mount) mount(sheet);
+}
+function closeSheet() {
+  const root = $('#sheet-root');
+  root.classList.remove('open');
+  document.body.classList.remove('locked');
+  reopen = null;
+  setTimeout(() => { if (!root.classList.contains('open')) { root.hidden = true; root.innerHTML = ''; } }, 260);
+}
+const sheetOpen = () => $('#sheet-root').classList.contains('open');
+const headHTML = (title, back) => '<div class="sh-head"><h2>' + title + '</h2>' +
+  (back ? '<button type="button" class="btn ghost" data-back>Tilbake</button>' : '<button type="button" class="btn ghost" data-close>Lukk</button>') + '</div>';
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#sheet-root').hidden) closeSheet(); });
+
+/* ---------- rediger rubrikk ---------- */
+function itemRow(it) {
+  return '<div class="item" data-iid="' + esc(it.id) + '"><input type="text" value="' + esc(it.text) + '" aria-label="Punkt i sjekklisten">' +
+    '<button type="button" class="icon-btn sm" data-rm aria-label="Fjern punkt">' + ICON_X + '</button></div>';
+}
+
+function openBlockSheet(id) {
+  const isNew = !id;
+  const blocks = blocksFor(view);
+  const src = isNew
+    ? { id: 'b-' + uid(), slot: '', type: 'awake', title: '', start: toHM(Math.min(23 * 60, Math.ceil(nowMin() / 15) * 15)), items: [], boys: '', adults: '', note: '', link: '' }
+    : blocks.find(b => b.id === id);
+  if (!src) return;
+  const b = clone(src);
+  b.link = b.link || '';
+  const isToday = view === todayISO();
+  const dayLbl = isToday ? 'i dag' : 'denne dagen';
+  const tasksHere = isNew ? [] : (placeTasks(view, blocks)[b.id] || []);
+  const tplName = state.templates[templateFor(view)].name;
+  reopen = null;
+
+  openSheet(
+    headHTML(isNew ? 'Ny rubrikk' : 'Rediger rubrikk') +
+    '<form class="sh-body" id="bf" novalidate>' +
+      '<section class="grp"><h3>Rubrikk</h3>' +
+        '<div class="field"><label for="f-title">Navn</label><input id="f-title" type="text" value="' + esc(b.title) + '" placeholder="' + esc(TYPES[b.type]) + '" autocomplete="off"></div>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="f-start">Starter</label><input id="f-start" type="time" value="' + b.start + '"></div>' +
+          '<div class="field"><label for="f-type">Type</label><select id="f-type">' +
+            Object.entries(TYPES).map(([k, v]) => '<option value="' + k + '"' + (k === b.type ? ' selected' : '') + '>' + v + '</option>').join('') +
+          '</select></div>' +
+        '</div>' +
+        '<div class="stack" id="f-meal"' + (b.type === 'meal' ? '' : ' hidden') + '>' +
+          '<div class="field"><label for="f-link">Rett fra middagsbanken</label><select id="f-link">' +
+            [['', 'Nei, bruk teksten under'], ['dinner', 'Ja, dagens middag'], ['lunch', 'Ja, dagens lunsj']].map(([k, v]) => '<option value="' + k + '"' + (k === b.link ? ' selected' : '') + '>' + v + '</option>').join('') +
+          '</select></div>' +
+          '<div class="field"><label for="f-boys">Guttene spiser</label><input id="f-boys" type="text" value="' + esc(b.boys) + '" autocomplete="off"></div>' +
+          '<div class="field"><label for="f-adults">Voksne spiser</label><input id="f-adults" type="text" value="' + esc(b.adults) + '" autocomplete="off"></div>' +
+          '<p class="hint">Når en rett fra banken er valgt for dagen, vises den i stedet for tekstene over.</p>' +
+        '</div>' +
+      '</section>' +
+      '<section class="grp"><h3>Sjekkliste</h3>' +
+        '<div class="items" id="f-items">' + b.items.map(itemRow).join('') + '</div>' +
+        '<button type="button" class="btn small wide" data-add>Legg til punkt</button>' +
+        (tasksHere.length ? '<p class="hint">Gjøremål som går igjen vises også her: ' + tasksHere.map(x => esc(x.task.text)).join(', ') + '. De endres under Meny.</p>' : '') +
+      '</section>' +
+      '<section class="grp"><h3>Notat</h3>' +
+        '<label for="f-note" class="vh">Notat</label><textarea id="f-note" rows="3">' + esc(b.note) + '</textarea>' +
+      '</section>' +
+      (isNew ? '' :
+        '<section class="grp"><h3>Flytt denne og resten av ' + dayLbl + '</h3><div class="shift">' +
+          [-30, -15, 15, 30].map(d => '<button type="button" class="btn small" data-shift="' + d + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</button>').join('') +
+          '</div>' +
+          (isToday ? '<button type="button" class="btn small wide" data-shift="now">Starter nå</button>' : '') +
+          '<p class="hint">Tall i minutter. Gjelder bare ' + dayLbl + '.</p>' +
+        '</section>' +
+        '<section class="grp quiet"><button type="button" class="btn link" data-del>Slett rubrikk</button>' +
+          '<div class="confirm" id="f-confirm" hidden><p class="hint">Slette «' + esc(b.title) + '» bare ' + dayLbl + ', eller fra malen «' + esc(tplName) + '»?</p>' +
+          '<div class="btnrow"><button type="button" class="btn small danger" data-del-scope="day">Slett ' + dayLbl + '</button>' +
+          '<button type="button" class="btn small danger" data-del-scope="perm">Slett fra malen</button></div></div>' +
+        '</section>') +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save="day">Lagre for ' + dayLbl + '</button><button type="button" class="btn grow" data-save="perm">Lagre i malen</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      q('#f-type').addEventListener('change', e => { q('#f-meal').hidden = e.target.value !== 'meal'; q('#f-title').placeholder = TYPES[e.target.value]; });
+      q('[data-add]').addEventListener('click', () => {
+        q('#f-items').insertAdjacentHTML('beforeend', itemRow({ id: 'i-' + uid(), text: '' }));
+        q('#f-items').lastElementChild.querySelector('input').focus();
+      });
+      q('#f-items').addEventListener('click', e => { const rm = e.target.closest('[data-rm]'); if (rm) rm.closest('.item').remove(); });
+      q('#f-items').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); q('[data-add]').click(); } });
+      q('#bf').addEventListener('submit', e => e.preventDefault());
+      sheet.querySelectorAll('[data-shift]').forEach(btn => btn.addEventListener('click', () => {
+        const v = btn.dataset.shift;
+        const delta = v === 'now' ? nowMin() - toMin(src.start) : Number(v);
+        closeSheet();
+        if (!delta) return;
+        mutate((src.title || 'Rubrikken') + ' flyttet ' + (delta > 0 ? '+' : '−') + fmtDur(Math.abs(delta)), () => shiftFrom(b.id, delta));
+      }));
+      const del = q('[data-del]');
+      if (del) del.addEventListener('click', () => { q('#f-confirm').hidden = false; del.hidden = true; });
+      sheet.querySelectorAll('[data-del-scope]').forEach(btn => btn.addEventListener('click', () => {
+        const scope = btn.dataset.delScope;
+        closeSheet();
+        mutate(scope === 'day' ? 'Slettet ' + dayLbl : 'Slettet fra malen', () => deleteBlock(b.id, scope));
+      }));
+      sheet.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', () => {
+        readBlock(sheet, b);
+        const scope = btn.dataset.save;
+        closeSheet();
+        mutate(scope === 'day' ? 'Lagret for ' + dayLbl : 'Lagret i malen «' + tplName + '»', () => saveBlock(b, scope));
+      }));
+      if (isNew) setTimeout(() => q('#f-title').focus(), 300);
+    });
+}
+
+function readBlock(sheet, b) {
+  const q = s => sheet.querySelector(s);
+  b.type = q('#f-type').value;
+  b.title = q('#f-title').value.trim() || TYPES[b.type];
+  b.start = q('#f-start').value || b.start;
+  b.boys = q('#f-boys').value.trim();
+  b.adults = q('#f-adults').value.trim();
+  b.link = b.type === 'meal' ? q('#f-link').value : '';
+  b.note = q('#f-note').value.trim();
+  b.items = [...sheet.querySelectorAll('#f-items .item')]
+    .map(r => ({ id: r.dataset.iid || 'i-' + uid(), text: r.querySelector('input').value.trim() }))
+    .filter(x => x.text);
+  if (!b.slot) b.slot = b.id;
+}
+function upsert(arr, b) {
+  const i = arr.findIndex(x => x.id === b.id);
+  if (i >= 0) arr[i] = clone(b); else arr.push(clone(b));
+  sortBlocks(arr);
+}
+function saveBlock(b, scope) {
+  if (scope === 'day') { upsert(ensureDayBlocks(view), b); return; }
+  upsert(state.templates[templateFor(view)].blocks, b);
+  const d = state.days[view];
+  if (d && d.blocks) upsert(d.blocks, b);
+}
+function deleteBlock(id, scope) {
+  const rm = arr => { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr.splice(i, 1); };
+  if (scope === 'day') { rm(ensureDayBlocks(view)); return; }
+  rm(state.templates[templateFor(view)].blocks);
+  const d = state.days[view];
+  if (d && d.blocks) rm(d.blocks);
+}
+function shiftFrom(id, delta) {
+  const arr = ensureDayBlocks(view);
+  sortBlocks(arr);
+  const i = arr.findIndex(x => x.id === id);
+  if (i < 0) return;
+  for (let k = i; k < arr.length; k++) arr[k].start = toHM(toMin(arr[k].start) + delta);
+  sortBlocks(arr);
+}
+
+/* ---------- meny (oversikt) ---------- */
+function navRow(act, label, meta) {
+  return '<button type="button" class="row" data-nav="' + act + '"><span class="grow">' + label + (meta ? '<span class="m">' + meta + '</span>' : '') + '</span><span class="r">›</span></button>';
+}
+function openMenu() {
+  const d = state.days[view];
+  const follow = scheduledTemplate(view);
+  const tpls = Object.values(state.templates);
+  const din = dishFor(view, 'dinner');
+  const le = state.meta.lastExport;
+  reopen = openMenu;
+  openSheet(
+    headHTML('Meny') +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>' + fmtDateLong(view) + '</h3>' +
+        '<div class="row2"><button type="button" class="btn" data-m="new">Ny rubrikk</button><button type="button" class="btn" data-nav="log">Dagslogg</button></div>' +
+        '<div class="field"><label for="m-daytpl">Mal for dagen</label><select id="m-daytpl">' +
+          '<option value="">Følg planen (' + esc(state.templates[follow].name) + ')</option>' +
+          tpls.map(t => '<option value="' + esc(t.id) + '"' + (d && d.templateId === t.id ? ' selected' : '') + '>' + esc(t.name) + ' bare denne dagen</option>').join('') +
+        '</select></div>' +
+        (d && d.blocks ? '<button type="button" class="btn wide" data-m="reset">Tilbakestill dagen til malen</button><p class="hint">Dagen har egne endringer i rubrikkene. Avkrysninger og logg beholdes.</p>' : '') +
+      '</section>' +
+      '<section class="grp"><h3>Mat</h3><div class="list">' +
+        navRow('week', 'Ukemeny', din ? 'I dag: ' + esc(din.name) : '') +
+        navRow('bank', 'Middagsbank', plural(state.dishes.length, 'rett', 'retter') + ', fisk ' + state.settings.fishPerWeek + ' ganger i uka') +
+      '</div></section>' +
+      '<section class="grp"><h3>Aktiviteter</h3><div class="list">' +
+        navRow('acts', 'Aktivitetsbibliotek', plural(state.activities.length, 'aktivitet', 'aktiviteter') + (state.place ? ', vær for ' + esc(state.place.name) : ', velg sted i Profil for vær')) +
+      '</div></section>' +
+      '<section class="grp"><h3>Logg</h3><div class="list">' +
+        navRow('log', 'Dagslogg', fmtDateShort(view)) +
+        navRow('history', 'Oversikt', 'Søvn og legging siste 14 dager') +
+      '</div></section>' +
+      '<section class="grp"><h3>Oppsett</h3><div class="list">' +
+        navRow('profile', 'Profil', esc(state.kids.map(k => k.name).join(', ')) + (state.place ? ', ' + esc(state.place.name) : '')) +
+        navRow('partner', 'Partner og turnus', partnerOn() ? esc(partnerName()) + ', ' + plural(Object.keys(state.partner.shifts).length, 'dag', 'dager') + ' i turnusen' : 'Av') +
+        navRow('tasks', 'Gjøremål som går igjen', plural(state.tasks.length, 'gjøremål', 'gjøremål')) +
+        navRow('templates', 'Maler', tpls.map(t => esc(t.name)).join(', ')) +
+        navRow('backup', 'Backup', syncOn() ? 'Automatisk til GitHub' + (sync.cfg.lastPush ? ', sist ' + fmtStamp(sync.cfg.lastPush) : '') : (le ? 'Siste fil ' + fmtDateShort(le) : 'Ingen backup ennå')) +
+      '</div></section>' +
+      '<p class="hint" style="text-align:center;padding-top:4px">Døgn ' + APP_VERSION + '</p>' +
+    '</div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      sheet.addEventListener('click', e => {
+        const nav = e.target.closest('[data-nav]');
+        const m = e.target.closest('[data-m]');
+        if (nav) {
+          const n = nav.dataset.nav;
+          ({ week: openWeekSheet, bank: openBankSheet, log: () => openLogSheet(view), history: openHistorySheet, tasks: openTasksSheet, templates: openTemplatesSheet, backup: openSyncSheet, profile: () => openProfileSheet(false), partner: openPartnerSheet, acts: openActivitiesSheet })[n]();
+          return;
+        }
+        if (!m) return;
+        if (m.dataset.m === 'new') openBlockSheet(null);
+        else if (m.dataset.m === 'reset') { closeSheet(); mutate('Dagen følger malen igjen', () => { delete state.days[view].blocks; }); }
+      });
+      q('#m-daytpl').addEventListener('change', e => {
+        const v = e.target.value;
+        mutate(v ? 'Dagen bruker ' + state.templates[v].name : 'Dagen følger planen', () => {
+          const d = dayRec(view);
+          if (v) d.templateId = v; else delete d.templateId;
+          delete d.blocks;
+        });
+        openMenu();
+      });
+    });
+}
+
+/* ---------- ukemeny ---------- */
+function openWeekSheet(ws) {
+  ws = ws || weekStart(view);
+  const days = [...Array(7)].map((_, i) => addDays(ws, i));
+  days.forEach(d => ensureWeek(d));
+  reopen = () => openWeekSheet(ws);
+  const today = todayISO();
+  const tomorrow = addDays(today, 1);
+  openSheet(
+    headHTML('Ukemeny', true) +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Uke fra ' + fmtDateShort(ws) + '</h3>' +
+        '<div class="row2"><button type="button" class="btn small" data-wk="-7">Forrige uke</button><button type="button" class="btn small" data-wk="7">Neste uke</button></div>' +
+        '<div class="list">' + days.map(d => {
+          const din = dishFor(d, 'dinner'), lun = dishFor(d, 'lunch');
+          const m = state.menu[d] || {};
+          const ph = partnerHome(d);
+          const pinfo = partnerOn() ? partnerName() + ': ' + (ph.ps && ph.ps.code ? shiftText(ph.ps) : 'ingen vakt registrert') + (ph.home ? ', spiser med' : ', spiser ikke med') : (ph.home ? partnerName() + ' spiser med' : '');
+          return '<button type="button" class="row' + (d === today ? ' cur' : '') + '" data-day="' + d + '"><span class="grow">' +
+            '<span class="wd">' + fmtDateTiny(d) + '</span> ' + (din ? esc(din.name) : '<span class="m" style="display:inline">ingen middag valgt</span>') +
+            '<span class="m">' + (din ? esc(dishMeta(din)) : '') + (m.dinner && m.dinner.manual ? ', valgt selv' : '') + '</span>' + (pinfo ? '<span class="m">' + esc(pinfo.trim()) + '</span>' : '') +
+            (lun ? '<span class="m">lunsj: ' + esc(lun.name) + '</span>' : '') +
+          '</span><span class="r">›</span></button>';
+        }).join('') + '</div>' +
+        '<p class="hint">Trykk på en dag for å bytte rett. Faste retter står på sine dager, fisk spres utover uka, og ellers kommer retten som er spist for lengst siden.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Lag menyen på nytt</h3>' +
+        '<p class="hint">Gjelder dager fra og med i morgen (' + fmtDateShort(tomorrow) + '). Retter du har valgt selv, beholdes.</p>' +
+        '<button type="button" class="btn wide" data-regen>Lag ny meny fra i morgen</button>' +
+      '</section>' +
+    '</div>',
+    sheet => {
+      sheet.querySelectorAll('[data-wk]').forEach(b => b.addEventListener('click', () => openWeekSheet(addDays(ws, Number(b.dataset.wk)))));
+      sheet.querySelectorAll('[data-day]').forEach(b => b.addEventListener('click', () => openSwapSheet(b.dataset.day, 'dinner', () => openWeekSheet(ws))));
+      sheet.querySelector('[data-regen]').addEventListener('click', () => {
+        mutate('Ny meny fra ' + fmtDateShort(tomorrow), () => regenerateFrom(tomorrow));
+        openWeekSheet(ws);
+      });
+    });
+}
+
+/* ---------- bytt rett ---------- */
+function openSwapSheet(date, meal, back) {
+  const cur = dishFor(date, meal);
+  const m = state.menu[date] && state.menu[date][meal];
+  const list = state.dishes.filter(x => x.meal === meal)
+    .map(x => ({ x, l: lastServed(x.id, date) }))
+    .sort((a, b) => (a.l || '').localeCompare(b.l || '') || a.x.name.localeCompare(b.x.name));
+  const afterSave = () => { if (back) back(); else closeSheet(); };
+  reopen = null;
+  openSheet(
+    '<div class="sh-head"><h2>' + MEALS[meal] + ' ' + fmtDateTiny(date) + '</h2>' +
+      (back ? '<button type="button" class="btn ghost" data-goback>Tilbake</button>' : '<button type="button" class="btn ghost" data-close>Lukk</button>') + '</div>' +
+    '<div class="sh-body">' +
+      (cur ? '<section class="grp"><h3>Valgt nå</h3>' +
+        '<div class="dcard"><strong>' + esc(cur.name) + '</strong><span class="m">' + esc(dishMeta(cur)) + '</span>' +
+          (cur.kids ? '<span>Til guttene: ' + esc(cur.kids) + '</span>' : '') +
+          (cur.prep ? '<span class="m">Forberedelse: ' + esc(cur.prep) + '</span>' : '') +
+          (cur.dayBefore ? '<span class="m">Dagen før: ' + esc(cur.dayBefore) + '</span>' : '') +
+        '</div>' +
+        '<div class="row2"><button type="button" class="btn small" data-edit-dish="' + cur.id + '">Rediger retten</button>' +
+        (m && m.manual ? '<button type="button" class="btn small" data-auto>Tilbake til auto</button>' : '<button type="button" class="btn small" data-none>Ingen rett</button>') + '</div>' +
+      '</section>' : (m && m.manual ? '<section class="grp"><p class="hint">Ingen rett valgt for dagen.</p><button type="button" class="btn small wide" data-auto>Tilbake til automatisk meny</button></section>' : '')) +
+      '<section class="grp"><h3>Velg en annen</h3><div class="list">' +
+        list.map(({ x, l }) => '<button type="button" class="row' + (cur && cur.id === x.id ? ' cur' : '') + '" data-pick="' + x.id + '"><span class="grow">' + esc(x.name) +
+          '<span class="m">' + esc(dishMeta(x)) + '</span></span><span class="r">' + (l ? diffDays(l, date) + ' d siden' : 'ny') + '</span></button>').join('') +
+      '</div><p class="hint">Sortert etter hvor lenge siden retten sto på menyen.</p></section>' +
+    '</div>',
+    sheet => {
+      const gb = sheet.querySelector('[data-goback]');
+      if (gb) gb.addEventListener('click', back);
+      sheet.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
+        const d = dishById(b.dataset.pick);
+        mutate(MEALS[meal] + ' ' + fmtDateTiny(date) + ': ' + d.name, () => setMenu(date, meal, d.id, true));
+        afterSave();
+      }));
+      const none = sheet.querySelector('[data-none]');
+      if (none) none.addEventListener('click', () => { mutate('Ingen ' + MEALS[meal].toLowerCase() + ' valgt', () => setMenu(date, meal, null, true)); afterSave(); });
+      const auto = sheet.querySelector('[data-auto]');
+      if (auto) auto.addEventListener('click', () => {
+        mutate('Automatisk meny for dagen', () => { delete state.menu[date][meal]; generateWeek(weekStart(date), date); });
+        afterSave();
+      });
+      const ed = sheet.querySelector('[data-edit-dish]');
+      if (ed) ed.addEventListener('click', () => openDishSheet(ed.dataset.editDish, () => openSwapSheet(date, meal, back)));
+    });
+}
+
+/* ---------- middagsbank ---------- */
+function openBankSheet() {
+  reopen = openBankSheet;
+  const group = meal => state.dishes.filter(x => x.meal === meal).sort((a, b) => (Number(b.weekday) ? 1 : 0) - (Number(a.weekday) ? 1 : 0) || a.name.localeCompare(b.name));
+  const rowsFor = meal => group(meal).map(x => '<button type="button" class="row" data-dish="' + x.id + '"><span class="grow">' + esc(x.name) +
+    '<span class="m">' + esc(dishMeta(x)) + '</span></span><span class="r">›</span></button>').join('') || '<div><span class="hint">Ingen retter ennå.</span></div>';
+  openSheet(
+    headHTML('Middagsbank', true) +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Middager</h3><div class="list">' + rowsFor('dinner') + '</div>' +
+        '<button type="button" class="btn wide" data-new="dinner">Ny middag</button></section>' +
+      '<section class="grp"><h3>Lunsjer</h3><div class="list">' + rowsFor('lunch') + '</div>' +
+        '<button type="button" class="btn wide" data-new="lunch">Ny lunsj</button>' +
+        '<p class="hint">Lunsj kommer bare på menyen på faste dager, eller når du velger den selv.</p></section>' +
+      '<section class="grp"><h3>Fisk</h3><div class="field"><label for="b-fish">Fiskemiddager per uke</label>' +
+        '<input id="b-fish" type="number" inputmode="numeric" min="0" max="7" value="' + state.settings.fishPerWeek + '"></div>' +
+        '<p class="hint">Gjelder uker som lages etter endringen. Bruk «Lag ny meny» i ukemenyen for å oppdatere uker som allerede er laget.</p></section>' +
+    '</div>',
+    sheet => {
+      sheet.querySelectorAll('[data-dish]').forEach(b => b.addEventListener('click', () => openDishSheet(b.dataset.dish, openBankSheet)));
+      sheet.querySelectorAll('[data-new]').forEach(b => b.addEventListener('click', () => openDishSheet(null, openBankSheet, b.dataset.new)));
+      sheet.querySelector('#b-fish').addEventListener('change', e => {
+        const v = Math.max(0, Math.min(7, parseInt(e.target.value, 10) || 0));
+        mutate('Fisk ' + v + ' ganger i uka', () => { state.settings.fishPerWeek = v; });
+        openBankSheet();
+      });
+    });
+}
+
+function openDishSheet(id, back, meal) {
+  const isNew = !id;
+  const src = isNew ? { id: 'd-' + uid(), name: '', meal: meal || 'dinner', minutes: 30, cat: 'kjott', weekday: 0, kids: '', prep: '', dayBefore: '' } : dishById(id);
+  if (!src) return;
+  const d = clone(src);
+  reopen = null;
+  openSheet(
+    '<div class="sh-head"><h2>' + (isNew ? 'Ny rett' : 'Rediger rett') + '</h2><button type="button" class="btn ghost" data-goback>Tilbake</button></div>' +
+    '<form class="sh-body" id="df" novalidate>' +
+      '<section class="grp"><h3>Rett</h3>' +
+        '<div class="field"><label for="d-name">Navn</label><input id="d-name" type="text" value="' + esc(d.name) + '" autocomplete="off" placeholder="For eksempel Fiskepudding med potet"></div>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="d-meal">Måltid</label><select id="d-meal">' + Object.entries(MEALS).map(([k, v]) => '<option value="' + k + '"' + (k === d.meal ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></div>' +
+          '<div class="field"><label for="d-min">Tid (min)</label><input id="d-min" type="number" inputmode="numeric" min="5" max="240" value="' + d.minutes + '"></div>' +
+        '</div>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="d-cat">Type</label><select id="d-cat">' + Object.entries(CATS).map(([k, v]) => '<option value="' + k + '"' + (k === d.cat ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></div>' +
+          '<div class="field"><label for="d-wd">Fast dag</label><select id="d-wd"><option value="0">Ingen</option>' + WD_SHORT.map((w, i) => '<option value="' + (i + 1) + '"' + (Number(d.weekday) === i + 1 ? ' selected' : '') + '>' + w + '</option>').join('') + '</select></div>' +
+        '</div>' +
+      '</section>' +
+      '<section class="grp"><h3>Til guttene</h3>' +
+        '<label for="d-kids" class="vh">Tilpasning til guttene</label><textarea id="d-kids" rows="2" placeholder="For eksempel lite salt, ta ut porsjonen før krydder">' + esc(d.kids) + '</textarea>' +
+      '</section>' +
+      '<section class="grp"><h3>Forberedelse</h3>' +
+        '<div class="field"><label for="d-prep">I luren før måltidet</label><input id="d-prep" type="text" value="' + esc(d.prep) + '" autocomplete="off" placeholder="For eksempel skrell potet"></div>' +
+        '<div class="field"><label for="d-before">Kvelden før</label><input id="d-before" type="text" value="' + esc(d.dayBefore) + '" autocomplete="off" placeholder="For eksempel tin fisken"></div>' +
+      '</section>' +
+      (isNew ? '' : '<section class="grp quiet"><button type="button" class="btn link" data-del>Slett rett</button><div class="confirm" id="d-confirm" hidden><p class="hint">Slette «' + esc(d.name) + '» fra banken? Dager der den står på menyen får ny rett neste gang menyen lages.</p><div class="btnrow"><button type="button" class="btn small danger" data-del-yes>Slett</button></div></div></section>') +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>Lagre rett</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      q('[data-goback]').addEventListener('click', back);
+      q('#df').addEventListener('submit', e => e.preventDefault());
+      const del = q('[data-del]');
+      if (del) {
+        del.addEventListener('click', () => { q('#d-confirm').hidden = false; del.hidden = true; });
+        q('[data-del-yes]').addEventListener('click', () => {
+          mutate('Rett slettet', () => {
+            state.dishes = state.dishes.filter(x => x.id !== d.id);
+            for (const m of Object.values(state.menu)) for (const k of Object.keys(m)) if (m[k] && m[k].dish === d.id) delete m[k];
+          });
+          openBankSheet();
+        });
+      }
+      q('[data-save]').addEventListener('click', () => {
+        const name = q('#d-name').value.trim();
+        if (!name) { q('#d-name').focus(); return; }
+        Object.assign(d, {
+          name, meal: q('#d-meal').value, cat: q('#d-cat').value,
+          minutes: Math.max(1, parseInt(q('#d-min').value, 10) || 30),
+          weekday: Number(q('#d-wd').value),
+          kids: q('#d-kids').value.trim(), prep: q('#d-prep').value.trim(), dayBefore: q('#d-before').value.trim()
+        });
+        mutate('Rett lagret', () => {
+          const i = state.dishes.findIndex(x => x.id === d.id);
+          if (i >= 0) state.dishes[i] = d; else state.dishes.push(d);
+        });
+        back();
+      });
+      if (isNew) setTimeout(() => q('#d-name').focus(), 300);
+    });
+}
+
+/* ---------- dagslogg ---------- */
+function openLogSheet(date) {
+  reopen = () => openLogSheet(date);
+  const L = getLog(date);
+  const blocks = blocksFor(date);
+  const mealBlocks = blocks.filter(b => b.type === 'meal' && (b.boys || b.link));
+  const sleepFor = kid => L.sleep.filter(e => e.kid === kid).sort((a, b) => a.start.localeCompare(b.start));
+  const bName = id => { const b = blocks.find(x => x.id === id); return b ? b.title + ' ' + b.start : 'lur'; };
+  openSheet(
+    '<div class="sh-head"><h2>Dagslogg ' + fmtDateTiny(date) + '</h2><button type="button" class="btn ghost" data-close>Lukk</button></div>' +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Lurer</h3>' +
+        state.kids.map(k => {
+          const list = sleepFor(k.id);
+          return '<div class="lg-sum"><strong>' + esc(k.name) + '</strong><span class="m">' + (list.length ? (napTotal(date, k.id) ? 'totalt ' + fmtDurShort(napTotal(date, k.id)) : 'pågår') : 'ingen lurer logget') + '</span></div>' +
+            (list.length ? '<div class="list">' + list.map(e => '<button type="button" class="row" data-nap="' + e.id + '"><span class="grow">' + e.start + '–' + (e.end || '…') +
+              '<span class="m">' + esc(bName(e.blockId)) + '</span></span><span class="r">' + (e.end ? fmtDurShort(toMin(e.end) - toMin(e.start)) : '') + '</span></button>').join('') + '</div>' : '');
+        }).join('') +
+        '<p class="hint">Lurer logges med knappene i søvnbolkene. Trykk på en lur for å endre tidene.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Natt</h3>' +
+        state.kids.map(k => { const n = L.night[k.id] || {}; return '<div class="field"><span class="lbl">' + esc(k.name) + '</span><div class="row2">' +
+          '<div class="field"><label for="n-a-' + k.id + '">Sovnet i kveld</label><input type="time" id="n-a-' + k.id + '" data-night="' + k.id + '" data-f="asleep" value="' + (n.asleep || '') + '"></div>' +
+          '<div class="field"><label for="n-w-' + k.id + '">Våknet i morgen</label><input type="time" id="n-w-' + k.id + '" data-night="' + k.id + '" data-f="wake" value="' + (n.wake || '') + '"></div>' +
+        '</div></div>'; }).join('') +
+      '</section>' +
+      '<section class="grp"><h3>Måltider</h3>' +
+        (mealBlocks.length ? '<div class="list">' + mealBlocks.map(b => { const r = L.meals[b.id] || {};
+          return '<div><span class="grow">' + esc(b.title) + '<span class="m">' + b.start + '</span></span><span class="rates">' +
+            state.kids.map(k => '<button type="button" class="chip sm rate' + (r[k.id] ? ' r-' + r[k.id] : '') + '" data-lrate="' + b.id + '" data-kid="' + k.id + '">' + esc(k.name.charAt(0)) + ' ' + (r[k.id] || '–') + '</button>').join('') +
+          '</span></div>'; }).join('') + '</div>' : '<p class="hint">Ingen måltider i dagens plan.</p>') +
+        '<p class="hint">Trykk for å veksle mellom godt, middels og lite.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Notat</h3><label for="l-note" class="vh">Notat for dagen</label>' +
+        '<textarea id="l-note" rows="4" placeholder="Hva gikk bra, hva bør endres?">' + esc(L.note) + '</textarea></section>' +
+    '</div>',
+    sheet => {
+      sheet.querySelectorAll('[data-night]').forEach(inp => inp.addEventListener('change', () => {
+        const Lr = logRec(date);
+        (Lr.night[inp.dataset.night] ??= {})[inp.dataset.f] = inp.value;
+        persist();
+      }));
+      sheet.querySelectorAll('[data-lrate]').forEach(btn => btn.addEventListener('click', () => {
+        cycleRate(date, btn.dataset.lrate, btn.dataset.kid);
+        openLogSheet(date);
+      }));
+      sheet.querySelectorAll('[data-nap]').forEach(btn => btn.addEventListener('click', () => {
+        const e = getLog(date).sleep.find(x => x.id === btn.dataset.nap);
+        if (e) openNapSheet(date, e.blockId, e.kid, () => openLogSheet(date));
+      }));
+      const note = sheet.querySelector('#l-note');
+      note.addEventListener('input', () => { logRec(date).note = note.value; persist(); });
+    });
+}
+function cycleRate(date, blockId, kid) {
+  const L = logRec(date);
+  const r = (L.meals[blockId] ??= {});
+  const next = RATES[(RATES.indexOf(r[kid] || '') + 1) % RATES.length];
+  if (next) r[kid] = next; else delete r[kid];
+  persist();
+  renderTimeline();
+}
+
+function openNapSheet(date, blockId, kid, back) {
+  const e = napEntry(date, kid, blockId) || { start: '', end: '' };
+  const b = blocksFor(date).find(x => x.id === blockId);
+  reopen = null;
+  openSheet(
+    '<div class="sh-head"><h2>' + esc(kidName(kid)) + ', ' + esc(b ? b.title + ' ' + b.start : 'lur') + '</h2>' +
+      (back ? '<button type="button" class="btn ghost" data-goback>Tilbake</button>' : '<button type="button" class="btn ghost" data-close>Lukk</button>') + '</div>' +
+    '<form class="sh-body" id="nf" novalidate>' +
+      '<section class="grp"><h3>Tider</h3><div class="row2">' +
+        '<div class="field"><label for="nap-s">Sovnet</label><input type="time" id="nap-s" value="' + e.start + '"></div>' +
+        '<div class="field"><label for="nap-e">Våknet</label><input type="time" id="nap-e" value="' + e.end + '"></div>' +
+      '</div></section>' +
+      (e.id ? '<section class="grp quiet"><button type="button" class="btn link" data-del>Slett luren fra loggen</button></section>' : '') +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>Lagre</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      const done = () => { if (back) back(); else closeSheet(); };
+      const gb = q('[data-goback]'); if (gb) gb.addEventListener('click', back);
+      q('#nf').addEventListener('submit', ev => ev.preventDefault());
+      q('[data-save]').addEventListener('click', () => {
+        const s = q('#nap-s').value, en = q('#nap-e').value;
+        if (!s) { q('#nap-s').focus(); return; }
+        mutate('Lur lagret', () => {
+          const L = logRec(date);
+          let x = L.sleep.find(y => y.kid === kid && y.blockId === blockId);
+          if (!x) { x = { id: 's-' + uid(), kid, blockId }; L.sleep.push(x); }
+          x.start = s; x.end = en;
+        });
+        done();
+      });
+      const del = q('[data-del]');
+      if (del) del.addEventListener('click', () => {
+        mutate('Lur slettet fra loggen', () => { const L = logRec(date); L.sleep = L.sleep.filter(y => !(y.kid === kid && y.blockId === blockId)); });
+        done();
+      });
+    });
+}
+
+/* ---------- oversikt ---------- */
+function openHistorySheet() {
+  reopen = openHistorySheet;
+  const today = todayISO();
+  const days = [...Array(14)].map((_, i) => addDays(today, -i));
+  const cell = v => '<td>' + (v || '<span class="faint">–</span>') + '</td>';
+  openSheet(
+    headHTML('Oversikt', true) +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Siste 14 dager</h3><div class="tblwrap"><table class="tbl"><thead><tr><th>dag</th>' +
+        state.kids.map(k => '<th>lur ' + esc(k.name.charAt(0)) + '</th>').join('') +
+        state.kids.map(k => '<th>kveld ' + esc(k.name.charAt(0)) + '</th>').join('') + '</tr></thead><tbody>' +
+        days.map(d => { const L = getLog(d);
+          return '<tr data-day="' + d + '"><td>' + fmtDateTiny(d) + (L.note ? ' <span class="acc">#</span>' : '') + '</td>' +
+            state.kids.map(k => cell(napTotal(d, k.id) ? fmtDurShort(napTotal(d, k.id)) : '')).join('') +
+            state.kids.map(k => cell((L.night[k.id] || {}).asleep)).join('') + '</tr>'; }).join('') +
+      '</tbody></table></div>' +
+      '<p class="hint">Trykk på en dag for å åpne dagsloggen. # betyr at dagen har notat. Når luren flyttes eller kortes ned over tid, kan det være tid for malen «Én lur».</p></section>' +
+    '</div>',
+    sheet => {
+      sheet.querySelectorAll('tr[data-day]').forEach(tr => tr.addEventListener('click', () => openLogSheet(tr.dataset.day)));
+    });
+}
+
+/* ---------- gjøremål ---------- */
+function openTasksSheet() {
+  reopen = openTasksSheet;
+  const slots = allSlots();
+  const slotLabel = t => { const s = slots.find(x => x.slot === t.slot); return s ? s.label : TYPES[t.type] || ''; };
+  openSheet(
+    headHTML('Gjøremål som går igjen', true) +
+    '<div class="sh-body"><section class="grp"><h3>Gjøremål</h3>' +
+      '<div class="list">' + (state.tasks.length ? state.tasks.map(t =>
+        '<button type="button" class="row" data-task="' + esc(t.id) + '"><span class="grow">' + esc(t.text) + '<span class="m">' + esc(ruleText(t.rule)) + ', ' + esc(slotLabel(t)) + '</span></span><span class="r">›</span></button>').join('')
+        : '<div><span class="hint">Ingen ennå.</span></div>') +
+      '</div><button type="button" class="btn wide" data-new-task>Nytt gjøremål</button>' +
+    '</section></div>',
+    sheet => {
+      sheet.querySelectorAll('[data-task]').forEach(b => b.addEventListener('click', () => openTaskSheet(b.dataset.task)));
+      sheet.querySelector('[data-new-task]').addEventListener('click', () => openTaskSheet(null));
+    });
+}
+
+function openTaskSheet(id) {
+  const isNew = !id;
+  const src = isNew
+    ? { id: 't-' + uid(), text: '', slot: 'lur1', type: 'sleep', rule: { kind: 'interval', every: 7, start: todayISO() > state.leave.start ? todayISO() : state.leave.start, days: [] } }
+    : state.tasks.find(t => t.id === id);
+  if (!src) return;
+  const t = clone(src);
+  t.rule.days = t.rule.days || [];
+  t.rule.every = t.rule.every || 7;
+  t.rule.start = t.rule.start || todayISO();
+  const slots = allSlots();
+  const prev = completions(t.id).pop();
+  reopen = null;
+  openSheet(
+    '<div class="sh-head"><h2>' + (isNew ? 'Nytt gjøremål' : 'Rediger gjøremål') + '</h2><button type="button" class="btn ghost" data-goback>Tilbake</button></div>' +
+    '<form class="sh-body" id="tf" novalidate>' +
+      '<section class="grp"><h3>Gjøremål</h3>' +
+        '<label for="t-text" class="vh">Gjøremål</label><input id="t-text" type="text" value="' + esc(t.text) + '" autocomplete="off" placeholder="For eksempel Skifte sengetøy">' +
+      '</section>' +
+      '<section class="grp"><h3>Hvor ofte</h3>' +
+        '<label for="t-kind" class="vh">Hvor ofte</label><select id="t-kind">' +
+          [['daily', 'Hver dag'], ['interval', 'Med fast mellomrom'], ['weekdays', 'Faste ukedager']].map(([k, v]) => '<option value="' + k + '"' + (t.rule.kind === k ? ' selected' : '') + '>' + v + '</option>').join('') +
+        '</select>' +
+        '<div class="field" id="t-every-f"><label for="t-every">Antall dager mellom hver gang</label><input id="t-every" type="number" inputmode="numeric" min="1" max="60" value="' + t.rule.every + '">' +
+          '<p class="hint">Telleren starter på nytt når du krysser av. Blir det ikke gjort, står det igjen til neste dag.' + (prev ? ' Sist gjort ' + fmtDateShort(prev) + '.' : '') + '</p></div>' +
+        '<div class="field" id="t-days-f"><span class="lbl">Ukedager</span><div class="chips">' +
+          WD_SHORT.map((w, i) => '<button type="button" class="chip" data-wd="' + (i + 1) + '" aria-pressed="' + t.rule.days.includes(i + 1) + '">' + w + '</button>').join('') +
+        '</div></div>' +
+        '<div class="field"><label for="t-start" id="t-start-l">Første gang</label><input id="t-start" type="date" value="' + t.rule.start + '"></div>' +
+      '</section>' +
+      '<section class="grp"><h3>Vises i</h3>' +
+        '<label for="t-slot" class="vh">Vises i</label><select id="t-slot">' +
+          slots.map(s => '<option value="' + esc(s.slot) + '"' + (s.slot === t.slot ? ' selected' : '') + '>' + esc(s.label) + '</option>').join('') +
+        '</select>' +
+        '<p class="hint">Finnes ikke rubrikken i malen som brukes, vises gjøremålet i første rubrikk av samme type.</p>' +
+      '</section>' +
+      (isNew ? '' : '<section class="grp quiet"><button type="button" class="btn link" data-del>Slett gjøremål</button><div class="confirm" id="t-confirm" hidden><p class="hint">Slette «' + esc(t.text) + '»? Tidligere avkrysninger forsvinner fra oversikten.</p><div class="btnrow"><button type="button" class="btn small danger" data-del-yes>Slett</button></div></div></section>') +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>Lagre gjøremål</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      const sync = () => {
+        const k = q('#t-kind').value;
+        q('#t-every-f').hidden = k !== 'interval';
+        q('#t-days-f').hidden = k !== 'weekdays';
+        q('#t-start-l').textContent = k === 'interval' ? 'Første gang' : 'Gjelder fra';
+      };
+      sync();
+      q('#t-kind').addEventListener('change', sync);
+      q('[data-goback]').addEventListener('click', openTasksSheet);
+      q('#tf').addEventListener('submit', e => e.preventDefault());
+      sheet.querySelectorAll('[data-wd]').forEach(c => c.addEventListener('click', () => c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') !== 'true')));
+      const del = q('[data-del]');
+      if (del) {
+        del.addEventListener('click', () => { q('#t-confirm').hidden = false; del.hidden = true; });
+        q('[data-del-yes]').addEventListener('click', () => {
+          mutate('Gjøremål slettet', () => { state.tasks = state.tasks.filter(x => x.id !== t.id); });
+          openTasksSheet();
+        });
+      }
+      q('[data-save]').addEventListener('click', () => {
+        const text = q('#t-text').value.trim();
+        if (!text) { q('#t-text').focus(); return; }
+        t.text = text;
+        t.rule = {
+          kind: q('#t-kind').value,
+          every: Math.max(1, Math.min(365, parseInt(q('#t-every').value, 10) || 7)),
+          start: q('#t-start').value || todayISO(),
+          days: [...sheet.querySelectorAll('[data-wd][aria-pressed="true"]')].map(c => Number(c.dataset.wd))
+        };
+        t.slot = q('#t-slot').value;
+        const sl = slots.find(s => s.slot === t.slot);
+        t.type = sl ? sl.type : t.type;
+        mutate('Gjøremål lagret', () => {
+          const i = state.tasks.findIndex(x => x.id === t.id);
+          if (i >= 0) state.tasks[i] = t; else state.tasks.push(t);
+        });
+        openTasksSheet();
+      });
+      if (isNew) setTimeout(() => q('#t-text').focus(), 300);
+    });
+}
+
+/* ---------- maler ---------- */
+function openTemplatesSheet() {
+  reopen = openTemplatesSheet;
+  const follow = scheduledTemplate(view);
+  const tpls = Object.values(state.templates);
+  const sch = [...state.schedule].sort((a, b) => a.from.localeCompare(b.from));
+  openSheet(
+    headHTML('Maler', true) +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Plan</h3>' +
+        '<div class="list">' + sch.map((s, i) =>
+          '<div><span class="grow">' + esc(state.templates[s.templateId] ? state.templates[s.templateId].name : '?') + '<span class="m">Fra ' + fmtDateShort(s.from) + ' ' + s.from.slice(0, 4) + '</span></span>' +
+          (i > 0 ? '<button type="button" class="btn small ghost" data-rm-sched="' + esc(s.from) + '">Fjern</button>' : '') + '</div>').join('') +
+        '</div>' +
+      '</section>' +
+      '<section class="grp"><h3>Bytt mal fra en dato</h3>' +
+        '<div class="field"><label for="m-stpl">Mal</label><select id="m-stpl">' + tpls.map(t => '<option value="' + esc(t.id) + '"' + (t.id !== follow ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') + '</select></div>' +
+        '<div class="field"><label for="m-sfrom">Fra dato</label><input type="date" id="m-sfrom" value="' + addDays(todayISO(), 1) + '"></div>' +
+        '<button type="button" class="btn wide" data-add-sched>Legg til bytte</button>' +
+        '<p class="hint">Endringer du lagrer i malen, gjelder malen som brukes den dagen du ser på.</p>' +
+      '</section>' +
+    '</div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      sheet.querySelectorAll('[data-rm-sched]').forEach(b => b.addEventListener('click', () => {
+        mutate('Bytte fjernet', () => { state.schedule = state.schedule.filter(s => s.from !== b.dataset.rmSched || s === sch[0]); });
+        openTemplatesSheet();
+      }));
+      q('[data-add-sched]').addEventListener('click', () => {
+        const from = q('#m-sfrom').value, tid = q('#m-stpl').value;
+        if (!from) return;
+        mutate(state.templates[tid].name + ' fra ' + fmtDateShort(from), () => {
+          state.schedule = state.schedule.filter(s => s.from !== from);
+          state.schedule.push({ from, templateId: tid });
+          state.schedule.sort((a, b) => a.from.localeCompare(b.from));
+        });
+        openTemplatesSheet();
+      });
+    });
+}
+
+async function exportData() {
+  const name = 'dogn-backup-' + todayISO() + '.json';
+  const copy = clone(state);
+  copy.meta.lastExport = todayISO();
+  const json = JSON.stringify(copy, null, 1);
+  const done = msg => { state.meta.lastExport = todayISO(); dayRec(todayISO()).done['gen-backup'] = true; persist(); render(); if (sheetOpen() && reopen) reopen(); toast(msg); };
+  let file = null;
+  try { file = new File([json], name, { type: 'application/json' }); } catch (e) {}
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); done('Backup eksportert'); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    done('Backup lastet ned');
+  } catch (e) { toast('Eksporten virket ikke i denne nettleseren.'); }
+}
+function importData(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const obj = migrate(JSON.parse(r.result));
+      closeSheet();
+      mutate('Backup importert', () => { state = obj; });
+    } catch (e) { toast(e.message && e.message.includes('Døgn') ? e.message : 'Filen kunne ikke leses som backup.'); }
+  };
+  r.onerror = () => toast('Filen kunne ikke leses.');
+  r.readAsText(file);
+}
+
+/* ---------- partner og turnus ---------- */
+function defaultPartner() {
+  return {
+    enabled: false, name: 'Partner', commute: 30,
+    codes: {
+      D: { label: 'Dagvakt', kind: 'work', start: '07:00', end: '15:00' },
+      A: { label: 'Aftenvakt', kind: 'work', start: '14:30', end: '22:00' },
+      N: { label: 'Nattevakt', kind: 'night', start: '21:15', end: '07:30' },
+      F: { label: 'Fri', kind: 'off', start: '', end: '' }
+    },
+    shifts: {}
+  };
+}
+const partnerOn = () => !!(state.partner && state.partner.enabled);
+const partnerName = () => (state.partner && state.partner.name) || 'Partner';
+function partnerStatus(date) {
+  if (!partnerOn()) return null;
+  const P = state.partner;
+  const code = P.shifts[date];
+  if (!code) return { code: '', def: null, home: null };
+  const def = P.codes[code];
+  if (!def) return { code, def: null, home: null };
+  const b = blocksFor(date).find(x => x.link === 'dinner');
+  const dm = b ? toMin(b.start) : 17 * 60 + 30;
+  const c = Number(P.commute) || 0;
+  let home = true;
+  if (def.kind === 'work' && def.start && def.end) home = (toMin(def.end) + c <= dm) || (toMin(def.start) - c >= dm + 30);
+  else if (def.kind === 'night' && def.start) home = toMin(def.start) - c >= dm + 30;
+  return { code, def, home };
+}
+function shiftText(ps) {
+  if (!ps || !ps.code) return '';
+  if (!ps.def) return ps.code;
+  if (ps.def.kind === 'off') return ps.code + ' fri';
+  return ps.code + (ps.def.start && ps.def.end ? ' ' + ps.def.start + '–' + ps.def.end : '');
+}
+function partnerHome(date) {
+  const d = state.days[date];
+  const ps = partnerStatus(date);
+  if (d && typeof d.wife === 'boolean') return { home: d.wife, manual: true, ps };
+  return { home: ps && ps.home != null ? ps.home : false, manual: false, ps };
+}
+const groupWord = () => state.kids.length === 2 ? 'Begge' : 'Alle';
+
+/* Import av turnus: JSON fra Døgn, eller tekstlinjer som «2026-10-01 D» / «01.10.2026 D». */
+function parseRota(text) {
+  const t = text.trim();
+  if (t.startsWith('{')) {
+    const o = JSON.parse(t);
+    if (!o.shifts || typeof o.shifts !== 'object') throw new Error('Filen mangler vakter.');
+    return { codes: o.codes || {}, shifts: o.shifts };
+  }
+  const shifts = {};
+  t.split(/\r?\n/).forEach(line => {
+    const m = line.trim().match(/^(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{4})\s+(\S+)/);
+    if (!m) return;
+    let d = m[1];
+    if (d.includes('.')) { const [dd, mm, yy] = d.split('.'); d = yy + '-' + pad(mm) + '-' + pad(dd); }
+    shifts[d] = m[2].toUpperCase();
+  });
+  if (!Object.keys(shifts).length) throw new Error('Fant ingen linjer med dato og vaktkode.');
+  return { codes: {}, shifts };
+}
+function importRota(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const { codes, shifts } = parseRota(String(r.result));
+      let unknown = [];
+      mutate('Turnus importert: ' + plural(Object.keys(shifts).length, 'dag', 'dager'), () => {
+        const P = state.partner;
+        Object.assign(P.codes, codes);
+        Object.assign(P.shifts, shifts);
+        P.enabled = true;
+        unknown = [...new Set(Object.values(shifts))].filter(c => !P.codes[c]);
+        unknown.forEach(c => { P.codes[c] = { label: 'Ukjent kode', kind: 'work', start: '', end: '' }; });
+      });
+      openPartnerSheet();
+      if (unknown.length) toast('Legg inn tider for: ' + unknown.join(', '));
+    } catch (e) { toast(e.message || 'Filen kunne ikke leses som turnus.'); }
+  };
+  r.readAsText(file);
+}
+
+function openPartnerSheet() {
+  reopen = openPartnerSheet;
+  const P = state.partner;
+  const codes = Object.entries(P.codes).sort((a, b) => a[0].localeCompare(b[0], 'nb', { numeric: true }));
+  const today = todayISO();
+  const days = [...Array(21)].map((_, i) => addDays(view < today ? today : view, i));
+  const opt = sel => '<option value="">–</option>' + codes.map(([c]) => '<option value="' + esc(c) + '"' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
+  const codeMeta = d => d.kind === 'off' ? 'fri' : (d.kind === 'night' ? 'natt ' : '') + (d.start && d.end ? d.start + '–' + d.end : 'tider mangler');
+  openSheet(
+    headHTML('Partner og turnus', true) +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Partner</h3>' +
+        '<button type="button" class="chip" data-p-on aria-pressed="' + !!P.enabled + '">' + (P.enabled ? 'Turnus er slått på' : 'Turnus er slått av') + '</button>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="p-name">Navn i appen</label><input id="p-name" type="text" value="' + esc(P.name) + '" autocomplete="off"></div>' +
+          '<div class="field"><label for="p-com">Reisetid (min)</label><input id="p-com" type="number" inputmode="numeric" min="0" max="180" value="' + (Number(P.commute) || 0) + '"></div>' +
+        '</div>' +
+        '<p class="hint">Reisetiden brukes til å avgjøre om ' + esc(P.name) + ' rekker middagen. Du kan alltid overstyre med knappen i middagsbolken.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Importer turnus</h3>' +
+        '<label class="btn wide" for="p-import">Velg turnusfil</label><input type="file" id="p-import" class="vh" accept=".json,.txt,text/plain,application/json">' +
+        '<p class="hint">Tar imot en turnusfil fra Døgn, eller en tekstfil med én dag per linje, for eksempel «2026-10-01 D». Har du turnusen som PDF, kan Claude lage filen for deg. Dager i filen erstatter dager som allerede ligger inne.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Vaktkoder</h3><div class="list">' +
+        codes.map(([c, d]) => '<button type="button" class="row" data-code="' + esc(c) + '"><span class="grow">' + esc(c) + '<span class="m">' + esc([d.label, codeMeta(d)].filter(Boolean).join(', ')) + '</span></span><span class="r">›</span></button>').join('') +
+      '</div><button type="button" class="btn wide" data-new-code>Ny vaktkode</button></section>' +
+      '<section class="grp"><h3>Neste tre uker</h3><div class="list">' +
+        days.map(d => { const ps = { code: P.shifts[d] || '' }; return '<div><span class="grow"><span class="wd">' + fmtDateTiny(d) + '</span></span>' +
+          '<label class="vh" for="sd-' + d + '">Vakt ' + d + '</label><select id="sd-' + d + '" class="sel-sm" data-sd="' + d + '">' + opt(ps.code) + '</select></div>'; }).join('') +
+      '</div><p class="hint">Tom betyr ingen vakt registrert, og regnes som fri.</p></section>' +
+    '</div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      q('[data-p-on]').addEventListener('click', () => { mutate(P.enabled ? 'Turnus slått av' : 'Turnus slått på', () => { state.partner.enabled = !state.partner.enabled; }); openPartnerSheet(); });
+      q('#p-name').addEventListener('change', e => { const v = e.target.value.trim() || 'Partner'; mutate('Navn lagret', () => { state.partner.name = v; }); });
+      q('#p-com').addEventListener('change', e => { const v = Math.max(0, Math.min(180, parseInt(e.target.value, 10) || 0)); mutate('Reisetid lagret', () => { state.partner.commute = v; }); });
+      q('#p-import').addEventListener('change', e => { const f = e.target.files[0]; if (f) importRota(f); e.target.value = ''; });
+      sheet.querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => openCodeSheet(b.dataset.code)));
+      q('[data-new-code]').addEventListener('click', () => openCodeSheet(null));
+      sheet.querySelectorAll('[data-sd]').forEach(s => s.addEventListener('change', () => {
+        const d = s.dataset.sd, v = s.value;
+        mutate('Vakt ' + fmtDateTiny(d) + ': ' + (v || 'ingen'), () => { if (v) state.partner.shifts[d] = v; else delete state.partner.shifts[d]; });
+      }));
+    });
+}
+
+function openCodeSheet(code) {
+  const isNew = !code;
+  const src = isNew ? { label: '', kind: 'work', start: '07:00', end: '15:00' } : state.partner.codes[code];
+  if (!src) return;
+  const d = clone(src);
+  reopen = null;
+  openSheet(
+    '<div class="sh-head"><h2>' + (isNew ? 'Ny vaktkode' : 'Vaktkode ' + esc(code)) + '</h2><button type="button" class="btn ghost" data-goback>Tilbake</button></div>' +
+    '<form class="sh-body" id="cf" novalidate>' +
+      '<section class="grp"><h3>Kode</h3>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="c-code">Kode</label><input id="c-code" type="text" value="' + esc(code || '') + '" autocomplete="off" autocapitalize="characters"' + (isNew ? '' : ' readonly') + '></div>' +
+          '<div class="field"><label for="c-kind">Type</label><select id="c-kind">' + [['work', 'Vakt'], ['night', 'Nattevakt'], ['off', 'Fri']].map(([k, v]) => '<option value="' + k + '"' + (k === d.kind ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></div>' +
+        '</div>' +
+        '<div class="field"><label for="c-label">Beskrivelse</label><input id="c-label" type="text" value="' + esc(d.label) + '" autocomplete="off"></div>' +
+        '<div class="row2" id="c-times">' +
+          '<div class="field"><label for="c-start">Fra</label><input id="c-start" type="time" value="' + (d.start || '') + '"></div>' +
+          '<div class="field"><label for="c-end">Til</label><input id="c-end" type="time" value="' + (d.end || '') + '"></div>' +
+        '</div>' +
+      '</section>' +
+      (isNew ? '' : '<section class="grp quiet"><button type="button" class="btn link" data-del>Slett vaktkode</button></section>') +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>Lagre vaktkode</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      const sync = () => { q('#c-times').hidden = q('#c-kind').value === 'off'; };
+      sync(); q('#c-kind').addEventListener('change', sync);
+      q('[data-goback]').addEventListener('click', openPartnerSheet);
+      q('#cf').addEventListener('submit', e => e.preventDefault());
+      const del = q('[data-del]');
+      if (del) del.addEventListener('click', () => { mutate('Vaktkode ' + code + ' slettet', () => { delete state.partner.codes[code]; }); openPartnerSheet(); });
+      q('[data-save]').addEventListener('click', () => {
+        const c = (q('#c-code').value || '').trim().toUpperCase();
+        if (!c) { q('#c-code').focus(); return; }
+        const kind = q('#c-kind').value;
+        const def = { label: q('#c-label').value.trim(), kind, start: kind === 'off' ? '' : q('#c-start').value, end: kind === 'off' ? '' : q('#c-end').value };
+        mutate('Vaktkode ' + c + ' lagret', () => { state.partner.codes[c] = def; });
+        openPartnerSheet();
+      });
+    });
+}
+
+/* ---------- profil og førstegangsoppsett ---------- */
+const SEED_TASK_OFFSETS = { 't-stov-oppe': 0, 't-stov-nede': 2, 't-bad-oppe': 1, 't-bad-nede': 8, 't-bad': 3 };
+function applySetup(o) {
+  state.kids = o.kids;
+  state.place = o.place;
+  state.leave = o.leave;
+  if (!state.meta.setupDone) {
+    state.schedule = [{ from: o.leave.start, templateId: o.templateId || state.schedule[0].templateId }];
+    state.tasks.forEach(t => { if (t.id in SEED_TASK_OFFSETS && t.rule) t.rule.start = addDays(o.leave.start, SEED_TASK_OFFSETS[t.id]); });
+  }
+  if (o.partnerEnabled != null) state.partner.enabled = o.partnerEnabled;
+  if (o.partnerName) state.partner.name = o.partnerName;
+  state.meta.setupDone = true;
+  setTimeout(() => refreshWeather(true), 50);
+}
+function placeLabel(p) { return p ? p.name + ', ' + p.lat.toFixed(3) + ' / ' + p.lon.toFixed(3) : 'Ikke valgt'; }
+
+function openProfileSheet(firstRun) {
+  reopen = firstRun ? null : () => openProfileSheet(false);
+  let place = state.place ? clone(state.place) : null;
+  const kidRow = k => '<div class="item" data-kid="' + esc(k.id) + '"><input type="text" value="' + esc(k.name) + '" aria-label="Navn" autocomplete="off"><button type="button" class="icon-btn sm" data-rm aria-label="Fjern">' + ICON_X + '</button></div>';
+  openSheet(
+    '<div class="sh-head"><h2>' + (firstRun ? 'Velkommen til Døgn' : 'Profil') + '</h2>' +
+      (firstRun ? '<button type="button" class="btn ghost" data-close>Senere</button>' : '<button type="button" class="btn ghost" data-back>Tilbake</button>') + '</div>' +
+    '<form class="sh-body" id="pf" novalidate>' +
+      (firstRun ? '<section class="grp"><h3>Har du en backup eller startfil?</h3>' +
+        '<label class="btn wide" for="f-start-import">Importer fil</label><input type="file" id="f-start-import" class="vh" accept="application/json,.json">' +
+        '<p class="hint">Ellers setter du opp appen under. Alt kan endres senere under Meny › Profil.</p></section>' : '') +
+      '<section class="grp"><h3>Barn</h3><div class="items" id="p-kids">' + state.kids.map(kidRow).join('') + '</div>' +
+        '<button type="button" class="btn small wide" data-add-kid>Legg til barn</button></section>' +
+      '<section class="grp"><h3>Sted</h3>' +
+        '<p class="hint" id="p-place">' + esc(placeLabel(place)) + '</p>' +
+        '<div class="item"><input type="text" id="p-q" placeholder="Søk etter sted, for eksempel Nesttun" autocomplete="off" aria-label="Søk etter sted"><button type="button" class="btn small" data-search>Søk</button></div>' +
+        '<div class="list" id="p-results" hidden></div>' +
+        '<button type="button" class="btn small wide" data-geo>Bruk posisjonen min</button>' +
+        '<p class="hint">Stedet brukes til soloppgang og solnedgang, og senere til værmelding.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Permisjon</h3><div class="row2">' +
+        '<div class="field"><label for="p-ls">Første dag</label><input type="date" id="p-ls" value="' + state.leave.start + '"></div>' +
+        '<div class="field"><label for="p-le">Siste dag</label><input type="date" id="p-le" value="' + state.leave.end + '"></div>' +
+      '</div></section>' +
+      (firstRun ? '<section class="grp"><h3>Dagsrytme</h3><label for="p-tpl" class="vh">Antall lurer</label><select id="p-tpl">' +
+          Object.values(state.templates).map(t => '<option value="' + esc(t.id) + '">' + esc(t.name) + '</option>').join('') +
+        '</select><p class="hint">Tidene i malen er et utgangspunkt. Juster dem i tidslinjen og lagre i malen.</p></section>' +
+        '<section class="grp"><h3>Partner med turnus</h3>' +
+          '<button type="button" class="chip" data-p-on aria-pressed="false">Nei</button>' +
+          '<div class="field" id="p-pn-f" hidden><label for="p-pn">Navn i appen</label><input id="p-pn" type="text" value="' + esc(partnerName()) + '" autocomplete="off"></div>' +
+          '<p class="hint">Med turnus vet appen hvilke dager dere spiser middag sammen. Selve turnusen importeres under Meny › Partner og turnus.</p></section>' : '') +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>' + (firstRun ? 'Start' : 'Lagre profil') + '</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      q('#pf').addEventListener('submit', e => e.preventDefault());
+      const setPlace = p => { place = p; q('#p-place').textContent = placeLabel(p); q('#p-results').hidden = true; };
+      q('[data-add-kid]').addEventListener('click', () => {
+        q('#p-kids').insertAdjacentHTML('beforeend', kidRow({ id: 'b-' + uid(), name: '' }));
+        q('#p-kids').lastElementChild.querySelector('input').focus();
+      });
+      q('#p-kids').addEventListener('click', e => { const rm = e.target.closest('[data-rm]'); if (rm && q('#p-kids').children.length > 1) rm.closest('.item').remove(); });
+      const search = async () => {
+        const term = q('#p-q').value.trim();
+        if (!term) return;
+        const out = q('#p-results');
+        out.hidden = false; out.innerHTML = '<div><span class="hint">Søker …</span></div>';
+        try {
+          const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=6&language=nb&format=json&name=' + encodeURIComponent(term));
+          const j = await r.json();
+          const res = j.results || [];
+          out.innerHTML = res.length ? res.map((x, i) => '<button type="button" class="row" data-pick="' + i + '"><span class="grow">' + esc(x.name) + '<span class="m">' + esc([x.admin2, x.admin1, x.country].filter(Boolean).join(', ')) + '</span></span></button>').join('')
+            : '<div><span class="hint">Fant ikke stedet. Prøv et annet navn, eller bruk posisjonen din.</span></div>';
+          out.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const x = res[Number(b.dataset.pick)]; setPlace({ name: x.name, lat: x.latitude, lon: x.longitude }); }));
+        } catch (e) { out.innerHTML = '<div><span class="hint">Stedsøk virker ikke uten nett. Prøv igjen senere, eller bruk posisjonen din.</span></div>'; }
+      };
+      q('[data-search]').addEventListener('click', search);
+      q('#p-q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); search(); } });
+      q('[data-geo]').addEventListener('click', () => {
+        if (!navigator.geolocation) { toast('Posisjon er ikke tilgjengelig her.'); return; }
+        navigator.geolocation.getCurrentPosition(
+          p => setPlace({ name: (place && place.name) || 'Hjemme', lat: Math.round(p.coords.latitude * 1e4) / 1e4, lon: Math.round(p.coords.longitude * 1e4) / 1e4 }),
+          () => toast('Fikk ikke tilgang til posisjonen. Søk etter stedet i stedet.'),
+          { timeout: 10000 });
+      });
+      let pOn = false;
+      const pBtn = q('[data-p-on]');
+      if (pBtn) pBtn.addEventListener('click', () => { pOn = !pOn; pBtn.setAttribute('aria-pressed', pOn); pBtn.textContent = pOn ? 'Ja' : 'Nei'; q('#p-pn-f').hidden = !pOn; });
+      const imp = q('#f-start-import');
+      if (imp) imp.addEventListener('change', e => { const f = e.target.files[0]; if (f) importData(f); e.target.value = ''; });
+      q('[data-save]').addEventListener('click', () => {
+        const kids = [...sheet.querySelectorAll('#p-kids .item')].map(r => ({ id: r.dataset.kid, name: r.querySelector('input').value.trim() })).filter(k => k.name);
+        if (!kids.length) { toast('Skriv inn minst ett navn.'); return; }
+        const ls = q('#p-ls').value, le = q('#p-le').value;
+        if (!ls || !le || le < ls) { toast('Sjekk permisjonsdatoene.'); return; }
+        const o = { kids, place, leave: { start: ls, end: le } };
+        if (firstRun) { o.templateId = q('#p-tpl').value; o.partnerEnabled = pOn; o.partnerName = pOn ? (q('#p-pn').value.trim() || 'Partner') : null; }
+        closeSheet();
+        mutate(firstRun ? 'Klar. God permisjon!' : 'Profil lagret', () => applySetup(o));
+        if (firstRun) { view = todayISO(); render(); scrollToNow(); }
+      });
+    });
+}
+
+/* ---------- automatisk backup til GitHub (valgfritt) ---------- */
+const PUSH_INTERVAL = 60 * 60 * 1000;
+const sync = { cfg: null, timer: null, busy: false };
+const syncOn = () => !!(sync.cfg && sync.cfg.token && sync.cfg.owner && sync.cfg.repo);
+async function loadSync() {
+  let c = null;
+  try { c = await store.getKey('sync'); } catch (e) {}
+  sync.cfg = c || null;
+}
+function saveSync() { store.setKey('sync', sync.cfg); }
+function ghUrl() {
+  const c = sync.cfg;
+  return '/repos/' + encodeURIComponent(c.owner) + '/' + encodeURIComponent(c.repo) + '/contents/' + (c.path || 'dogn-backup.json').split('/').map(encodeURIComponent).join('/');
+}
+async function gh(method, url, body, accept) {
+  const headers = { 'Authorization': 'Bearer ' + sync.cfg.token, 'Accept': accept || 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  if (body) headers['Content-Type'] = 'application/json';
+  return fetch('https://api.github.com' + url, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
+}
+function ghError(r) {
+  const m = { 401: 'Nøkkelen er ugyldig eller utløpt.', 403: 'Nøkkelen mangler tilgang til repoet.', 404: 'Fant ikke repoet eller filen. Sjekk eier, navn og at nøkkelen gjelder dette repoet.', 409: 'Konflikt ved lagring. Prøv igjen.', 422: 'GitHub avviste filen.' };
+  return new Error(m[r.status] || 'GitHub svarte med feilkode ' + r.status + '.');
+}
+function b64enc(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+async function pushNow() {
+  if (!syncOn() || sync.busy) return false;
+  sync.busy = true;
+  clearTimeout(sync.timer);
+  let ok = false;
+  try {
+    let sha = null;
+    const g = await gh('GET', ghUrl());
+    if (g.ok) sha = (await g.json()).sha;
+    else if (g.status !== 404) throw ghError(g);
+    const body = { message: 'Døgn backup ' + new Date().toISOString().slice(0, 16).replace('T', ' '), content: b64enc(JSON.stringify(state)) };
+    if (sha) body.sha = sha;
+    const p = await gh('PUT', ghUrl(), body);
+    if (!p.ok) throw ghError(p);
+    Object.assign(sync.cfg, { lastPush: new Date().toISOString(), lastError: '', dirty: false });
+    ok = true;
+  } catch (e) {
+    sync.cfg.lastError = e instanceof TypeError ? 'Fikk ikke kontakt med GitHub. Prøver igjen senere.' : (e.message || 'Ukjent feil.');
+  } finally {
+    sync.busy = false;
+    saveSync();
+    if (sync.cfg && sync.cfg.dirty) scheduleSync();
+    renderTimeline();
+    if (sheetOpen() && reopen === openSyncSheet) openSyncSheet();
+  }
+  return ok;
+}
+function scheduleSync() {
+  if (!syncOn() || !sync.cfg.dirty) return;
+  const last = sync.cfg.lastPush ? Date.parse(sync.cfg.lastPush) : 0;
+  const wait = Math.max(10000, last + PUSH_INTERVAL - Date.now());
+  clearTimeout(sync.timer);
+  sync.timer = setTimeout(pushNow, wait);
+}
+function markDirty() {
+  if (!syncOn()) return;
+  if (!sync.cfg.dirty) { sync.cfg.dirty = true; saveSync(); }
+  scheduleSync();
+}
+async function connectSync(owner, repo, token, path) {
+  sync.cfg = { owner, repo, token, path: path || 'dogn-backup.json', lastPush: '', lastError: '', dirty: true };
+  const r = await gh('GET', '/repos/' + encodeURIComponent(owner) + '/' + encodeURIComponent(repo));
+  if (!r.ok) { const e = ghError(r); sync.cfg = null; throw e; }
+  const info = await r.json();
+  saveSync();
+  const ok = await pushNow();
+  return { ok, isPublic: info.private === false };
+}
+async function pullSync() {
+  const r = await gh('GET', ghUrl(), null, 'application/vnd.github.raw+json');
+  if (!r.ok) throw ghError(r);
+  return migrate(JSON.parse(await r.text()));
+}
+const fmtStamp = isoStr => { const d = new Date(isoStr); return (iso(d) === todayISO() ? 'i dag' : fmtDateShort(iso(d))) + ' kl. ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+
+function openSyncSheet() {
+  reopen = openSyncSheet;
+  const c = sync.cfg;
+  const le = state.meta.lastExport;
+  openSheet(
+    headHTML('Backup', true) +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Automatisk til GitHub</h3>' +
+      (syncOn() ?
+        '<p class="hint">Koblet til <strong>' + esc(c.owner + '/' + c.repo) + '</strong>, fil ' + esc(c.path) + '.</p>' +
+        '<p class="hint">' + (c.lastPush ? 'Sist lagret ' + fmtStamp(c.lastPush) + '.' : 'Ikke lagret ennå.') + (c.dirty ? ' Nye endringer venter.' : '') + '</p>' +
+        (c.lastError ? '<p class="hint warn-text">' + esc(c.lastError) + '</p>' : '') +
+        '<button type="button" class="btn primary wide" data-push>Lagre nå</button>' +
+        '<button type="button" class="btn wide" data-pull>Hent backup fra GitHub</button>' +
+        '<div class="confirm" id="s-confirm" hidden><p class="hint">Erstatte alt i appen med backupen fra GitHub?</p><button type="button" class="btn small danger" data-pull-yes>Erstatt</button></div>' +
+        '<button type="button" class="btn link" data-disconnect>Koble fra</button>'
+      :
+        '<p class="hint">Valgfritt. Appen lagrer da en kopi i et privat GitHub-repo når du har gjort endringer, høyst én gang i timen, og når appen åpnes. Oppsett står i LESMEG.</p>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="s-owner">GitHub-bruker</label><input id="s-owner" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"></div>' +
+          '<div class="field"><label for="s-repo">Repo</label><input id="s-repo" type="text" value="dogn-data" autocomplete="off" autocapitalize="off" spellcheck="false"></div>' +
+        '</div>' +
+        '<div class="field"><label for="s-token">Tilgangsnøkkel</label><input id="s-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></div>' +
+        '<p class="hint">Nøkkelen lagres bare på denne telefonen og kommer ikke med i backupfiler.</p>' +
+        '<button type="button" class="btn primary wide" data-connect>Koble til</button>' +
+        '<p class="hint">Uten tilkobling står «Ta backup» som gjøremål hver søndag kveld.</p>'
+      ) +
+      '</section>' +
+      '<section class="grp"><h3>Backup til fil</h3>' +
+        '<p class="hint">' + (le ? 'Siste fil ' + fmtDateShort(le) + '.' : 'Ingen fil eksportert ennå.') + ' Lagre filen i iCloud Drive eller Filer.</p>' +
+        '<button type="button" class="btn wide" data-export>Eksporter backup</button>' +
+        '<label class="btn wide" for="m-import">Importer backup</label><input type="file" id="m-import" class="vh" accept="application/json,.json">' +
+      '</section>' +
+    '</div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      q('[data-export]').addEventListener('click', exportData);
+      q('#m-import').addEventListener('change', e => { const f = e.target.files[0]; if (f) importData(f); e.target.value = ''; });
+      const on = f => { const el = q(f); return el; };
+      if (on('[data-push]')) q('[data-push]').addEventListener('click', async () => { q('[data-push]').textContent = 'Lagrer …'; const ok = await pushNow(); toast(ok ? 'Lagret i GitHub' : 'Lagring feilet'); });
+      if (on('[data-pull]')) {
+        q('[data-pull]').addEventListener('click', () => { q('#s-confirm').hidden = false; });
+        q('[data-pull-yes]').addEventListener('click', async () => {
+          try { const obj = await pullSync(); closeSheet(); mutate('Backup hentet fra GitHub', () => { state = obj; }); }
+          catch (e) { toast(e instanceof TypeError ? 'Fikk ikke kontakt med GitHub.' : e.message); }
+        });
+      }
+      if (on('[data-disconnect]')) q('[data-disconnect]').addEventListener('click', () => { clearTimeout(sync.timer); sync.cfg = null; saveSync(); openSyncSheet(); toast('Koblet fra GitHub'); });
+      if (on('[data-connect]')) q('[data-connect]').addEventListener('click', async () => {
+        const owner = q('#s-owner').value.trim(), repo = q('#s-repo').value.trim(), token = q('#s-token').value.trim();
+        if (!owner || !repo || !token) { toast('Fyll inn bruker, repo og nøkkel.'); return; }
+        q('[data-connect]').textContent = 'Kobler til …';
+        try {
+          const res = await connectSync(owner, repo, token);
+          openSyncSheet();
+          toast(res.isPublic ? 'Koblet til, men repoet er offentlig. Gjør det privat på GitHub.' : (res.ok ? 'Koblet til og lagret' : 'Koblet til, men første lagring feilet'));
+        } catch (e) { q('[data-connect]').textContent = 'Koble til'; toast(e instanceof TypeError ? 'Fikk ikke kontakt med GitHub.' : e.message); }
+      });
+    });
+}
+
+/* ---------- vær (Open-Meteo, med MET Nordic-modellen i Norden) ---------- */
+const WMO = { 0: 'klart', 1: 'lettskyet', 2: 'delvis skyet', 3: 'overskyet', 45: 'tåke', 48: 'tåke', 51: 'lett yr', 53: 'yr', 55: 'tett yr', 56: 'underkjølt yr', 57: 'underkjølt yr',
+  61: 'lett regn', 63: 'regn', 65: 'kraftig regn', 66: 'underkjølt regn', 67: 'underkjølt regn', 71: 'lett snø', 73: 'snø', 75: 'kraftig snø', 77: 'snøkorn',
+  80: 'lette regnbyger', 81: 'regnbyger', 82: 'kraftige regnbyger', 85: 'snøbyger', 86: 'kraftige snøbyger', 95: 'torden', 96: 'torden og hagl', 99: 'torden og hagl' };
+const wx = { data: null, index: null, loading: false };
+function wxSetData(d) {
+  wx.data = d;
+  wx.index = new Map();
+  if (d && d.time) d.time.forEach((t, i) => wx.index.set(t, i));
+}
+async function loadWeatherCache() { try { wxSetData(await store.getKey('weather')); } catch (e) {} }
+function wxFresh() {
+  const p = state.place, d = wx.data;
+  return !!(p && d && d.lat === p.lat && d.lon === p.lon && Date.now() - Date.parse(d.fetched) < 60 * 60 * 1000);
+}
+async function refreshWeather(force) {
+  const p = state && state.place;
+  if (!p || wx.loading || (!force && wxFresh())) return;
+  wx.loading = true;
+  try {
+    const nordic = p.lat > 54 && p.lat < 72 && p.lon > 3 && p.lon < 33;
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + p.lat + '&longitude=' + p.lon +
+      '&hourly=temperature_2m,precipitation,weather_code,wind_speed_10m&wind_speed_unit=ms&timezone=auto&past_days=1&forecast_days=10' +
+      (nordic ? '&models=metno_seamless' : '');
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('vær ' + r.status);
+    const h = (await r.json()).hourly;
+    wxSetData({ lat: p.lat, lon: p.lon, fetched: new Date().toISOString(), time: h.time, t: h.temperature_2m, p: h.precipitation, c: h.weather_code, w: h.wind_speed_10m });
+    store.setKey('weather', wx.data);
+    renderTimeline();
+  } catch (e) { /* uten nett: bruk det som ligger lagret */ }
+  finally { wx.loading = false; }
+}
+/* Oppsummerer været for et tidsrom samme dag (minutter fra midnatt). */
+function wxFor(date, s, e) {
+  const d = wx.data;
+  if (!d || !wx.index || !state.place || d.lat !== state.place.lat || d.lon !== state.place.lon) return null;
+  const rows = [];
+  for (let h = Math.floor(s / 60); h < Math.max(Math.floor(s / 60) + 1, Math.ceil(e / 60)); h++) {
+    const i = wx.index.get(date + 'T' + pad(Math.min(23, h)) + ':00');
+    if (i != null && d.t[i] != null) rows.push(i);
+  }
+  if (!rows.length) return null;
+  const t = rows.map(i => d.t[i]), p = rows.map(i => d.p[i] || 0), w = rows.map(i => d.w[i] || 0), c = rows.map(i => d.c[i] || 0);
+  const sum = p.reduce((a, b) => a + b, 0);
+  return { tmin: Math.round(Math.min(...t)), tmax: Math.round(Math.max(...t)), precip: Math.round(sum * 10) / 10, pmax: Math.max(...p), wind: Math.round(Math.max(...w)), code: Math.max(...c) };
+}
+const isWet = w => !!w && (w.precip >= 1 || w.pmax >= 0.5);
+const isWindy = w => !!w && w.wind >= 10;
+function wxText(w) {
+  const temp = w.tmin === w.tmax ? w.tmin + '°' : w.tmin + '–' + w.tmax + '°';
+  const parts = [temp, WMO[w.code] || ''];
+  if (w.precip > 0) parts.push(String(w.precip).replace('.', ',') + ' mm');
+  parts.push('vind ' + w.wind + ' m/s');
+  return parts.filter(Boolean).join(', ');
+}
+
+/* ---------- aktiviteter ---------- */
+const TRAVEL = { hjemme: 'hjemme', gange: 'gå/vogn', kollektiv: 'buss/bybane', bil: 'bil' };
+function seedActivities() {
+  const A = (id, name, kind, minutes, x = {}) => Object.assign({ id, name, kind, minutes, weather: kind === 'ute' ? 'any' : 'any', travel: 'hjemme', where: '', note: '', url: '', days: [], from: '', to: '' }, x);
+  return [
+    A('a-gulv',    'Gulvlek med klosser og bøker', 'inne', 30),
+    A('a-sang',    'Sang, rim og regler',          'inne', 15),
+    A('a-musikk',  'Musikk og dans i stua',        'inne', 15),
+    A('a-hinder',  'Krabbeløype med puter',        'inne', 20, { note: 'Puter, madrass og en tunnel av stoler.' }),
+    A('a-skuff',   'Utforske en trygg kjøkkenskuff', 'inne', 20, { note: 'Bokser, sleiver og lokk.' }),
+    A('a-vann',    'Vannlek ved vasken',           'inne', 20, { note: 'Kopper og sil. Håndkle på gulvet.' }),
+    A('a-tur',     'Trilletur i nærområdet',       'ute',  60, { travel: 'gange', note: 'Regntrekk og ullteppe.' }),
+    A('a-leke',    'Lekeplass',                    'ute',  45, { weather: 'dry', travel: 'gange', note: 'Huske og sandkasse.' }),
+    A('a-handel',  'Handletur med vogn',           'inne', 45, { travel: 'gange', note: 'Fint på regnværsdager.' }),
+    A('a-bibl',    'Biblioteket',                  'inne', 45, { travel: 'gange', note: 'Bildebøker og lekekrok. Sjekk åpningstider.' }),
+    A('a-besok',   'Besøk eller lekeavtale',       'inne', 90),
+  ];
+}
+function lastPicked(aid, before) {
+  let last = null;
+  for (const [d, rec] of Object.entries(state.days)) {
+    if (d >= before || !rec.picks) continue;
+    if (Object.values(rec.picks).includes(aid) && (!last || d > last)) last = d;
+  }
+  return last;
+}
+function actFits(a, date, s, e) {
+  if (a.days && a.days.length && !a.days.includes(isoWd(date))) return false;
+  const need = Math.min(Number(a.minutes) || 30, 120);
+  let from = s, to = e;
+  if (a.from) from = Math.max(from, toMin(a.from));
+  if (a.to) to = Math.min(to, toMin(a.to));
+  return to - from >= Math.min(need, e - s) - 5 && (e - s) + 15 >= Math.min(need, 60);
+}
+/* Rangerer aktiviteter for en våkenbolk ut fra vær, dagslys, faste tider og hva som er gjort nylig. */
+function suggest(date, s, e) {
+  const w = wxFor(date, s, e);
+  const sun = sunTimes(date);
+  const light = sun.rise == null ? e - s : Math.max(0, Math.min(e, sun.set) - Math.max(s, sun.rise));
+  const wet = isWet(w), windy = isWindy(w);
+  const out = [];
+  for (const a of state.activities) {
+    if (!actFits(a, date, s, e)) continue;
+    let score = 0;
+    if (a.kind === 'ute') {
+      if (light < 30) continue;
+      if (wet && a.weather === 'dry') continue;
+      if (w) score += wet ? -2 : 3;
+      if (windy) score -= 1.5;
+      if (light >= Math.min(90, e - s)) score += 0.5;
+    } else if (wet) score += 1.5;
+    if (a.days && a.days.length) score += 2.5;
+    if (a.travel === 'hjemme' && e - s >= 90) score -= 0.5;
+    if (a.travel !== 'hjemme' && e - s < 45) score -= 4;
+    if (a.travel === 'bil') score -= 0.6; else if (a.travel === 'kollektiv') score -= 0.3;
+    const last = lastPicked(a.id, date);
+    score += last ? Math.min(diffDays(last, date), 14) / 7 : 1.5;
+    out.push({ a, score });
+  }
+  out.sort((x, y) => y.score - x.score || x.a.name.localeCompare(y.a.name));
+  return { w, light, list: out.map(o => o.a) };
+}
+/* Tre forslag med bredde: et fast tilbud i dag, noe ute og noe inne når det er mulig. */
+function pickTop(list, n) {
+  const out = [];
+  const add = a => { if (a && !out.includes(a) && out.length < n) out.push(a); };
+  add(list.find(a => a.days && a.days.length));
+  add(list.find(a => a.kind === 'ute'));
+  add(list.find(a => a.kind === 'inne'));
+  list.forEach(add);
+  return out.sort((x, y) => list.indexOf(x) - list.indexOf(y));
+}
+function actMeta(a) {
+  const parts = [a.kind, (a.minutes || 30) + ' min', TRAVEL[a.travel] || ''];
+  if (a.days && a.days.length) parts.push(a.days.slice().sort().map(d => WD_SHORT[d - 1].toLowerCase()).join('/') + (a.from ? ' ' + a.from + (a.to ? '–' + a.to : '') : ''));
+  return parts.filter(Boolean).join(', ');
+}
+function activityHTML(date, b, s, e, phase) {
+  const d = state.days[date];
+  const pickedId = d && d.picks && d.picks[b.id];
+  const picked = pickedId && state.activities.find(a => a.id === pickedId);
+  const res = suggest(date, s, e);
+  let h = '';
+  if (res.w) h += '<p class="wx"><span class="wx-k">vær</span>' + esc(wxText(res.w)) + (res.light < 30 && (e - s) >= 30 ? ', mørkt' : '') + '</p>';
+  if (picked) {
+    h += '<div class="pick on"><div class="pk-h"><span class="sn">' + esc(picked.name) + '</span><button type="button" class="btn small ghost" data-act="unpick">Bytt</button></div>' +
+      '<span class="sm">' + esc(actMeta(picked)) + '</span>' +
+      (picked.where ? '<span class="sm">' + esc(picked.where) + '</span>' : '') +
+      (picked.note ? '<span class="sm">' + esc(picked.note) + '</span>' : '') +
+      (picked.url ? '<a class="sm lnk" href="' + esc(picked.url) + '" target="_blank" rel="noopener">Mer informasjon</a>' : '') + '</div>';
+    return h;
+  }
+  if (phase === 'past' || date < todayISO()) return h;
+  const top = pickTop(res.list, 3);
+  if (!top.length) return h;
+  h += '<div class="sugg"><span class="rl">forslag</span>' + top.map(a =>
+    '<button type="button" class="sg" data-act="pick" data-aid="' + esc(a.id) + '"><span class="sn">' + esc(a.name) + '</span><span class="sm">' + esc(actMeta(a)) + '</span></button>').join('') +
+    (res.list.length > 3 ? '<button type="button" class="btn small ghost more" data-act="more">Flere forslag</button>' : '') + '</div>';
+  return h;
+}
+
+function openSuggestSheet(date, blockId) {
+  const blocks = blocksFor(date);
+  const i = blocks.findIndex(x => x.id === blockId);
+  if (i < 0) return;
+  const s = toMin(blocks[i].start), e = endOf(blocks, i);
+  const res = suggest(date, s, e);
+  const rest = state.activities.filter(a => !res.list.includes(a));
+  reopen = null;
+  const row = a => '<button type="button" class="row" data-pick="' + esc(a.id) + '"><span class="grow">' + esc(a.name) + '<span class="m">' + esc(actMeta(a)) + '</span></span><span class="r">›</span></button>';
+  openSheet(
+    headHTML('Forslag ' + blocks[i].start + '–' + toHM(e)) +
+    '<div class="sh-body">' +
+      (res.w ? '<p class="hint">' + esc(wxText(res.w)) + '</p>' : '<p class="hint">Ingen værmelding for dette tidspunktet.</p>') +
+      '<section class="grp"><h3>Passer nå</h3><div class="list">' + (res.list.map(row).join('') || '<div><span class="hint">Ingen treff.</span></div>') + '</div></section>' +
+      (rest.length ? '<section class="grp"><h3>Passer mindre godt</h3><div class="list">' + rest.map(row).join('') + '</div><p class="hint">Feil ukedag, for kort tid, mørkt eller for vått.</p></section>' : '') +
+      '<button type="button" class="btn wide" data-lib>Åpne aktivitetsbiblioteket</button>' +
+    '</div>',
+    sheet => {
+      sheet.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
+        const d = dayRec(date);
+        (d.picks ??= {})[blockId] = b.dataset.pick;
+        persist(); closeSheet(); renderTimeline();
+      }));
+      sheet.querySelector('[data-lib]').addEventListener('click', openActivitiesSheet);
+    });
+}
+
+function openActivitiesSheet() {
+  reopen = openActivitiesSheet;
+  const acts = [...state.activities].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'ute' ? 1 : -1) || a.name.localeCompare(b.name));
+  const list = kind => acts.filter(a => a.kind === kind).map(a => '<button type="button" class="row" data-aid="' + esc(a.id) + '"><span class="grow">' + esc(a.name) +
+    '<span class="m">' + esc(actMeta(a)) + '</span></span><span class="r">›</span></button>').join('') || '<div><span class="hint">Ingen ennå.</span></div>';
+  openSheet(
+    headHTML('Aktiviteter', true) +
+    '<div class="sh-body">' +
+      '<section class="grp"><h3>Inne</h3><div class="list">' + list('inne') + '</div></section>' +
+      '<section class="grp"><h3>Ute</h3><div class="list">' + list('ute') + '</div></section>' +
+      '<button type="button" class="btn primary wide" data-new>Ny aktivitet</button>' +
+      '<p class="hint">Forslagene i våkenbolkene velges ut fra været, dagslyset, faste tider og hva dere har gjort nylig. Værdata fra <a class="lnk" href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> og MET Norge (CC BY 4.0).</p>' +
+    '</div>',
+    sheet => {
+      sheet.querySelectorAll('[data-aid]').forEach(b => b.addEventListener('click', () => openActivitySheet(b.dataset.aid)));
+      sheet.querySelector('[data-new]').addEventListener('click', () => openActivitySheet(null));
+    });
+}
+
+function openActivitySheet(id) {
+  const isNew = !id;
+  const src = isNew ? { id: 'a-' + uid(), name: '', kind: 'inne', minutes: 30, weather: 'any', travel: 'hjemme', where: '', note: '', url: '', days: [], from: '', to: '' } : state.activities.find(a => a.id === id);
+  if (!src) return;
+  const a = clone(src);
+  a.days = a.days || [];
+  reopen = null;
+  openSheet(
+    '<div class="sh-head"><h2>' + (isNew ? 'Ny aktivitet' : 'Rediger aktivitet') + '</h2><button type="button" class="btn ghost" data-goback>Tilbake</button></div>' +
+    '<form class="sh-body" id="af" novalidate>' +
+      '<section class="grp"><h3>Aktivitet</h3>' +
+        '<div class="field"><label for="a-name">Navn</label><input id="a-name" type="text" value="' + esc(a.name) + '" autocomplete="off"></div>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="a-kind">Inne eller ute</label><select id="a-kind"><option value="inne"' + (a.kind === 'inne' ? ' selected' : '') + '>Inne</option><option value="ute"' + (a.kind === 'ute' ? ' selected' : '') + '>Ute</option></select></div>' +
+          '<div class="field"><label for="a-min">Varighet (min)</label><input id="a-min" type="number" inputmode="numeric" min="5" max="300" value="' + a.minutes + '"></div>' +
+        '</div>' +
+        '<div class="row2">' +
+          '<div class="field" id="a-w-f"><label for="a-w">Vær</label><select id="a-w"><option value="any"' + (a.weather !== 'dry' ? ' selected' : '') + '>Tåler regn</option><option value="dry"' + (a.weather === 'dry' ? ' selected' : '') + '>Trenger opphold</option></select></div>' +
+          '<div class="field"><label for="a-tr">Reise</label><select id="a-tr">' + Object.entries(TRAVEL).map(([k, v]) => '<option value="' + k + '"' + (k === a.travel ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></div>' +
+        '</div>' +
+      '</section>' +
+      '<section class="grp"><h3>Faste tider</h3>' +
+        '<div class="chips">' + WD_SHORT.map((w, i) => '<button type="button" class="chip" data-wd="' + (i + 1) + '" aria-pressed="' + a.days.includes(i + 1) + '">' + w + '</button>').join('') + '</div>' +
+        '<div class="row2">' +
+          '<div class="field"><label for="a-from">Fra</label><input id="a-from" type="time" value="' + (a.from || '') + '"></div>' +
+          '<div class="field"><label for="a-to">Til</label><input id="a-to" type="time" value="' + (a.to || '') + '"></div>' +
+        '</div>' +
+        '<p class="hint">For tilbud med åpningstider, som babysang eller åpen barnehage. La stå tomt hvis aktiviteten passer når som helst.</p>' +
+      '</section>' +
+      '<section class="grp"><h3>Detaljer</h3>' +
+        '<div class="field"><label for="a-where">Sted eller adresse</label><input id="a-where" type="text" value="' + esc(a.where) + '" autocomplete="off"></div>' +
+        '<div class="field"><label for="a-note">Notat</label><textarea id="a-note" rows="2">' + esc(a.note) + '</textarea></div>' +
+        '<div class="field"><label for="a-url">Lenke</label><input id="a-url" type="text" inputmode="url" value="' + esc(a.url) + '" autocomplete="off" autocapitalize="off" placeholder="https://"></div>' +
+      '</section>' +
+      (isNew ? '' : '<section class="grp quiet"><button type="button" class="btn link" data-del>Slett aktivitet</button></section>') +
+    '</form>' +
+    '<div class="sh-foot"><button type="button" class="btn primary grow" data-save>Lagre aktivitet</button></div>',
+    sheet => {
+      const q = s => sheet.querySelector(s);
+      const sync = () => { q('#a-w-f').hidden = q('#a-kind').value !== 'ute'; };
+      sync(); q('#a-kind').addEventListener('change', sync);
+      q('[data-goback]').addEventListener('click', openActivitiesSheet);
+      q('#af').addEventListener('submit', e => e.preventDefault());
+      sheet.querySelectorAll('[data-wd]').forEach(c => c.addEventListener('click', () => c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') !== 'true')));
+      const del = q('[data-del]');
+      if (del) del.addEventListener('click', () => { mutate('Aktivitet slettet', () => { state.activities = state.activities.filter(x => x.id !== a.id); }); openActivitiesSheet(); });
+      q('[data-save]').addEventListener('click', () => {
+        const name = q('#a-name').value.trim();
+        if (!name) { q('#a-name').focus(); return; }
+        const url = q('#a-url').value.trim();
+        Object.assign(a, {
+          name, kind: q('#a-kind').value, minutes: Math.max(5, parseInt(q('#a-min').value, 10) || 30),
+          weather: q('#a-kind').value === 'ute' ? q('#a-w').value : 'any', travel: q('#a-tr').value,
+          days: [...sheet.querySelectorAll('[data-wd][aria-pressed="true"]')].map(c => Number(c.dataset.wd)),
+          from: q('#a-from').value, to: q('#a-to').value,
+          where: q('#a-where').value.trim(), note: q('#a-note').value.trim(),
+          url: /^https?:\/\//i.test(url) ? url : (url ? 'https://' + url : '')
+        });
+        mutate('Aktivitet lagret', () => {
+          const i = state.activities.findIndex(x => x.id === a.id);
+          if (i >= 0) state.activities[i] = a; else state.activities.push(a);
+        });
+        openActivitiesSheet();
+      });
+    });
+}
+
+/* ---------- melding med angre ---------- */
+let toastTimer = null;
+function toast(msg, undo) {
+  const t = $('#toast');
+  t.innerHTML = '<span>' + esc(msg) + '</span>' + (undo ? '<button type="button" id="undo">Angre</button>' : '');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), undo ? 7000 : 2600);
+}
+$('#toast').addEventListener('click', e => {
+  if (e.target.id !== 'undo' || !undoSnap) return;
+  state = JSON.parse(undoSnap);
+  undoSnap = null;
+  persist();
+  render();
+  if (sheetOpen() && reopen) reopen();
+  toast('Angret');
+});
+
+/* ---------- hendelser ---------- */
+$('#prev').addEventListener('click', () => go(-1));
+$('#next').addEventListener('click', () => go(1));
+$('#menu').addEventListener('click', openMenu);
+$('#sub').addEventListener('click', e => { if (e.target.id === 'go-today') go(0); });
+$('#timeline').addEventListener('click', e => {
+  const qs = e.target.closest('[data-qshift]');
+  if (qs) {
+    const id = qs.closest('.blk').dataset.id;
+    const b = blocksFor(view).find(x => x.id === id);
+    if (!b) return;
+    const delta = qs.dataset.qshift === 'now' ? nowMin() - toMin(b.start) : Number(qs.dataset.qshift);
+    if (!delta) { toast(b.title + ' starter allerede nå'); return; }
+    mutate((b.title || 'Rubrikken') + ' flyttet ' + (delta > 0 ? '+' : '−') + fmtDur(Math.abs(delta)), () => shiftFrom(id, delta));
+    if (qs.dataset.qshift === 'now') { shiftOpen = null; renderTimeline(); }
+    return;
+  }
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const a = el.dataset.act;
+  const blk = el.closest('.blk');
+  if (a === 'expand') { expanded.add(blk.dataset.id); renderTimeline(); }
+  else if (a === 'time') { shiftOpen = shiftOpen === blk.dataset.id ? null : blk.dataset.id; renderTimeline(); }
+  else if (a === 'edit') openBlockSheet(blk.dataset.id);
+  else if (a === 'new') openBlockSheet(null);
+  else if (a === 'export') exportData();
+  else if (a === 'log') openLogSheet(view);
+  else if (a === 'dish') openSwapSheet(view, el.dataset.meal, null);
+  else if (a === 'wife') {
+    const ph = partnerHome(view);
+    const d = dayRec(view);
+    const next = !ph.home;
+    if (ph.ps && ph.ps.home === next) delete d.wife; else d.wife = next;
+    persist(); renderTimeline();
+  }
+  else if (a === 'pick') { const d = dayRec(view); (d.picks ??= {})[blk.dataset.id] = el.dataset.aid; persist(); renderTimeline(); }
+  else if (a === 'unpick') { const d = dayRec(view); if (d.picks) delete d.picks[blk.dataset.id]; persist(); renderTimeline(); }
+  else if (a === 'more') openSuggestSheet(view, blk.dataset.id);
+  else if (a === 'sync') pushNow().then(ok => toast(ok ? 'Lagret i GitHub' : 'Lagring feilet'));
+  else if (a === 'rate') cycleRate(view, blk.dataset.id, el.dataset.kid);
+  else if (a === 'sleep-now') {
+    const kids = el.dataset.kid === 'all' ? state.kids.map(k => k.id) : [el.dataset.kid];
+    let msg = '';
+    mutate('…', () => { msg = logSleepNow(view, blk.dataset.id, kids); });
+    toast(msg, true);
+  }
+  else if (a === 'night-now') {
+    const kids = el.dataset.kid === 'all' ? state.kids.map(k => k.id) : [el.dataset.kid];
+    let msg = '';
+    mutate('…', () => { msg = logNightNow(view, blk.dataset.id, kids); });
+    toast(msg, true);
+  }
+  else if (a === 'sleep-edit') openNapSheet(view, blk.dataset.id, el.dataset.kid, null);
+});
+$('#timeline').addEventListener('change', e => {
+  const cb = e.target.closest('input[data-done]');
+  if (cb) toggleDone(view, cb.dataset.done, cb.checked);
+});
+/* sveip til sidene for å bytte dag */
+(() => {
+  let sx = 0, sy = 0, st = 0;
+  const tl = $('#timeline');
+  tl.addEventListener('touchstart', e => { const p = e.touches[0]; sx = p.clientX; sy = p.clientY; st = Date.now(); }, { passive: true });
+  tl.addEventListener('touchend', e => {
+    const p = e.changedTouches[0], dx = p.clientX - sx, dy = p.clientY - sy;
+    if (Date.now() - st < 600 && Math.abs(dx) > 70 && Math.abs(dy) < 45) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
+
+function tick() {
+  if (!state) return;
+  refreshWeather();
+  const t = todayISO();
+  if (t !== lastToday) {
+    if (view === lastToday) { view = t; expanded.clear(); }
+    lastToday = t;
+    render(); scrollToNow();
+  } else if (view === t) render();
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); else { tick(); if (syncOn() && sync.cfg.dirty && Date.now() - Date.parse(sync.cfg.lastPush || 0) > PUSH_INTERVAL) pushNow(); } });
+window.addEventListener('pagehide', flush);
+window.addEventListener('resize', renderHeader);
+
+/* ---------- oppstart ---------- */
+(async () => {
+  await store.init();
+  await loadSync();
+  await loadWeatherCache();
+  let saved = null;
+  try { saved = await store.get(); } catch (e) {}
+  try { state = saved ? migrate(saved) : seed(); } catch (e) { state = seed(); }
+  persist();
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch (e) {}
+  render();
+  scrollToNow();
+  if (!state.meta.setupDone) setTimeout(() => openProfileSheet(true), 300);
+  if (syncOn() && sync.cfg.dirty) setTimeout(pushNow, 3000);
+  refreshWeather();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderHeader);
+  setInterval(tick, 30000);
+  try {
+    if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top === window.self) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
