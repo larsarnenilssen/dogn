@@ -82,7 +82,7 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 
 ## 7. Daglig bruk
 
-- **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge guttene har vært våkne, og én knapp for det du mest sannsynlig skal gjøre nå (sovnet, våknet eller «starter nå»). Trykk på teksten for å hoppe til bolken.
+- **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge guttene har vært våkne, og en knapp for sovnet eller våknet når det er aktuelt. Ved siden av neste bolk står en liten «start nå» som krever to trykk, fordi den flytter resten av dagen. Trykk på teksten for å hoppe til bolken.
 - **Pluss-knappen** nede til høyre legger til noe å huske (i neste lur, i kveld eller i morgen), en avtale eller en bolk.
 - **Nullstilling** viser «i morgen»: vær, klær, vakt, middag, første lur, faste tilbud, avtaler og gjøremål. Der kan du også dele en kort dagsrapport.
 - **Klær og pakkeliste** vises når dere skal ut. Pakkelisten redigeres under Meny → Aktivitetsbibliotek.

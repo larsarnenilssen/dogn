@@ -227,7 +227,12 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
 .ch-tip{position:absolute;top:0;transform:translateX(-50%);background:var(--panel-hi);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:12.5px;display:flex;flex-direction:column;gap:2px;pointer-events:none;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,.25)}
 .tbl .late{color:var(--late)}
 .endrow{flex-wrap:wrap}
-.nowbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;border-top:1px solid var(--line-soft);padding-top:10px}
+.nowbar{grid-column:1/-1;display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line-soft);padding-top:10px}
+.nb-row{display:flex;align-items:center;gap:10px}
+.nb-row2{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:30px}
+.nb-start{font:500 12.5px var(--mono);color:var(--muted);background:none;border:1px solid var(--line);border-radius:4px;padding:4px 8px;min-height:30px;cursor:pointer;white-space:nowrap}
+.nb-start.armed{color:var(--accent);border-color:var(--accent);white-space:normal;text-align:right}
+.nb-start:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .nb-txt{all:unset;box-sizing:border-box;flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;cursor:pointer}
 .nb-txt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .nb-1{font-size:14px;font-weight:600;color:var(--accent);overflow-wrap:anywhere}
@@ -331,7 +336,7 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--accent);outline-
    Datastrukturen har versjonsnummer (DATA_VERSION) slik at
    nye versjoner av appen kan oppgradere lagrede data trygt.
    ============================================================ */
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.8.1';
 const DATA_VERSION = 6;
 const DAY_END = 22 * 60;                      // siste rubrikk varer til kl. 22
 
@@ -2868,13 +2873,13 @@ function nowModel() {
   if (!act && next && next.type === 'sleep' && toMin(next.start) - now <= 45 && napState(next).every(x => x === 'none')) {
     act = { kind: 'sleep', block: next.id, kids: ids, label: groupWord() + ' sovnet' };
   }
-  if (!act && next) act = { kind: 'start', block: next.id, label: (next.title || TYPES[next.type]) + ' starter nå' };
   let line1 = b ? (b.title || TYPES[b.type]) + ', ' + fmtDur(Math.max(1, endOf(blocks, cur) - now)) + ' igjen' : 'Dagen starter ' + blocks[0].start;
   if (b && b.type !== 'sleep') {
     const w = lastWake(date);
     if (w && toMin(w) <= now) line1 += ', våken ' + fmtDurShort(now - toMin(w));
   }
-  return { line1, line2: next ? 'neste ' + next.start + ' ' + (next.title || TYPES[next.type]) : 'siste bolk i dag', act };
+  const start = next && !(act && act.block === next.id) ? { kind: 'start', block: next.id } : null;
+  return { line1, line2: next ? 'neste ' + next.start + ' ' + (next.title || TYPES[next.type]) : 'siste bolk i dag', act, start };
 }
 function renderNowbar() {
   const el = $('#nowbar');
@@ -2882,9 +2887,12 @@ function renderNowbar() {
   const m = nowModel();
   if (!m) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
-  el.innerHTML = '<button type="button" class="nb-txt" data-nb="scroll"><span class="nb-1">' + esc(m.line1) + '</span><span class="nb-2">' + esc(m.line2) + '</span></button>' +
-    (m.act ? '<button type="button" class="btn small primary nb-act" data-nb="act">' + esc(m.act.label) + '</button>' : '');
+  el.innerHTML = '<div class="nb-row"><button type="button" class="nb-txt" data-nb="scroll"><span class="nb-1">' + esc(m.line1) + '</span></button>' +
+      (m.act ? '<button type="button" class="btn small primary nb-act" data-nb="act">' + esc(m.act.label) + '</button>' : '') + '</div>' +
+    '<div class="nb-row2"><span class="nb-2">' + esc(m.line2) + '</span>' +
+      (m.start ? '<button type="button" class="nb-start" data-nb="start" aria-label="Start neste bolk nå og flytt resten av dagen">start nå</button>' : '') + '</div>';
   el._act = m.act;
+  el._start = m.start;
 }
 function nowbarAction(act) {
   if (!act) return;
@@ -3321,7 +3329,14 @@ $('#fab').addEventListener('click', () => openAddSheet());
 $('#nowbar').addEventListener('click', e => {
   const t = e.target.closest('[data-nb]');
   if (!t) return;
-  if (t.dataset.nb === 'scroll') scrollToNow(); else nowbarAction($('#nowbar')._act);
+  if (t.dataset.nb === 'scroll') { scrollToNow(); return; }
+  if (t.dataset.nb === 'act') { nowbarAction($('#nowbar')._act); return; }
+  if (t.dataset.nb === 'start') {
+    // To trykk: første gjør knappen klar, andre flytter dagen. Kan angres fra meldingen eller menyen.
+    if (t.dataset.armed) { nowbarAction($('#nowbar')._start); return; }
+    t.dataset.armed = '1'; t.textContent = 'trykk igjen'; t.classList.add('armed');
+    setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.textContent = 'start nå'; t.classList.remove('armed'); } }, 3500);
+  }
 });
 $('#sub').addEventListener('click', e => { if (e.target.id === 'go-today') go(0); });
 $('#timeline').addEventListener('click', e => {
