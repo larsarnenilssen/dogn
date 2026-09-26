@@ -162,7 +162,7 @@ class DognTest(unittest.TestCase):
         pg.evaluate('render()')
         pg.click('.blk[data-id="to-lurer.lur2"] [data-act="sleep-now"][data-kid="all"]')
         self.assertEqual(self.start_of(pg, 'vaken3'), '15:40')     # våkentiden starter når begge våknet
-        self.assertTrue('17:30' < self.start_of(pg, 'kvelds') < '18:00')   # kvelds skyves litt, ikke hele avviket
+        self.assertEqual(self.start_of(pg, 'kvelds'), '17:30')     # forsinkelsen er tatt igjen før kvelds
         self.assert_day_is_sane(pg)
 
     def test_long_nap_keeps_wake_button(self):
@@ -177,6 +177,37 @@ class DognTest(unittest.TestCase):
         self.assertEqual(self.start_of(pg, 'opp1'), '11:20')
         self.assert_day_is_sane(pg)
 
+    def test_long_first_nap_shifts_second_nap_a_little(self):
+        pg = self.open(when=(2026, 10, 7, 9, 15))
+        pg.evaluate("commit(null, () => { logRec('2026-10-06').night = { a: { wake: '07:00' }, b: { wake: '07:00' } }; })")
+        pg.click('.blk[data-id="to-lurer.lur1"] [data-act="sleep-now"][data-kid="all"]')
+        pg.clock.set_system_time(datetime.datetime(2026, 10, 7, 11, 45, tzinfo=TZ))   # én time for lenge
+        pg.evaluate('render()')
+        pg.click('#nowbar [data-nb="act"]')
+        lur2 = self.start_of(pg, 'lur2')
+        self.assertTrue('14:15' <= lur2 <= '14:45', lur2)
+        self.assertEqual(self.start_of(pg, 'kvelds'), '17:30')
+        self.assert_day_is_sane(pg)
+
+    def test_early_dinner_does_not_move_nap(self):
+        pg = self.open(when=(2026, 10, 7, 12, 40))
+        pg.click('#nowbar [data-nb="start"]')
+        pg.click('#nowbar [data-nb="start"]')
+        self.assertEqual(self.start_of(pg, 'middag'), '12:40')
+        self.assertEqual(self.start_of(pg, 'lur2'), '14:15')
+
+    def test_explicit_move_changes_plan_for_the_day(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        pg.click('.blk[data-id="to-lurer.middag"] .tbtn')
+        pg.click('.blk[data-id="to-lurer.middag"] [data-qshift="30"]')
+        self.assertEqual(self.start_of(pg, 'middag'), '14:00')
+        self.assertEqual(pg.evaluate("blocksFor(view).find(b => b.slot === 'middag').plan"), '14:00')
+        self.assertEqual(self.start_of(pg, 'kvelds'), '17:30')
+        # En senere hendelse trekker ikke middagen tilbake til malen
+        pg.evaluate("commit(null, () => { logRec('2026-10-06').night = { a: { wake: '07:00' }, b: { wake: '07:00' } }; })")
+        pg.click('.blk[data-id="to-lurer.lur1"] [data-act="sleep-now"][data-kid="all"]')
+        self.assertEqual(self.start_of(pg, 'middag'), '14:00')
+
     def test_night_sleep_never_moves_bedtime(self):
         pg = self.open(when=(2026, 10, 7, 18, 52))
         pg.click('.blk[data-id="to-lurer.legging"] [data-act="night-now"][data-kid="all"]')
@@ -189,6 +220,8 @@ class DognTest(unittest.TestCase):
         self.assertEqual(self.start_of(pg, 'mme-morgen'), '08:10')
         self.assertEqual(self.start_of(pg, 'morgen'), '06:30')      # forberedelsen før står
         self.assertTrue('08:15' < self.start_of(pg, 'frokost') < '09:45')
+        self.assertEqual(self.start_of(pg, 'middag'), '13:30')      # tatt igjen innen middag
+        self.assertEqual(self.start_of(pg, 'lur2'), '14:15')
         self.assert_day_is_sane(pg)
         self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a.wake"), '08:10')
 

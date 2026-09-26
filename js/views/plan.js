@@ -212,7 +212,7 @@ function openStartNowSheet(b, p) {
       shiftOpen = null;
       const k = a.dataset.sn, t = nowMin();
       if (k === 'alt') commit('', () => fitMessage(moveBlock(p.alt.id, t)));
-      else if (k === 'bed') commit('', () => fitMessage(moveBlock(b.id, t)));
+      else if (k === 'bed') commit('', () => fitMessage(moveBlock(b.id, t, true)));
       else if (k === 'copy') commit(S.copied(b.title), () => { copyBlockNow(b.id); });
       else if (k === 'skip') commit('', () => { skipBlocks(p.between.map(x => x.id)); return S.skipped(names(p.between)) + ' ' + fitMessage(moveBlock(b.id, t)); });
     }));
@@ -388,7 +388,7 @@ function openSaveDaySheet() {
         if (mode === 'replace') {
           closeSheet();
           commit(P.updated(cur.name), () => {
-            state.templates[curId].blocks = clone(blocks);
+            state.templates[curId].blocks = stripPlan(blocks);
             const d = state.days[date];
             if (d) delete d.blocks;
           });

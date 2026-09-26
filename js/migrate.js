@@ -140,6 +140,7 @@ function sanitize(s, base) {
       b.boys = str(b.boys); b.adults = str(b.adults); b.note = str(b.note);
       b.link = oneOf(b.link, ['', 'dinner', 'lunch'], '');
       b.role = oneOf(b.role, ROLE_KEYS, '');
+      if ('plan' in b && !isTime(b.plan)) delete b.plan;
     });
     return list;
   };

@@ -377,7 +377,7 @@ function moveBlockBy(id, delta) {
   const b = blocksFor(view).find(x => x.id === id);
   if (!b || !delta) return;
   let r = null;
-  commit('', () => { r = moveBlock(id, toMin(b.start) + delta); return fitMessage(r); });
+  commit('', () => { r = moveBlock(id, toMin(b.start) + delta, true); return fitMessage(r); });
 }
 function startNow(id) {
   const b = blocksFor(view).find(x => x.id === id);

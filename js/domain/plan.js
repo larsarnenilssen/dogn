@@ -35,7 +35,7 @@ function blocksFor(date) {
 }
 function ensureDayBlocks(date) {
   const d = dayRec(date);
-  if (!d.blocks) d.blocks = clone(blocksFor(date));
+  if (!d.blocks) d.blocks = clone(blocksFor(date)).map(b => { b.plan = b.plan || b.start; return b; });
   return d.blocks;
 }
 function endOf(blocks, i) {
@@ -56,69 +56,95 @@ const bedtimeIndex = blocks => { const nb = nightBlock(blocks); return nb ? bloc
 /* Barnas måltider: måltidsbolker med noe i «Barnene spiser» eller en rett fra banken */
 const isKidMeal = b => b.type === 'meal' && !!(b.boys || b.link);
 
-/* ---------- rammen for dagen ----------
-   Leggetid er fast og endres bare når leggebolken selv flyttes. Starter en bolk
-   tidligere eller senere enn planlagt, fordeles bolkene mellom den og leggetid
-   forholdsmessig i tiden som er igjen. Barnene får da alle måltider og lurer,
-   tettere eller mer spredt, og døgnet forskyves ikke. */
-const MIN_BLOCK = 10;          // korteste bolk når dagen presses sammen
+/* ---------- planen for dagen og hvordan den tas igjen ----------
+   Hver bolk har en planlagt tid (plan) og en faktisk tid (start). Planen er malen,
+   eller det du selv har satt for dagen (i bolkeditoren eller med ±15/30). Faktisk tid
+   endres når noe skjer: våknet, sovnet, våknet fra lur, «start nå».
+
+   Når en bolk starter tidligere eller senere enn planlagt, går de neste bolkene tilbake
+   til planlagt tid så fort det lar seg gjøre. Bolkene imellom kan krympe til tre
+   fjerdedeler av planlagt lengde (stell og forberedelser til halvparten). Lurer kan
+   strekkes litt, mens måltider og våkentid kan vare lenger, fordi trøttheten følger
+   tiden siden forrige søvn og ikke måltidet. Da tas en forsinkelse igjen i løpet av få bolker, slik at
+   tvillingene blir sultne og trøtte til vanlig tid, og planen holder dag for dag.
+   Leggetid er fast og endres bare når leggebolken selv flyttes. */
+const MIN_BLOCK = 10;          // korteste bolk
 const SNAP = 5;                // nye tider rundes til nærmeste fem minutter
-function moveBlock(id, newMin) {
+const SQUEEZE = { meal: [0.75, 15], sleep: [0.75, 20], awake: [0.75, 10], routine: [0.5, 10], prep: [0.5, 10] };   // [andel, minst min]
+const STRETCH = { sleep: [1.25, 15], other: [3, 60] };                                                                  // [andel, minst min ekstra]
+
+function planMinutes(arr, date) {
+  const tpl = new Map(state.templates[templateFor(date)].blocks.map(b => [b.id, toMin(b.start)]));
+  return arr.map(b => isTime(b.plan) ? toMin(b.plan) : tpl.has(b.id) ? tpl.get(b.id) : toMin(b.start));
+}
+/* Legger bolkene etter i inn så nær planen som mulig. arr[i] har allerede sin nye tid. */
+function catchUp(arr, i, date) {
+  const bi = bedtimeIndex(arr), endIdx = bi >= 0 ? bi : arr.length;
+  if (i >= endIdx - 1) return;
+  const end = bi >= 0 ? toMin(arr[bi].start) : Math.max(DAY_END, toMin(arr[arr.length - 1].start) + MIN_BLOCK);
+  const P = planMinutes(arr, date);
+  const pEnd = bi >= 0 ? P[bi] : end;
+  const pd = k => Math.max(0, (k + 1 < endIdx ? P[k + 1] : pEnd) - P[k]);
+  const minD = k => { const [f, fl] = SQUEEZE[arr[k].type] || SQUEEZE.awake; return Math.max(MIN_BLOCK, Math.min(pd(k), Math.max(fl, Math.round(pd(k) * f)))); };
+  const maxD = k => { const [f, add] = arr[k].type === 'sleep' ? STRETCH.sleep : STRETCH.other; return Math.max(pd(k) + add, pd(k) * f, MIN_BLOCK); };
+  const need = [];
+  for (let k = endIdx - 1, acc = 0; k > i; k--) { acc += minD(k); need[k] = acc; }
+  const N = [toMin(arr[i].start)];
+  for (let k = i + 1; k < endIdx; k++) {
+    const prev = N[k - i - 1];
+    const lo = prev + minD(k - 1), hi = Math.min(prev + maxD(k - 1), end - need[k]);
+    if (lo > hi) return spreadEvenly(arr, i, endIdx, end, P, pEnd);
+    let n = Math.round(Math.min(Math.max(P[k], lo), hi) / SNAP) * SNAP;
+    if (n < lo) n = Math.ceil(lo / SNAP) * SNAP;
+    if (n > hi) n = Math.max(lo, Math.floor(hi / SNAP) * SNAP);
+    N.push(n);
+  }
+  N.forEach((m, j) => { if (j) arr[i + j].start = toHM(m); });
+}
+/* Når det ikke er plass innenfor grensene: fordel etter planlagt lengde fram til leggetid */
+function spreadEvenly(arr, i, endIdx, end, P, pEnd) {
+  const s0 = toMin(arr[i].start), f = pEnd - P[i] > 0 ? (end - s0) / (pEnd - P[i]) : 1;
+  let prev = s0;
+  for (let k = i + 1; k < endIdx; k++) {
+    let m = Math.round((s0 + (P[k] - P[i]) * f) / SNAP) * SNAP;
+    m = Math.min(Math.max(m, prev + MIN_BLOCK), end - (endIdx - k) * MIN_BLOCK);
+    arr[k].start = toHM(m);
+    prev = m;
+  }
+}
+/* Flytter en bolk. explicit = brukeren har selv satt ny tid (±15/30, leggetid), og da
+   endres også planen for dagen. Ellers er det bare den faktiske tiden som endres. */
+function moveBlock(id, newMin, explicit) {
   const arr = ensureDayBlocks(view);
   sortBlocks(arr);
   const i = arr.findIndex(x => x.id === id);
   if (i < 0) return null;
   const bi = bedtimeIndex(arr);
-  const lo = i > 0 ? toMin(arr[i - 1].start) + SNAP : 0;
+  const set = (b, m) => { b.start = toHM(m); if (explicit) b.plan = b.start; };
   if (bi >= 0 && i > bi) {
     // Etter leggetid (nullstillingen): flyttes like mye, men aldri før leggetid
     newMin = Math.max(toMin(arr[bi].start) + MIN_BLOCK, Math.min(24 * 60 - 1, newMin));
     const delta = newMin - toMin(arr[i].start);
-    for (let k = i; k < arr.length; k++) arr[k].start = toHM(toMin(arr[k].start) + delta);
+    for (let k = i; k < arr.length; k++) set(arr[k], toMin(arr[k].start) + delta);
     return { block: arr[i], kind: 'after' };
   }
   if (i === bi) {
-    // Leggetid endres bare her, når leggebolken selv flyttes. Det som kommer etter, følger med,
-    // og bolkene fra nå (eller fra morgenen) fram til leggetid fordeles i den nye rammen.
-    const w = arr.indexOf(wakeBlock(arr));
-    let a = Math.max(0, w);
+    // Leggetid endres bare her. Det som kommer etter, følger med, og bolkene fra nå
+    // (eller fra morgenen) fram til leggetid legges inn så nær planen som mulig.
+    let a = Math.max(0, arr.indexOf(wakeBlock(arr)));
     if (view === todayISO()) arr.forEach((b, k) => { if (k < bi && toMin(b.start) <= nowMin()) a = Math.max(a, k); });
-    const floor = a < bi ? toMin(arr[a].start) + (bi - a) * MIN_BLOCK : lo;
-    newMin = Math.max(floor, Math.min(24 * 60 - 1, newMin));
-    const oldBed = toMin(arr[bi].start), delta = newMin - oldBed;
-    for (let k = bi; k < arr.length; k++) arr[k].start = toHM(toMin(arr[k].start) + delta);
-    if (a < bi - 1) scaleBetween(arr, a, bi, oldBed);
+    newMin = Math.max(a < bi ? toMin(arr[a].start) + (bi - a) * MIN_BLOCK : 0, Math.min(24 * 60 - 1, newMin));
+    const delta = newMin - toMin(arr[bi].start);
+    for (let k = bi; k < arr.length; k++) { arr[k].start = toHM(toMin(arr[k].start) + delta); arr[k].plan = arr[k].start; }
+    if (a < bi) catchUp(arr, a, view);
     return { block: arr[i], kind: 'bedtime' };
   }
   const endIdx = bi >= 0 ? bi : arr.length;
   const end = bi >= 0 ? toMin(arr[bi].start) : Math.max(DAY_END, toMin(arr[arr.length - 1].start) + MIN_BLOCK);
-  newMin = Math.max(lo, Math.min(end - (endIdx - i) * MIN_BLOCK, newMin));
-  const s0 = toMin(arr[i].start);
-  const f = end - s0 > 0 ? (end - newMin) / (end - s0) : 1;
-  const old = arr.slice(i, endIdx).map(b => toMin(b.start));
-  arr[i].start = toHM(newMin);
-  let prev = newMin;
-  for (let k = i + 1; k < endIdx; k++) {
-    let m = Math.round((newMin + (old[k - i] - s0) * f) / SNAP) * SNAP;
-    m = Math.min(Math.max(m, prev + MIN_BLOCK), end - (endIdx - k) * MIN_BLOCK);
-    arr[k].start = toHM(m);
-    prev = m;
-  }
+  const lo = i > 0 ? toMin(arr[i - 1].start) + SNAP : 0;
+  set(arr[i], Math.max(lo, Math.min(end - (endIdx - i) * MIN_BLOCK, newMin)));
+  catchUp(arr, i, view);
   return { block: arr[i], kind: 'fit', end: bi >= 0 ? arr[bi].start : null };
-}
-
-/* Fordeler bolkene mellom a og b forholdsmessig. arr[a] står, arr[b] har allerede ny tid;
-   oldEnd er tiden arr[b] hadde før. */
-function scaleBetween(arr, a, b, oldEnd) {
-  const s0 = toMin(arr[a].start), end = toMin(arr[b].start);
-  const f = oldEnd - s0 > 0 ? (end - s0) / (oldEnd - s0) : 1;
-  let prev = s0;
-  for (let k = a + 1; k < b; k++) {
-    let m = Math.round((s0 + (toMin(arr[k].start) - s0) * f) / SNAP) * SNAP;
-    m = Math.min(Math.max(m, prev + MIN_BLOCK), end - (b - k) * MIN_BLOCK);
-    arr[k].start = toHM(m);
-    prev = m;
-  }
 }
 
 /* Hva «start nå» betyr for en bolk. Nåværende og neste bolk startes direkte.
@@ -151,7 +177,7 @@ function copyBlockNow(id) {
   const c = clone(src);
   c.id = src.id + '-' + uid(); c.slot = c.id; c.role = '';
   c.items = c.items.map(it => ({ id: c.id + '.' + uid(), text: it.text }));
-  c.start = toHM(nowMin());
+  c.start = c.plan = toHM(nowMin());
   arr.push(c);
   sortBlocks(arr);
   return c;
@@ -165,24 +191,29 @@ function resetRestOfDay(date) {
   const tplIds = new Set(tpl.map(b => b.id));
   const keep = d.blocks.filter(b => toMin(b.start) < now);
   const keepIds = new Set(keep.map(b => b.id));
-  const later = tpl.filter(t => !keepIds.has(t.id) && (toMin(t.start) >= now || d.blocks.some(b => b.id === t.id))).map(clone);
+  const later = tpl.filter(t => !keepIds.has(t.id) && (toMin(t.start) >= now || d.blocks.some(b => b.id === t.id))).map(t => Object.assign(clone(t), { plan: t.start }));
   const own = d.blocks.filter(b => toMin(b.start) >= now && !tplIds.has(b.id));
   d.blocks = sortBlocks([...keep, ...later, ...own]);
 }
 
-function upsert(arr, b) {
+/* Malene har bare planlagte tider. En dag har både plan og faktisk tid. */
+const stripPlan = list => list.map(b => { const c = clone(b); delete c.plan; return c; });
+function upsert(arr, b, isDay) {
   if (b.role) arr.forEach(x => { if (x.id !== b.id && x.role === b.role) x.role = ''; });
+  const c = clone(b);
+  if (isDay) c.plan = c.start; else delete c.plan;
   const i = arr.findIndex(x => x.id === b.id);
-  if (i >= 0) arr[i] = clone(b); else arr.push(clone(b));
+  if (i >= 0) arr[i] = c; else arr.push(c);
   sortBlocks(arr);
 }
-/* scope: 'tpl' (malen tplId), 'day' (bare dagen som vises) eller 'perm' (malen dagen bruker) */
+/* scope: 'tpl' (malen tplId), 'day' (bare dagen som vises) eller 'perm' (malen dagen bruker).
+   Tiden du setter i bolkeditoren, blir også planen for dagen. */
 function saveBlock(b, scope, tplId) {
-  if (scope === 'tpl') { upsert(state.templates[tplId].blocks, b); return; }
-  if (scope === 'day') { upsert(ensureDayBlocks(view), b); return; }
-  upsert(state.templates[templateFor(view)].blocks, b);
+  if (scope === 'tpl') { upsert(state.templates[tplId].blocks, b, false); return; }
+  if (scope === 'day') { upsert(ensureDayBlocks(view), b, true); return; }
+  upsert(state.templates[templateFor(view)].blocks, b, false);
   const d = state.days[view];
-  if (d && d.blocks) upsert(d.blocks, b);
+  if (d && d.blocks) upsert(d.blocks, b, true);
 }
 function deleteBlock(id, scope, tplId) {
   const rm = arr => { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr.splice(i, 1); };
@@ -202,7 +233,7 @@ function tplUse(id) {
 function makeTemplate(name, blocks) {
   const id = 'tpl-' + uid();
   const used = new Set();
-  const t = { id, name, blocks: blocks.map(b => {
+  const t = { id, name, blocks: stripPlan(blocks).map(b => {
     const nb = clone(b);
     nb.slot = b.slot || b.id;
     nb.id = id + '.' + nb.slot;

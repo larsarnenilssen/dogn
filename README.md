@@ -92,11 +92,15 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 
 ### Når dagen ikke går etter planen
 
-Dagen har en ramme: fra når barnene våkner til leggetid. Leggetiden er fast og endres bare når du flytter leggebolken selv.
+Målet er at tvillingene er sultne og trøtte til vanlig tid, og at planen holder dag for dag. Leggetiden er fast og endres bare når du flytter leggebolken selv.
 
-- Når en bolk starter tidligere eller senere enn planlagt (våknet, sovnet, våknet fra lur, «start nå», ±15/30 min), fordeles bolkene mellom den og leggetid forholdsmessig i tiden som er igjen. Alle måltider og lurer blir med, litt tettere eller mer spredt. Bolker som er passert, står.
-- Våkner barnene sent, trykk **Begge våknet**. Dagen starter da, og resten tilpasses fram til leggetid.
-- Flytter du leggetid (på leggebolken), følger nullstillingen med, og bolkene fra nå fram til leggetid tilpasses den nye rammen.
+- Hver bolk har en planlagt tid (fra malen, eller det du selv har satt for dagen) og en faktisk tid.
+- Når en bolk starter tidligere eller senere enn planlagt (våknet, sovnet, våknet fra lur, «start nå»), går de neste bolkene tilbake til planlagt tid så fort det lar seg gjøre. Bolkene imellom kan krympe til tre fjerdedeler av planlagt lengde (stell og forberedelser til halvparten). Lurer strekkes lite, mens måltider og våkentid kan vare lenger, fordi trøttheten følger tiden siden forrige søvn.
+- Eksempel: Våkner barnene 08:10 i stedet for 07:00, blir frokost 09:10, første lur 10:00 og lunsj 11:20, mens middag, andre lur og resten av dagen står som planlagt. En lur som varer én time for lenge, gir middag 20 minutter senere og andre lur litt senere, og så er dagen tilbake i planen.
+- Flytter du selv en bolk med ±15/30 eller i bolkeditoren, blir det dagens nye plan for den bolken, og de neste tilpasses som over.
+- Våkner barnene sent, trykk **Begge våknet**. Dagen starter da, og resten tas igjen så fort det går.
+- Flytter du leggetid (på leggebolken), følger nullstillingen med, og bolkene før tilpasses fra nå fram til den nye leggetiden.
+- Er det ikke plass innenfor grensene, fordeles bolkene jevnt fram til leggetid.
 - «Start nå» virker direkte på bolken dere er i og den neste. På andre bolker får du et valg: Er bolken passert, foreslås neste bolk av samme type, eller en kopi nå. Ligger den langt fram, foreslås neste bolk av samme type, og måltider kan aldri hoppes over. Nullstilling kan ikke startes før leggetid.
 - Sovner barnene før leggetid, logges tiden, men leggetiden står. Nullstillingen starter tidligst ti minutter etter leggetid.
 - En lur som varer lenger enn planlagt, forsvinner ikke fra tidslinjen, og «våknet» står i nå-kortet til den er logget.
