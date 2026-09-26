@@ -1,22 +1,31 @@
 # Døgn – oppsett
 
-Døgn er en dagsplan for foreldrepermisjon. Appen er én nettside som legges på hjemskjermen og virker uten nett. Alt du legger inn, lagres på telefonen din. Andre som åpner samme adresse, får sin egen, tomme app.
+Døgn er en dagsplan for foreldrepermisjon. Appen er en nettside som legges på hjemskjermen og virker uten nett. Alt du legger inn, lagres på telefonen din. Andre som åpner samme adresse, får sin egen, tomme app.
 
 ## Filer som skal ligge i det offentlige repoet
 
-| Fil | Hva den gjør |
+| Fil eller mappe | Hva den gjør |
 |---|---|
-| `index.html` | Selve appen |
+| `index.html` | Siden som åpnes. Laster stilene og skriptene under |
+| `styles/tokens.css` | Alle farger, tekststørrelser, avstander og hjørner |
+| `styles/app.css` | Oppsett og utseende, bygget på verdiene i `tokens.css` |
+| `js/text.nb.js` | All tekst som vises i appen |
+| `js/version.js` | Versjonsnummer og listen over filer som lagres for bruk uten nett |
+| `js/seed.js` | Startdata: maler, retter og aktiviteter en ny bruker får |
+| `js/migrate.js`, `js/store.js` | Oppgradering og kontroll av data, lagring og angre |
+| `js/domain/` | Regler: dagsplan, gjøremål, meny, logg, vær, aktiviteter, turnus og backup |
+| `js/views/` | Det som vises: tidslinjen og arkene |
+| `js/app.js` | Knapper, sveiping og oppstart |
 | `sw.js` | Gjør at appen virker uten nett |
-| `manifest.webmanifest` | Navn og ikon på hjemskjermen |
-| `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Ikoner |
+| `manifest.webmanifest`, ikonene | Navn og ikon på hjemskjermen |
+| `tests/` | Automatiske tester (se nederst) |
 
 Last aldri opp backupfiler, startfiler eller turnusfiler hit. Repoet er offentlig.
 
 ## 1. Legg ut appen med GitHub Pages
 
 1. Logg inn på github.com og velg **New repository**. Kall det for eksempel `dogn` og velg **Public**.
-2. I repoet: **Add file → Upload files**. Dra inn filene i tabellen over og trykk **Commit changes**.
+2. I repoet: **Add file → Upload files**. Dra inn filene og mappene i tabellen over og trykk **Commit changes**.
 3. **Settings → Pages**. Velg Source **Deploy from a branch**, Branch **main**, mappe **/(root)**, og trykk **Save**.
 4. Etter et par minutter står adressen øverst, typisk `https://<brukernavn>.github.io/dogn/`.
 
@@ -25,7 +34,7 @@ Last aldri opp backupfiler, startfiler eller turnusfiler hit. Repoet er offentli
 - iPhone: åpne adressen i **Safari**, trykk **Del → Legg til på Hjem-skjerm**, og bruk alltid appen fra ikonet.
 - Android: åpne i Chrome, meny → **Installer app**.
 
-Første gang du åpner appen, kommer oppsettet: barnas navn, sted, permisjonsdatoer, antall lurer og om partneren har turnus. Har du en startfil eller backup, velger du **Importer fil** i stedet.
+Første gang du åpner appen, kommer oppsettet: barnas navn og hva appen skal kalle dem samlet (for eksempel «barna» eller «guttene»), sted, permisjonsdatoer, antall lurer og om partneren har turnus. Har du en startfil eller backup, velger du **Importer fil** i stedet.
 
 ## 3. Backup
 
@@ -79,10 +88,11 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 - **Lagre en dag som mal:** Juster en dag i tidslinjen (flytt bolker, endre tekst), og velg **Meny → Lagre dagen som mal**. Velg **Ny mal fra en dato** for å la dager før datoen beholde den gamle rytmen, eller **Erstatt** for å endre malen for alle dager.
 - **Planlegge en mal i ro og mak:** **Meny → Maler → Ny mal**. Start med en kopi eller en tom mal, og rediger bolkene. Malen påvirker ingen dager før du trykker **Bruk fra denne datoen**. **Se malen på en dag** viser den i tidslinjen for én dag.
 - Trinnvise overganger, som å fase ut MME eller gå over til én lur, gjøres som flere maler etter hverandre i planen.
+- **Roller:** To bolker har en rolle. **Legging** er bolken der nattesøvnen logges. **Nullstilling** er kveldsbolken som viser «i morgen», dagsrapporten, ukentlig backup og det som skal gjøres dagen før. Rollen velges nederst i **Rubrikk**-delen når du redigerer en bolk, så bolkene kan hete hva du vil. Hver rolle brukes av én bolk om gangen.
 
 ## 7. Daglig bruk
 
-- **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge guttene har vært våkne, og en knapp for sovnet eller våknet når det er aktuelt. Ved siden av neste bolk står en liten «start nå» som krever to trykk, fordi den flytter resten av dagen. Trykk på teksten for å hoppe til bolken.
+- **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge barna har vært våkne, og en knapp for sovnet eller våknet når det er aktuelt. Ved siden av neste bolk står en liten «start nå» som krever to trykk, fordi den flytter resten av dagen. Trykk på teksten for å hoppe til bolken.
 - **Pluss-knappen** nede til høyre legger til noe å huske (i neste lur, i kveld eller i morgen), en avtale eller en bolk.
 - **Nullstilling** viser «i morgen»: vær, klær, vakt, middag, første lur, faste tilbud, avtaler og gjøremål. Der kan du også dele en kort dagsrapport.
 - **Klær og pakkeliste** vises når dere skal ut. Pakkelisten redigeres under Meny → Aktivitetsbibliotek.
@@ -94,8 +104,17 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 - **Handleliste:** Meny → Handleliste (eller knappen i ukemenyen) samler ingrediensene fra rettene de neste sju dagene. Legg til egne varer, kryss av i butikken og del listen. Varer du alltid har hjemme, holdes utenfor. Ingrediensene redigeres på hver rett i middagsbanken.
 - **Søvnoversikt:** Meny → Oversikt viser en graf over lur per dag for hvert barn, og snitt for de siste sju dagene mot uken før.
 - **Helse:** I dagsloggen, eller med pluss-knappen → Helse, fører du temperatur, medisin og symptomer. Når et barn er merket som sykt, vises et varsel øverst med siste medisin og temperatur, og forslagene holder seg hjemme. Appen gir ikke råd om dosering.
-- **Visning:** Meny → Profil → Visning har lyst tema (lettere å lese ute), «følg telefonen» og større tekst.
+- **Visning:** Meny → Profil → Visning har lyst tema (lettere å lese ute), «følg telefonen» og større tekst. Større tekst gjør bare teksten større, ikke knapper og luft.
 
 ## Oppdateringer
 
-Last opp ny `index.html` (og eventuelt `sw.js`) i det offentlige repoet med **Upload files**. Appen henter ny versjon neste gang den åpnes med nett. Dataene dine berøres ikke.
+Last opp endrede filer i det offentlige repoet med **Upload files** (mappene kan dras inn som de er). Appen henter ny versjon neste gang den åpnes med nett. Dataene dine berøres ikke. Endres datastrukturen, oppgraderes dataene automatisk første gang den nye versjonen åpnes.
+
+## For den som vil endre appen
+
+- **Tekst:** All tekst står i `js/text.nb.js`, ordnet etter hvor den vises. Tekster som tar inn verdier, er små funksjoner. Bruk felleskjønn (-en) for hankjønn og hunkjønn.
+- **Farger og størrelser:** Står bare i `styles/tokens.css`, med et mørkt og et lyst sett. `app.css` bruker bare disse variablene.
+- **Endringer i data** går alltid gjennom `commit()` i `js/store.js`. Den lagrer, merker for backup, tegner på nytt og gjør endringen mulig å angre.
+- **HTML** lages med `h`…`` fra `js/util.js`, som escaper alle verdier som settes inn. Innleste filer kontrolleres av `sanitize()` i `js/migrate.js`.
+- **Ny fil:** Legg den inn i `index.html` og i `APP_FILES` i `js/version.js`. Øk `APP_VERSION` ved hver utgivelse, så får lageret for bruk uten nett nytt navn.
+- **Tester:** `python3 -m unittest discover -s tests -v` (krever `pip install playwright` og `python -m playwright install chromium`). Testene kjøres også automatisk på GitHub under **Actions** ved hver endring.

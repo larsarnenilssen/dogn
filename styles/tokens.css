@@ -1,0 +1,60 @@
+/* Døgn – designverdier. Alle farger, tekststørrelser, avstander og hjørner
+   som brukes i appen, står her. app.css bruker bare disse variablene.
+   Tekststørrelsene er i rem, slik at «Tekststørrelse» i Profil bare
+   skalerer teksten (roten settes til 110 % eller 120 %). */
+:root{
+  /* Flater (mørkt tema er standard) */
+  --ground:#151A1F; --bar:#1B2127; --panel:#1F262D; --panel-hi:#252E36; --field:#13181C;
+  --night:#1B2533; --night-line:#314560; --night-bar:#5479A0;
+  --line:#37434D; --line-soft:#2C363F; --field-line:#46535E;
+  /* Tekst */
+  --ink:#E8ECEF; --muted:#A3AEB7; --faint:#66737D;
+  /* Aksent og varsler */
+  --accent:#E2AA4F; --accent-ink:#141008; --accent-dim:rgba(226,170,79,.14);
+  --accent-line:rgba(226,170,79,.45); --accent-glow:rgba(226,170,79,.35);
+  --late:#E58A6E; --danger:#E0705E;
+  /* Bolktyper og avtaler */
+  --c-appt:#E79BBE; --c-prep:#B8A0EE; --c-meal:#6FC2AF; --c-sleep:#80A9DE; --c-awake:#A7CC7D; --c-routine:#A3B6C7;
+  /* Graf (én farge per barn) */
+  --chart-1:#3a87d4; --chart-2:#c9711f; --chart-3:#199e70;
+  /* Skygger og bakgrunn bak ark */
+  --shadow-head:0 12px 20px -14px rgba(0,0,0,.95);
+  --shadow-fab:0 8px 20px rgba(0,0,0,.45);
+  --shadow-toast:0 10px 24px rgba(0,0,0,.5);
+  --shadow-tip:0 6px 16px rgba(0,0,0,.25);
+  --scrim:rgba(0,0,0,.6);
+
+  /* Skrift og tekststørrelser (6 trinn, pluss aksetekst i grafen) */
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --fs-xs:.78125rem;   /* 12,5 px: merkelapper, små detaljer */
+  --fs-sm:.84375rem;   /* 13,5 px: hjelpetekst, etiketter, metadata */
+  --fs-md:.90625rem;   /* 14,5 px: knapper, notater */
+  --fs-base:.9375rem;  /* 15 px: brødtekst */
+  --fs-lg:1rem;        /* 16 px: titler og skjemafelt (under 16 px zoomer iPhone inn) */
+  --fs-xl:1.1875rem;   /* 19 px: datoen i toppen */
+  --fs-chart:11px;     /* aksetekst i grafen (skaleres med grafen) */
+
+  /* Avstander */
+  --sp-1:4px; --sp-2:6px; --sp-3:8px; --sp-4:10px; --sp-5:12px; --sp-6:14px; --sp-7:16px; --sp-8:20px;
+  --gap:14px;          /* mellom bolkene i tidslinjen */
+  --rcol:18px;         /* bredden på tidslinjen til venstre */
+  --head-h:110px;      /* settes av appen etter høyden på toppen */
+
+  /* Hjørner */
+  --r-xs:3px; --r-sm:4px; --r:6px; --r-lg:8px; --r-xl:10px;
+
+  color-scheme:dark;
+}
+/* Lyst tema for bruk ute i dagslys */
+:root[data-theme="light"]{
+  --ground:#EEF1F3; --bar:#FFFFFF; --panel:#FFFFFF; --panel-hi:#FFF7E8; --field:#F4F6F8;
+  --night:#EAF0F7; --night-line:#BDCDE0; --night-bar:#5F84B0;
+  --line:#BFC8CF; --line-soft:#D9DFE4; --field-line:#9AA6B0;
+  --ink:#0F161D; --muted:#46525D; --faint:#88949E;
+  --accent:#9A5B00; --accent-ink:#FFFFFF; --accent-dim:rgba(154,91,0,.10);
+  --accent-line:rgba(154,91,0,.45); --accent-glow:rgba(154,91,0,.18);
+  --late:#B0421B; --danger:#B3261E;
+  --c-appt:#B23C78; --c-prep:#6A48BF; --c-meal:#177C65; --c-sleep:#2F66A3; --c-awake:#4E7F16; --c-routine:#566B7D;
+  --chart-1:#2a6fb8; --chart-2:#b35f12; --chart-3:#1baf7a;
+  color-scheme:light;
+}

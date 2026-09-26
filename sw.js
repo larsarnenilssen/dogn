@@ -1,12 +1,13 @@
 /* Døgn – service worker
    Appfilene hentes fra nettet når det er mulig (slik at oppdateringer kommer
    automatisk), og fra lageret når telefonen er uten dekning.
-   Dataene dine ligger ikke her, men i nettleserens database. */
-const CACHE = 'dogn-v14';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+   Navnet på lageret følger versjonen i js/version.js, så gamle filer ryddes
+   bort av seg selv. Dataene dine ligger ikke her, men i nettleserens database. */
+importScripts('js/version.js');
+const CACHE = 'dogn-' + APP_VERSION;
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(APP_FILES)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {

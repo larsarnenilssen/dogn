@@ -2,3 +2,7 @@
 *backup*.json
 *startfil*.json
 *turnus*.json
+
+# Midlertidige filer fra testene
+__pycache__/
+tests/.tmp-*

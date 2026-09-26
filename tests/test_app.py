@@ -2,6 +2,7 @@
 
 Kjøres med:  python3 -m unittest discover -s tests -v
 Krever:      pip install playwright  og  python -m playwright install chromium
+Kjøres også automatisk på GitHub (Actions) ved hver endring.
 
 Testene starter en lokal webserver for repoet, åpner appen i en mobilstørrelse
 og bruker en fast klokke og simulert værmelding, slik at resultatene er stabile.
@@ -22,9 +23,18 @@ READY = "() => typeof state !== 'undefined' && !!state && !!document.querySelect
 TZ = datetime.timezone(datetime.timedelta(hours=2))
 
 
+class _Quiet(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *a):
+        pass
+
+
+def _read(*parts):
+    with open(os.path.join(ROOT, *parts), encoding='utf-8') as f:
+        return f.read()
+
+
 def _serve():
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=ROOT)
-    handler.log_message = lambda *a, **k: None
+    handler = functools.partial(_Quiet, directory=ROOT)
     srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
@@ -91,7 +101,7 @@ class DognTest(unittest.TestCase):
         pg.goto(self.base)
         pg.wait_for_function(READY)
         if setup:
-            pg.wait_for_selector('#p-kids')           # førstegangsoppsettet åpnes selv
+            pg.wait_for_selector('#sheet-root.open #p-kids')   # førstegangsoppsettet åpnes selv
             pg.evaluate('() => closeSheet()')
             pg.evaluate(SETUP_JS)
             pg.wait_for_timeout(300)
@@ -245,6 +255,10 @@ class DognTest(unittest.TestCase):
         self.assertEqual(v, pg.evaluate('DATA_VERSION'))
         self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'kvelds').link"), 'dinner')
         self.assertTrue(pg.evaluate('state.dishes.length > 10 && state.activities.length > 5'))
+        # v7: roller i stedet for faste navn, og eksisterende brukere beholder «guttene»
+        self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'kveld').role"), 'reset')
+        self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'legging').role"), 'bedtime')
+        self.assertEqual(pg.evaluate('state.settings.kidsWord'), 'guttene')
 
     def test_export_import_roundtrip(self):
         pg = self.open()
@@ -265,6 +279,79 @@ class DognTest(unittest.TestCase):
         pg.evaluate("state.settings.theme = 'light'; state.settings.textSize = 1.2; applyTheme(); render();")
         self.assertEqual(pg.evaluate('document.documentElement.dataset.theme'), 'light')
         self.assertTrue(pg.evaluate('document.querySelector("#date").textContent.length > 0'))
+        # Tekststørrelsen skalerer rem (bare tekst), ikke hele siden
+        self.assertEqual(pg.evaluate('document.documentElement.style.fontSize'), '120%')
+        self.assertEqual(pg.evaluate('document.body.style.zoom'), '')
+        self.assertEqual(pg.evaluate('document.querySelector(\'meta[name="theme-color"]\').content'), '#FFFFFF')
+
+    def test_roles_decide_reset_and_bedtime(self):
+        pg = self.open(when=(2026, 10, 7, 18, 40))
+        # Nullstillingen gjenkjennes på rollen, ikke på navnet
+        pg.evaluate("""() => { const b = state.templates['to-lurer'].blocks.find(x => x.role === 'reset');
+                                 b.slot = 'kveldsrutine'; b.title = 'Kveldsrutine'; persist(); render(); }""")
+        self.assertTrue(pg.is_visible('.blk[data-id="to-lurer.kveld"] .tomorrow'))
+        # Flytt rollen «legging» til leggeforberedelsen i bolkeditoren
+        pg.evaluate("openBlockSheet('to-lurer.legg', 'to-lurer')")
+        pg.select_option('#f-role', 'bedtime')
+        pg.click('.sh-foot [data-save="tpl"]')
+        pg.wait_for_timeout(200)
+        roles = pg.evaluate("Object.fromEntries(state.templates['to-lurer'].blocks.filter(b => b.role).map(b => [b.slot, b.role]))")
+        self.assertEqual(roles, {'legg': 'bedtime', 'kveldsrutine': 'reset'})
+        pg.evaluate('closeSheet()')
+        pg.wait_for_timeout(300)
+        self.assertTrue(pg.is_visible('.blk[data-id="to-lurer.legg"] .log.night'))
+
+    def test_kids_word(self):
+        pg = self.open()
+        self.assertIn('Barna', pg.inner_text('.blk[data-id="to-lurer.middag"]'))
+        pg.evaluate("openProfileSheet(false)")
+        pg.fill('#p-kw', 'tvillingene')
+        pg.click('.sh-foot [data-save]')
+        pg.wait_for_timeout(300)
+        self.assertIn('Tvillingene', pg.inner_text('.blk[data-id="to-lurer.middag"]'))
+
+    def test_import_is_escaped_and_sanitized(self):
+        pg = self.open()
+        data = json.loads(pg.evaluate('JSON.stringify(state)'))
+        blk = data['templates']['to-lurer']['blocks'][0]
+        blk['title'] = '<img src=x onerror="window.pwned=1">Frokost'
+        blk['start'] = '25:99'
+        data['activities'][0]['url'] = 'javascript:window.pwned=2'
+        data['appts'] = [{'id': 'x', 'title': 'Feil', 'date': 'i morgen', 'start': '10:00'}]
+        data['kids'][0]['name'] = '<b>Ola</b>'
+        path = os.path.join(ROOT, 'tests', '.tmp-backup.json')
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+        self.addCleanup(lambda: os.path.exists(path) and os.remove(path))
+        pg.click('#menu')
+        pg.click('[data-nav="backup"]')
+        pg.set_input_files('#m-import', path)
+        pg.wait_for_timeout(400)
+        self.assertIsNone(pg.evaluate('window.pwned'))
+        self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.title.includes('img')).start"), '12:00')
+        self.assertEqual(pg.evaluate('state.activities[0].url'), '')
+        self.assertEqual(pg.evaluate('state.appts.length'), 0)
+        self.assertIn('<b>Ola</b>', pg.inner_text('#timeline'))      # vises som tekst, ikke som HTML
+
+    def test_undo_keeps_only_changed_parts(self):
+        pg = self.open()
+        pg.click('.blk[data-id="to-lurer.middag"] .tbtn')
+        pg.click('.blk[data-id="to-lurer.middag"] [data-qshift="15"]')
+        keys = pg.evaluate('undoStack[undoStack.length - 1].parts.map(p => p[0])')
+        self.assertEqual(keys, ['days/2026-10-07'])
+
+    def test_offline_file_list_is_complete(self):
+        import re
+        html = _read('index.html')
+        local = [x for x in re.findall(r'(?:src|href)="([^"]+)"', html) if not x.startswith('http')]
+        version = _read('js', 'version.js')
+        listed = re.findall(r"'\./([^']*)'", version)
+        for f in local:
+            self.assertIn(f, listed, f + ' mangler i APP_FILES i js/version.js')
+        for f in listed:
+            if f:
+                self.assertTrue(os.path.exists(os.path.join(ROOT, f)), f + ' finnes ikke')
+        self.assertIn("importScripts('js/version.js')", _read('sw.js'))
 
 
 if __name__ == '__main__':
