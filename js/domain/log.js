@@ -100,12 +100,11 @@ function lastWake(date) {
   }
   return w;
 }
-/* Veksler mellom godt, middels, lite og ingenting */
-function cycleRate(date, blockId, kid) {
+/* Hvor godt et barn spiste: godt, middels eller lite. Samme valg igjen fjerner det. */
+function setRate(date, blockId, kid, val) {
   const L = logRec(date);
   const r = (L.meals[blockId] ??= {});
-  const next = RATES[(RATES.indexOf(r[kid] || '') + 1) % RATES.length];
-  if (next) r[kid] = next; else delete r[kid];
+  if (r[kid] === val || !RATES.includes(val) || !val) delete r[kid]; else r[kid] = val;
 }
 
 /* ---------- helse og sykdom ---------- */

@@ -42,16 +42,15 @@ function openLogSheet(date) {
   const health = [...(L.health || [])].sort((a, b) => a.time.localeCompare(b.time));
   const mealRow = b => {
     const r = L.meals[b.id] || {};
-    return h`<div><span class="grow">${b.title}<span class="m">${b.start}</span></span><span class="rates">
-      ${state.kids.map(k => h`<button type="button" class="chip sm rate${r[k.id] ? ' r-' + r[k.id] : ''}" data-lrate="${b.id}" data-kid="${k.id}">${k.name.charAt(0) + ' ' + (r[k.id] ? T.rates[r[k.id]] : '–')}</button>`)}
-      </span></div>`;
+    return h`<div class="meal-row"><span class="grow">${b.title}<span class="m">${b.start}</span></span>
+      ${state.kids.map(k => h`<div class="rate-row"><span class="kn">${k.name}</span>${rateSeg(r[k.id], k.id, 'data-lrate="' + esc(b.id) + '"')}</div>`)}</div>`;
   };
   openSheet(h`<div class="sh-head"><h2>${G.title(fmtDateTiny(date))}</h2><button type="button" class="btn ghost" data-close>${T.common.close}</button></div>
     <div class="sh-body">
       <section class="grp"><h3>${G.naps}</h3>${state.kids.map(napsFor)}${hint(G.napsHint)}</section>
       <section class="grp"><h3>${G.night}</h3>${state.kids.map(nightFor)}</section>
       <section class="grp" id="lg-health"><h3>${G.health}</h3>
-        <div class="chips">${state.kids.map(k => h`<button type="button" class="chip" data-sick="${k.id}" aria-pressed="${!!(L.sick && L.sick[k.id])}">${G.isSick(k.name)}</button>`)}</div>
+        <div class="switches">${state.kids.map(k => switchBtn('data-sick', k.id, !!(L.sick && L.sick[k.id]), G.isSick(k.name)))}</div>
         ${health.length ? h`<div class="list">${health.map(x => h`<div><span class="grow">${x.time + ' ' + kidName(x.kid)}<span class="m">${T.health[x.kind] + (x.value ? ': ' + x.value : '')}</span></span><button type="button" class="icon-btn sm" data-rm-h="${x.id}" aria-label="${T.common.remove}">${ICON_X}</button></div>`)}</div>` : ''}
         ${healthFormHTML(date)}
         <button type="button" class="btn wide" data-add-h>${T.common.add}</button>
@@ -71,7 +70,7 @@ function openLogSheet(date) {
         commit(null, () => { (logRec(date).night[inp.dataset.night] ??= {})[inp.dataset.f] = v; }, 'none');
       }));
       sheet.querySelectorAll('[data-lrate]').forEach(btn => btn.addEventListener('click', () => {
-        commit(null, () => cycleRate(date, btn.dataset.lrate, btn.dataset.kid), 'timeline');
+        commit(null, () => setRate(date, btn.dataset.lrate, btn.dataset.kid, btn.dataset.val), 'timeline');
         openLogSheet(date);
       }));
       sheet.querySelectorAll('[data-nap]').forEach(btn => btn.addEventListener('click', () => {

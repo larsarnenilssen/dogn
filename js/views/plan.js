@@ -94,38 +94,22 @@ function openBlockSheet(id, tplId) {
   const back = () => openTemplateEditor(tplId);
   const isBed = !isNew && !inTpl && nightBlock(blocks) === src;
 
-  const delSection = isNew ? '' : inTpl
-    ? h`<section class="grp quiet"><button type="button" class="btn link" data-del>${B.delBlock}</button>
-        <div class="confirm" data-confirm hidden>${hint(B.delConfirmTpl(b.title, tplName))}
-        <div class="btnrow"><button type="button" class="btn small danger" data-del-scope="tpl">${B.delFromTpl}</button></div></div>
-      </section>`
-    : h`<section class="grp"><h3>${isBed ? B.shiftHeadBed : B.shiftHead}</h3><div class="shift">${shiftButtons('data-shift')}</div>
+  const delSection = isNew ? '' : h`<section class="grp quiet"><button type="button" class="btn link" data-del>${inTpl ? B.delBlock : B.del}</button>
+      <div class="confirm" data-confirm hidden>${hint(inTpl ? B.delConfirmTpl(b.title, tplName) : B.delConfirm(b.title, dayLbl, tplName))}
+      <div class="btnrow">${inTpl ? h`<button type="button" class="btn small danger" data-del-scope="tpl">${B.delFromTpl}</button>`
+        : h`<button type="button" class="btn small danger" data-del-scope="day">${B.delDay(dayLbl)}</button><button type="button" class="btn small danger" data-del-scope="perm">${B.delFromTpl}</button>`}</div></div>
+    </section>`;
+  // Tid og flytting øverst, så sjekkliste og notat. Navn, type, rett og rolle ligger under «Mer».
+  const timeSection = h`<section class="grp"><h3>${isBed ? B.shiftHeadBed : B.time}</h3>
+      <div class="field"><label for="f-start">${B.starts}</label><input id="f-start" type="time" value="${b.start}"></div>
+      ${inTpl ? '' : h`<div class="shift">${shiftButtons('data-shift')}</div>
         ${isToday ? h`<button type="button" class="btn small wide" data-shift="now">${T.tl.startsNow}</button>` : ''}
-        ${hint(isBed ? B.shiftHintBed(dayLbl) : B.shiftHint(dayLbl))}
-      </section>
-      <section class="grp quiet"><button type="button" class="btn link" data-del>${B.del}</button>
-        <div class="confirm" data-confirm hidden>${hint(B.delConfirm(b.title, dayLbl, tplName))}
-        <div class="btnrow"><button type="button" class="btn small danger" data-del-scope="day">${B.delDay(dayLbl)}</button>
-        <button type="button" class="btn small danger" data-del-scope="perm">${B.delFromTpl}</button></div></div>
-      </section>`;
+        ${hint(isBed ? B.shiftHintBed(dayLbl) : B.shiftHint(dayLbl))}`}
+    </section>`;
 
   openSheet(h`${inTpl ? headBack(isNew ? B.newInTpl : B.inTpl) : headHTML(isNew ? B.new : B.edit)}
     <form class="sh-body" id="bf" novalidate>
-      <section class="grp"><h3>${B.group}</h3>
-        <div class="field"><label for="f-title">${T.common.name}</label><input id="f-title" type="text" value="${b.title}" placeholder="${T.types[b.type]}" autocomplete="off"></div>
-        <div class="row2">
-          <div class="field"><label for="f-start">${B.starts}</label><input id="f-start" type="time" value="${b.start}"></div>
-          <div class="field"><label for="f-type">${T.common.type}</label><select id="f-type">${options(Object.entries(T.types), b.type)}</select></div>
-        </div>
-        <div class="stack" id="f-meal"${b.type === 'meal' ? '' : raw(' hidden')}>
-          <div class="field"><label for="f-link">${B.fromBank}</label><select id="f-link">${options(Object.entries(B.linkOpts), b.link)}</select></div>
-          <div class="field"><label for="f-boys">${T.kids.eat(kidsWord())}</label><input id="f-boys" type="text" value="${b.boys}" autocomplete="off"></div>
-          <div class="field"><label for="f-adults">${T.kids.adultsEat}</label><input id="f-adults" type="text" value="${b.adults}" autocomplete="off"></div>
-          ${hint(B.bankHint)}
-        </div>
-        <div class="field"><label for="f-role">${B.role}</label><select id="f-role">${options(Object.entries(B.roleOpts), b.role)}</select></div>
-        ${hint(B.roleHint)}
-      </section>
+      ${timeSection}
       <section class="grp"><h3>${B.checklist}</h3>
         <div class="items" id="f-items">${b.items.map(itemRow)}</div>
         <button type="button" class="btn small wide" data-add>${B.addItem}</button>
@@ -134,6 +118,18 @@ function openBlockSheet(id, tplId) {
       <section class="grp"><h3>${T.common.note}</h3>
         <label for="f-note" class="vh">${T.common.note}</label><textarea id="f-note" rows="3">${b.note}</textarea>
       </section>
+      <details class="grp more-sec"${isNew ? raw(' open') : ''}><summary>${B.more}</summary>
+        <div class="field"><label for="f-title">${T.common.name}</label><input id="f-title" type="text" value="${b.title}" placeholder="${T.types[b.type]}" autocomplete="off"></div>
+        <div class="field"><label for="f-type">${T.common.type}</label><select id="f-type">${options(Object.entries(T.types), b.type)}</select></div>
+        <div class="stack" id="f-meal"${b.type === 'meal' ? '' : raw(' hidden')}>
+          <div class="field"><label for="f-link">${B.fromBank}</label><select id="f-link">${options(Object.entries(B.linkOpts), b.link)}</select></div>
+          <div class="field"><label for="f-boys">${T.kids.eat(kidsWord())}</label><input id="f-boys" type="text" value="${b.boys}" autocomplete="off"></div>
+          <div class="field"><label for="f-adults">${T.kids.adultsEat}</label><input id="f-adults" type="text" value="${b.adults}" autocomplete="off"></div>
+          ${hint(B.bankHint)}
+        </div>
+        <div class="field"><label for="f-role">${B.role}</label><select id="f-role">${options(Object.entries(B.roleOpts), b.role)}</select></div>
+        ${hint(B.roleHint)}
+      </details>
       ${delSection}
     </form>
     ${inTpl ? footSave(B.saveTpl, 'data-save="tpl"')
@@ -305,6 +301,7 @@ function openTemplateEditor(id) {
     <div class="sh-body">
       <section class="grp"><h3>${T.common.name}</h3><label for="te-name" class="vh">${T.common.name}</label><input id="te-name" type="text" value="${t.name}" autocomplete="off"></section>
       <section class="grp"><h3>${P.blocks}</h3>
+        ${stripHTML(blocks, '', false)}
         ${blocks.length ? h`<div class="list">${blocks.map(b => h`<button type="button" class="row tb-${b.type}" data-blk="${b.id}"><span class="grow"><span class="wd">${b.start}</span> ${b.title}
           <span class="m">${blockMeta(b)}</span></span><span class="r">›</span></button>`)}</div>` : hint(P.isEmpty)}
         <button type="button" class="btn wide" data-new-blk>${P.newBlock}</button>

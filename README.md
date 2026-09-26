@@ -88,7 +88,7 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 - **Lagre en dag som mal:** Juster en dag i tidslinjen (flytt bolker, endre tekst), og velg **Meny → Lagre dagen som mal**. Velg **Ny mal fra en dato** for å la dager før datoen beholde den gamle rytmen, eller **Erstatt** for å endre malen for alle dager.
 - **Planlegge en mal i ro og mak:** **Meny → Maler → Ny mal**. Start med en kopi eller en tom mal, og rediger bolkene. Malen påvirker ingen dager før du trykker **Bruk fra denne datoen**. **Se malen på en dag** viser den i tidslinjen for én dag.
 - Trinnvise overganger, som å fase ut MME eller gå over til én lur, gjøres som flere maler etter hverandre i planen.
-- **Roller:** Tre bolker har en rolle. **Morgen** er bolken der dagen starter når barnene har våknet. **Legging** har fast leggetid, og nattesøvnen logges der. **Nullstilling** er kveldsbolken som viser «i morgen», dagsrapporten, ukentlig backup og det som skal gjøres dagen før. Rollen velges nederst i **Rubrikk**-delen når du redigerer en bolk, så bolkene kan hete hva du vil. Hver rolle brukes av én bolk om gangen.
+- **Roller:** Tre bolker har en rolle. **Morgen** er bolken der dagen starter når barnene har våknet. **Legging** har fast leggetid, og nattesøvnen logges der. **Nullstilling** er kveldsbolken som viser «i morgen», dagsrapporten, ukentlig backup og det som skal gjøres dagen før. Rollen velges under **Mer** når du redigerer en bolk, så bolkene kan hete hva du vil. Hver rolle brukes av én bolk om gangen.
 
 ### Når dagen ikke går etter planen
 
@@ -108,14 +108,21 @@ Målet er at tvillingene er sultne og trøtte til vanlig tid, og at planen holde
 
 ## 7. Daglig bruk
 
-- **Nå-kortet** øverst viser bolken dere er i, hva som kommer, hvor lenge barnene har vært våkne, og en knapp for sovnet eller våknet når det er aktuelt. Om morgenen står det «Begge våknet» til dere har logget det. Ved siden av neste bolk står en liten «start nå» som krever to trykk. Trykk på teksten for å hoppe til bolken.
-- **Hopp til en dag:** Trykk på datoen i toppen. Kalenderen viser ukenummer, partnerens vakter, avtaler og huskepunkter (prikk) og dager med egne endringer (stjerne). Pilene og sveiping går fortsatt én dag om gangen.
-- **Rekkefølge:** Sjekklister i bolkene, gjøremål, huskelisten, barnene i Profil og «Andre varer» i handlelisten kan sorteres. Dra i grepet (⋮⋮) til venstre, eller velg grepet og bruk pil opp og ned. Gjøremålene står i bolkene i samme rekkefølge, etter sjekklisten. Retter, aktiviteter og vaktkoder sorteres automatisk.
-- **Pluss-knappen** nede til høyre legger til noe å huske (i neste lur, i kveld eller i morgen), en avtale eller en bolk.
-- **Nullstilling** viser «i morgen»: vær, klær, vakt, middag, første lur, faste tilbud, avtaler og gjøremål. Der kan du også dele en kort dagsrapport.
-- **Klær og pakkeliste** vises når dere skal ut. Pakkelisten redigeres under Meny → Aktivitetsbibliotek.
+- **Linjen nederst:** «i dag» går til i dag (eller til nå, om du allerede er der), «uke» åpner ukemenyen, «+» legger til noe å huske, en avtale, helse eller en bolk, «logg» åpner dagsloggen og «mer» åpner menyen.
+- **Toppen** viser datoen, dag i permisjonen og partnerens vakt, dagstripen og nå-kortet. Når du blar ned, krymper den til dato, stripe og nå-kort.
+- **Dagstripen** viser dagens bolker i typefargene, med en strek for nå. Trykk på et sted i stripen for å gå til bolken der.
+- **Nå-kortet** viser bolken dere er i, hva som kommer og hvor lenge barnene har vært våkne, og har én hovedknapp: sovnet, våknet eller «Begge våknet» om morgenen. Ved siden av neste bolk står en liten «start nå» som krever to trykk.
+- **Tidslinjen:** Bolken dere er i og den neste vises fullt. De andre er én linje med tid, navn og det viktigste (rett, forslag eller hvor mye som er gjort). Trykk på linjen for å folde den ut. «Vis alle detaljer» nederst viser alt.
+- **Sveip:** Sveip til siden på tidslinjen eller dagstripen for å bytte dag, i kalenderen for å bytte måned. Dra toppen av et ark ned for å lukke det, og sveip fra venstre kant for å gå tilbake.
+- **Hopp til en dag:** Trykk på datoen i toppen. Kalenderen viser ukenummer, partnerens vakter, avtaler og huskepunkter (prikk) og dager med egne endringer (stjerne).
+- **Rekkefølge:** Sjekklister i bolkene, gjøremål, huskelisten, barnene i Profil og «Andre varer» i handlelisten kan sorteres. Dra i grepet (⋮⋮) til venstre, eller velg grepet og bruk pil opp og ned.
+- **Spiste:** Velg godt, midd. eller lite for hvert barn. Trykk på valget igjen for å fjerne det.
+- **Av og på** vises som [x] og [ ]. Hjelpetekster viser første setning; trykk «?» for resten.
+- **Bolkeditoren** har tid og flytting øverst, så sjekkliste og notat. Navn, type, rett fra banken og rolle ligger under «Mer».
+- **Nullstilling** viser «i morgen» som én linje. Trykk på den for alt: vær, klær, vakt, middag, første lur, faste tilbud, avtaler og gjøremål. Der kan du også dele en kort dagsrapport.
+- **Klær og pakkeliste** vises når dere skal ut. Pakkelisten redigeres under Meny › Aktivitetsbibliotek.
 - **Angre** står i meldingen nederst og i menyen, og går opptil 15 steg tilbake.
-- Nå-kort, «i morgen» og klær/pakkeliste kan slås av under Meny → Profil → Visning.
+- Nå-kort, «i morgen» og klær/pakkeliste kan slås av under Meny › Profil › Visning.
 
 ## 8. Handleliste, søvnoversikt, helse og visning
 

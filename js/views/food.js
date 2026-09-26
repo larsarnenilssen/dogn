@@ -13,7 +13,7 @@ function openWeekSheet(ws) {
     const din = dishFor(d, 'dinner'), lun = dishFor(d, 'lunch');
     const m = state.menu[d] || {};
     const ph = partnerHome(d);
-    const pinfo = partnerOn() ? W.partnerInfo(partnerName(), ph.ps && ph.ps.code ? shiftText(ph.ps) : '', ph.home) : (ph.home ? W.partnerEats(partnerName()) : '');
+    const pinfo = partnerOn() || ph.manual ? W.partnerShort(partnerName(), ph.home, ph.ps && ph.ps.code ? shiftText(ph.ps) : '') : '';
     return h`<button type="button" class="row${d === today ? ' cur' : ''}" data-day="${d}"><span class="grow">
       <span class="wd">${fmtDateTiny(d)}</span> ${din ? din.name : h`<span class="m inline">${W.noDinner}</span>`}
       <span class="m">${(din ? dishMeta(din) : '') + (m.dinner && m.dinner.manual ? W.manual : '')}</span>${pinfo ? h`<span class="m">${pinfo.trim()}</span>` : ''}

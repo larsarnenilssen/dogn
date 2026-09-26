@@ -6,6 +6,7 @@ let lastToday = todayISO();
 const expanded = new Set();                   // passerte bolker som er foldet ut
 let shiftOpen = null;                         // bolken som har flyttelinjen åpen
 let reopen = null;                            // arket som skal vises igjen etter «Angre»
+let showAll = false;                          // vis alle bolker fullt (ellers er fjerne bolker én linje)
 
 function dayRec(date) { const d = (state.days[date] ??= { done: {} }); d.done ??= {}; return d; }
 function logRec(date) { const d = dayRec(date); return (d.log ??= { sleep: [], night: {}, meals: {}, note: '' }); }

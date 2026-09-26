@@ -2,15 +2,48 @@
 /* ---------- hendelser og oppstart ---------- */
 $('#prev').setAttribute('aria-label', T.top.prev);
 $('#next').setAttribute('aria-label', T.top.next);
-$('#menu').setAttribute('aria-label', T.top.menu);
 $('#date').setAttribute('aria-label', T.top.pickDay);
-$('#fab').setAttribute('aria-label', T.top.fab);
+$('#bottombar').setAttribute('aria-label', T.nav.label);
+$('#tab-today').textContent = T.nav.today;
+$('#tab-week').textContent = T.nav.week;
+$('#fab').textContent = T.nav.add;
+$('#fab').setAttribute('aria-label', T.nav.addAria);
+$('#tab-log').textContent = T.nav.log;
+$('#menu').textContent = T.nav.more;
 
 $('#prev').addEventListener('click', () => go(-1));
 $('#next').addEventListener('click', () => go(1));
-$('#menu').addEventListener('click', openMenu);
 $('#date').addEventListener('click', () => openCalendarSheet());
+$('#tab-today').addEventListener('click', () => { if (view === todayISO()) scrollToNow(); else go(0); });
+$('#tab-week').addEventListener('click', () => openWeekSheet());
 $('#fab').addEventListener('click', () => openAddSheet());
+$('#tab-log').addEventListener('click', () => openLogSheet(view));
+$('#menu').addEventListener('click', openMenu);
+/* Dagstripen: trykk går til bolken på det tidspunktet */
+$('#strip').addEventListener('click', e => {
+  const st = e.target.closest('.strip');
+  if (!st) return;
+  const r = st.getBoundingClientRect();
+  const m = Number(st.dataset.a) + (e.clientX - r.left) / r.width * (Number(st.dataset.z) - Number(st.dataset.a));
+  const blocks = blocksFor(view);
+  let b = blocks[0];
+  blocks.forEach(x => { if (toMin(x.start) <= m) b = x; });
+  if (!b) return;
+  expanded.add(b.id);
+  renderTimeline();
+  const el = document.querySelector('.blk[data-id="' + CSS.escape(b.id) + '"]');
+  if (el) el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+});
+/* Toppen krymper når du blar ned, og kommer tilbake øverst */
+(() => {
+  let compact = false;
+  const top = $('#top');
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (!compact && y > 80) { compact = true; top.classList.add('compact'); }
+    else if (compact && y < 12) { compact = false; top.classList.remove('compact'); }
+  }, { passive: true });
+})();
 $('#nowbar').addEventListener('click', e => {
   const t = e.target.closest('[data-nb]');
   if (!t) return;
@@ -23,7 +56,6 @@ $('#nowbar').addEventListener('click', e => {
     setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.textContent = T.nowbar.start; t.classList.remove('armed'); } }, 3500);
   }
 });
-$('#sub').addEventListener('click', e => { if (e.target.id === 'go-today') go(0); });
 
 $('#timeline').addEventListener('click', e => {
   const qs = e.target.closest('[data-qshift]');
@@ -57,7 +89,8 @@ $('#timeline').addEventListener('click', e => {
     case 'unpick': commit(null, () => setPick(view, blk.dataset.id, null), 'timeline'); break;
     case 'more': openSuggestSheet(view, blk.dataset.id); break;
     case 'sync': pushNow().then(ok => toast(ok ? T.sync.saved : T.sync.failed)); break;
-    case 'rate': commit(null, () => cycleRate(view, blk.dataset.id, el.dataset.kid), 'timeline'); break;
+    case 'rate': commit(null, () => setRate(view, blk.dataset.id, el.dataset.kid, el.dataset.val), 'timeline'); break;
+    case 'toggle-all': showAll = !showAll; renderTimeline(); break;
     case 'sleep-now': commit('', () => logSleepNow(view, blk.dataset.id, kidsOf())); break;
     case 'night-now': commit('', () => logNightNow(view, blk.dataset.id, kidsOf())); break;
     case 'wake-now': commit('', () => logWakeNow(view, kidsOf())); break;
@@ -70,16 +103,6 @@ $('#timeline').addEventListener('change', e => {
   const id = cb.dataset.done, on = cb.checked, date = view;
   commit(null, () => { const d = dayRec(date); if (on) d.done[id] = true; else delete d.done[id]; }, 'timeline');
 });
-/* sveip til sidene for å bytte dag */
-(() => {
-  let sx = 0, sy = 0, st = 0;
-  const tl = $('#timeline');
-  tl.addEventListener('touchstart', e => { const p = e.touches[0]; sx = p.clientX; sy = p.clientY; st = Date.now(); }, { passive: true });
-  tl.addEventListener('touchend', e => {
-    const p = e.changedTouches[0], dx = p.clientX - sx, dy = p.clientY - sy;
-    if (Date.now() - st < 600 && Math.abs(dx) > 70 && Math.abs(dy) < 45) go(dx < 0 ? 1 : -1);
-  }, { passive: true });
-})();
 
 function tick() {
   if (!state) return;

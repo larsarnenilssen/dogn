@@ -30,6 +30,7 @@ const T = {
   cats: { fisk: 'fisk', kjott: 'kjøtt', kylling: 'kylling', vegetar: 'vegetar', annet: 'annet' },
   meals: { dinner: 'Middag', lunch: 'Lunsj' },
   rates: { godt: 'godt', middels: 'middels', lite: 'lite' },
+  ratesShort: { godt: 'godt', middels: 'midd.', lite: 'lite' },
   travel: { hjemme: 'hjemme', gange: 'gå/vogn', kollektiv: 'buss/bybane', bil: 'bil' },
   kinds: { inne: 'inne', ute: 'ute' },
   health: { temp: 'Temperatur', med: 'Medisin', sym: 'Symptom', other: 'Annet' },
@@ -38,6 +39,7 @@ const T = {
     80: 'lette regnbyger', 81: 'regnbyger', 82: 'kraftige regnbyger', 85: 'snøbyger', 86: 'kraftige snøbyger', 95: 'torden', 96: 'torden og hagl', 99: 'torden og hagl' },
 
   common: {
+    moreInfo: 'Mer forklaring', lessInfo: 'Mindre forklaring',
     close: 'Lukk', back: 'Tilbake', later: 'Senere', save: 'Lagre', del: 'Slett', add: 'Legg til', remove: 'Fjern', undo: 'Angre',
     name: 'Navn', type: 'Type', note: 'Notat', from: 'Fra', to: 'Til', date: 'Dato', time: 'Klokken', none: 'Ingen', noneYet: 'Ingen ennå.',
     yes: 'Ja', no: 'Nei', fromDate: 'Fra dato', minutes: 'Varighet (min)', nameSaved: 'Navn lagret', saved: 'Lagret',
@@ -67,16 +69,18 @@ const T = {
 
   tl: {
     sunrise: 'Soloppgang', sunset: 'Solnedgang', sunriseRow: '↑ soloppgang ', sunsetRow: '↓ solnedgang ',
-    empty: 'Dagen har ingen rubrikker. Legg til den første.',
+    empty: 'Dagen har ingen bolker. Legg til den første.',
     log: 'Dagslogg', week: 'Ukemeny', acts: 'Aktiviteter',
     allDone: 'alt gjort', left: dur => dur + ' igjen',
     moveAria: (title, start) => 'Flytt ' + title + ', starter ' + start,
     showAria: title => 'Vis ' + title, editAria: title => 'Rediger ' + title,
     dishAria: (meal, name) => meal + ': ' + name + '. Trykk for å bytte', swap: 'bytt',
     pickDish: 'Velg rett fra banken',
-    partnerEats: (name, home) => name + (home ? ' spiser med' : ' spiser ikke med'),
+    partnerEats: (name, home) => (home ? '[x] ' : '[ ] ') + name + ' spiser med',
     clothes: 'klær', clothesToday: 'klær i dag', ate: 'spiste',
-    rememberFrom: d => 'Husk fra ' + d, late: n => plural(n, T.n.dag) + ' på etterskudd',
+    rememberFrom: d => 'Husk fra ' + d, late: n => plural(n, T.n.dag) + ' på etterskudd', lateCount: n => n + ' på etterskudd',
+    sugg: list => 'forslag: ' + list.join(' · '), showAll: 'Vis alle detaljer', showCompact: 'Vis kompakt',
+    stripAria: 'Dagen i bolker. Trykk for å gå til en bolk.',
     openLog: 'Åpne dagslogg', shareReport: 'Del dagsrapport', exportBackup: 'Eksporter backup',
     shiftHead: 'Flytt (min). Bolkene etter tilpasses fram til leggetid.', shiftHeadBed: 'Flytt leggetid (min). Nullstilling flyttes like mye.', startsNow: 'Starter nå',
     alreadyNow: title => title + ' starter allerede nå',
@@ -99,6 +103,7 @@ const T = {
   },
 
   sheet: { dialog: 'Ark' },
+  nav: { label: 'Hovedmeny', today: 'i dag', week: 'uke', add: '+', addAria: 'Legg til husk, avtale, helse eller bolk', log: 'logg', more: 'mer' },
 
   // Når bolker flyttes eller startes: leggetid står, resten tilpasses
   fit: {
@@ -124,8 +129,8 @@ const T = {
   },
 
   block: {
-    newInTpl: 'Ny bolk i malen', inTpl: 'Bolk i malen', new: 'Ny rubrikk', edit: 'Rediger rubrikk', group: 'Rubrikk',
-    starts: 'Starter', fromBank: 'Rett fra middagsbanken',
+    newInTpl: 'Ny bolk i malen', inTpl: 'Bolk i malen', new: 'Ny bolk', edit: 'Rediger bolk', group: 'Bolk',
+    starts: 'Starter', time: 'Tid', more: 'Mer: navn, type, rett og rolle', fromBank: 'Rett fra middagsbanken',
     linkOpts: { '': 'Nei, bruk teksten under', dinner: 'Ja, dagens middag', lunch: 'Ja, dagens lunsj' },
     bankHint: 'Når en rett fra banken er valgt for dagen, vises den i stedet for tekstene over.',
     role: 'Rolle',
@@ -135,20 +140,20 @@ const T = {
     tasksHere: list => 'Gjøremål som går igjen vises også her: ' + list + '. De endres under Meny.',
     today: 'i dag', thisDay: 'denne dagen',
     delBlock: 'Slett bolken', delConfirmTpl: (title, tpl) => 'Slette «' + title + '» fra malen «' + tpl + '»?', delFromTpl: 'Slett fra malen',
-    shiftHead: 'Flytt denne bolken', shiftHint: dayLbl => 'Tall i minutter. Bolkene etter tilpasses fram til leggetid, som står. Gjelder bare ' + dayLbl + '.',
+    shiftHead: 'Flytt denne bolken', shiftHint: dayLbl => 'Knappene flytter med en gang, bare ' + dayLbl + '. Tidsfeltet lagres med knappene nederst. Bolkene etter tilpasses fram til leggetid, som står.',
     shiftHeadBed: 'Flytt leggetid', shiftHintBed: dayLbl => 'Tall i minutter. Nullstilling flyttes like mye. Gjelder bare ' + dayLbl + '.',
-    del: 'Slett rubrikk', delConfirm: (title, dayLbl, tpl) => 'Slette «' + title + '» bare ' + dayLbl + ', eller fra malen «' + tpl + '»?',
+    del: 'Slett bolken', delConfirm: (title, dayLbl, tpl) => 'Slette «' + title + '» bare ' + dayLbl + ', eller fra malen «' + tpl + '»?',
     delDay: dayLbl => 'Slett ' + dayLbl, saveTpl: 'Lagre i malen', saveDay: dayLbl => 'Lagre for ' + dayLbl,
     deletedTpl: 'Slettet fra malen', deletedDay: dayLbl => 'Slettet ' + dayLbl,
     savedTpl: tpl => 'Lagret i malen «' + tpl + '»', savedDay: dayLbl => 'Lagret for ' + dayLbl,
   },
 
   menu: {
-    title: 'Meny', newBlock: 'Ny rubrikk', add: 'Husk eller avtale', dayTpl: 'Mal for dagen',
+    title: 'Meny', newBlock: 'Ny bolk', add: 'Husk eller avtale', dayTpl: 'Mal for dagen',
     follow: name => 'Følg planen (' + name + ')', only: name => name + ' bare denne dagen',
     saveDay: 'Lagre dagen som mal', undo: label => 'Angre: ' + label, reset: 'Tilbakestill dagen til malen',
     resetRest: 'Tilbakestill resten av dagen', toastResetRest: 'Resten av dagen følger malen igjen',
-    resetHint: 'Dagen har egne endringer i rubrikkene. Lagre dem som mal, eller tilbakestill hele dagen eller bare resten av den (fra nå). Avkrysninger og logg beholdes uansett.',
+    resetHint: 'Dagen har egne endringer i bolkene. Lagre dem som mal, eller tilbakestill hele dagen eller bare resten av den (fra nå). Avkrysninger og logg beholdes uansett.',
     food: 'Mat', week: 'Ukemeny', todayDish: name => 'I dag: ' + name, shop: 'Handleliste', shopMeta: 'Neste 7 dager fra ukemenyen',
     bank: 'Middagsbank', bankMeta: (n, fish) => plural(n, T.n.rett) + ', fisk ' + fish + ' ganger i uken',
     acts: 'Aktiviteter', library: 'Aktivitetsbibliotek',
@@ -165,8 +170,7 @@ const T = {
   week: {
     title: 'Ukemeny', from: d => 'Uke fra ' + d, prev: 'Forrige uke', next: 'Neste uke',
     noDinner: 'ingen middag valgt', manual: ', valgt selv', lunch: name => 'lunsj: ' + name,
-    partnerInfo: (name, shift, home) => name + ': ' + (shift || 'ingen vakt registrert') + (home ? ', spiser med' : ', spiser ikke med'),
-    partnerEats: name => name + ' spiser med',
+    partnerShort: (name, home, shift) => (home ? '[x] ' : '[ ] ') + name + (home ? '' : shift ? ' · ' + shift : ''),
     hint: 'Trykk på en dag for å bytte rett. Faste retter står på sine dager, fisk spres utover uken, og ellers kommer retten som er spist for lengst siden.',
     shop: 'Handleliste for uken', regenHead: 'Lag menyen på nytt',
     regenHint: d => 'Gjelder dager fra og med i morgen (' + d + '). Retter du har valgt selv, beholdes.',
@@ -206,7 +210,7 @@ const T = {
     night: 'Natt', asleepEve: 'Sovnet i kveld', wokeMorning: 'Våknet i morgen',
     health: 'Helse', isSick: name => name + ' er syk',
     healthHint: 'For temperatur, medisin og symptomer. Appen gir ikke råd om dosering. Når et barn er sykt, foreslås bare aktiviteter hjemme.',
-    meals: 'Måltider', noMeals: 'Ingen måltider i dagens plan.', ratesHint: 'Trykk for å veksle mellom godt, middels og lite.',
+    meals: 'Måltider', noMeals: 'Ingen måltider i dagens plan.', ratesHint: 'Trykk på valget igjen for å fjerne det.',
     noteAria: 'Notat for dagen', notePh: 'Hva gikk bra, hva bør endres?', share: 'Del dagsrapport',
     healthToast: (kid, kind, value, time) => 'Helse: ' + kid + ', ' + kind.toLowerCase() + (value ? ' ' + value : '') + ' kl. ' + time,
   },
@@ -233,7 +237,7 @@ const T = {
     everyLabel: 'Antall dager mellom hver gang',
     everyHint: prev => 'Telleren starter på nytt når du krysser av. Blir det ikke gjort, står det igjen til neste dag.' + (prev ? ' Sist gjort ' + prev + '.' : ''),
     weekdays: 'Ukedager', firstTime: 'Første gang', validFrom: 'Gjelder fra',
-    shownIn: 'Vises i', shownHint: 'Finnes ikke rubrikken i malen som brukes, vises gjøremålet i første rubrikk av samme type.',
+    shownIn: 'Vises i', shownHint: 'Finnes ikke bolken i malen som brukes, vises gjøremålet i første bolk av samme type.',
     del: 'Slett gjøremål', delConfirm: text => 'Slette «' + text + '»? Tidligere avkrysninger forsvinner fra oversikten.',
     save: 'Lagre gjøremål', deleted: 'Gjøremål slettet', savedToast: 'Gjøremål lagret',
   },
@@ -276,7 +280,7 @@ const T = {
     defaultName: 'Partner', off: ' fri', unknownCode: 'Ukjent kode',
     noShifts: 'Filen mangler vakter.', noLines: 'Fant ingen linjer med dato og vaktkode.', notRota: 'Filen kunne ikke leses som turnus.',
     imported: n => 'Turnus importert: ' + plural(n, T.n.dag), needTimes: list => 'Legg inn tider for: ' + list,
-    title: 'Partner og turnus', group: 'Partner', on: 'Turnus er slått på', isOff: 'Turnus er slått av',
+    title: 'Partner og turnus', group: 'Partner', rotaOn: 'Bruk turnus',
     nameInApp: 'Navn i appen', commute: 'Reisetid (min)', commuteHint: name => 'Reisetiden brukes til å avgjøre om ' + name + ' rekker middagen. Du kan alltid overstyre med knappen i middagsbolken.',
     importHead: 'Importer turnus', importBtn: 'Velg turnusfil',
     importHint: 'Tar imot en turnusfil fra Døgn, eller en tekstfil med én dag per linje, for eksempel «2026-10-01 D». Har du turnusen som PDF, kan Claude lage filen for deg. Dager i filen erstatter dager som allerede ligger inne.',
@@ -301,7 +305,7 @@ const T = {
     theme: 'Tema', themes: { dark: 'Mørkt', light: 'Lyst', auto: 'Følg telefonen' },
     textSize: 'Tekststørrelse', sizes: { 1: 'Normal', 1.1: 'Stor', 1.2: 'Ekstra stor' }, themeHint: 'Lyst tema er lettere å lese ute i dagslys.',
     rhythm: 'Dagsrytme', napsAria: 'Antall lurer', rhythmHint: 'Tidene i malen er et utgangspunkt. Juster dem i tidslinjen og lagre i malen.',
-    partner: 'Partner med turnus', partnerHint: 'Med turnus vet appen hvilke dager dere spiser middag sammen. Selve turnusen importeres under Meny › Partner og turnus.',
+    partner: 'Partner med turnus', partnerHas: 'Partneren har turnus', partnerHint: 'Med turnus vet appen hvilke dager dere spiser middag sammen. Selve turnusen importeres under Meny › Partner og turnus.',
     start: 'Start', save: 'Lagre profil',
     noGeo: 'Posisjon er ikke tilgjengelig her.', geoDenied: 'Fikk ikke tilgang til posisjonen. Søk etter stedet i stedet.',
     needName: 'Skriv inn minst ett navn.', checkDates: 'Sjekk permisjonsdatoene.', ready: 'Klar. God permisjon!', saved: 'Profil lagret',
@@ -331,7 +335,7 @@ const T = {
     suggestTitle: (s, e) => 'Forslag ' + s + '–' + e, noWeather: 'Ingen værmelding for dette tidspunktet.',
     fits: 'Passer nå', noHits: 'Ingen treff.', fitsLess: 'Passer mindre godt', fitsLessHint: 'Feil ukedag, for kort tid, mørkt eller for vått.',
     openLib: 'Åpne aktivitetsbiblioteket',
-    title: 'Aktiviteter', inside: 'Inne', outside: 'Ute', new: 'Ny aktivitet',
+    title: 'Aktiviteter', inside: 'Inne', outside: 'Ute', new: 'Ny aktivitet', groups: { home: 'Hjemme', walk: 'I gåavstand', far: 'Med buss eller bil' },
     pack: 'Pakkeliste', packAria: 'Pakkeliste, ett punkt per linje', packHint: 'Ett punkt per linje. Listen dukker opp i bolken når du velger en aktivitet utenfor huset.',
     credit1: 'Forslagene i våkenbolkene velges ut fra været, dagslyset, faste tider og hva dere har gjort nylig. Værdata fra ', credit2: ' og MET Norge (CC BY 4.0).',
     packSaved: 'Pakkeliste lagret', packFor: name => 'Pakkeliste for ' + name,
@@ -349,7 +353,7 @@ const T = {
   tomorrow: {
     head: d => 'i morgen, ' + d, weather: 'vær', light: 'lyst', lightRange: r => ', lyst ' + r, clothes: 'klær',
     home: ', spiser middag med dere', away: ', ikke hjemme til middag', lunch: 'lunsj', dinner: 'middag', tonight: text => '. ' + text + ' i kveld',
-    firstNap: 'første lur', fixed: 'faste tilbud', appt: 'avtale', tasks: 'gjøremål', more: ' med flere',
+    firstNap: 'første lur', napShort: t => '1. lur ' + t, fixed: 'faste tilbud', appt: 'avtale', tasks: 'gjøremål', more: ' med flere',
   },
 
   report: {

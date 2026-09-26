@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/app.css">
 <!-- Skriptene deler samme globale navnerom og kjøres i denne rekkefølgen etter at siden er lest inn.
@@ -40,6 +40,7 @@
 <script src="js/views/log.js" defer></script>
 <script src="js/views/setup.js" defer></script>
 <script src="js/views/calendar.js" defer></script>
+<script src="js/views/swipe.js" defer></script>
 <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -49,14 +50,22 @@
     <div class="nav">
       <button class="icon-btn" id="prev" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
       <button class="icon-btn" id="next" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
-      <button class="icon-btn" id="menu" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
     </div>
     <div class="sub" id="sub"></div>
+    <div class="strip-wrap" id="strip"></div>
     <div class="nowbar" id="nowbar" hidden></div>
   </div>
 </header>
 <main class="wrap" id="timeline" aria-live="off"></main>
-<button type="button" class="fab" id="fab"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+<nav class="bottombar" id="bottombar">
+  <div class="bb-in">
+    <button type="button" id="tab-today">i dag</button>
+    <button type="button" id="tab-week">uke</button>
+    <button type="button" class="bb-add" id="fab">+</button>
+    <button type="button" id="tab-log">logg</button>
+    <button type="button" id="menu">mer</button>
+  </div>
+</nav>
 <div id="sheet-root" hidden></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </body>

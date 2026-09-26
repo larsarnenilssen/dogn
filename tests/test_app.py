@@ -110,6 +110,10 @@ class DognTest(unittest.TestCase):
     def tearDown(self):
         self.assertEqual(getattr(self, 'errors', []), [], 'JavaScript-feil i siden')
 
+    def expand(self, pg, block_id):
+        """Fjerne bolker vises som én linje. Denne folder ut en bolk, som et trykk på den."""
+        pg.evaluate("id => { expanded.add(id); renderTimeline(); }", block_id)
+
     def times(self, pg):
         return pg.eval_on_selector_all('.blk .tbtn', 'els => els.map(e => e.textContent.trim())')
 
@@ -326,16 +330,21 @@ class DognTest(unittest.TestCase):
     def test_weather_and_sick_mode_shape_suggestions(self):
         pg = self.open()
         pg.evaluate("go(0, '2026-10-08')")              # regnværsdag
+        self.expand(pg, 'to-lurer.vaken2')
         txt = pg.inner_text('.blk[data-id="to-lurer.vaken2"]')
         self.assertIn('regn', txt)
         self.assertNotIn('Parktur', txt)                  # trenger opphold
         pg.evaluate("go(0, '2026-10-07')")              # tørt, onsdag
+        self.expand(pg, 'to-lurer.vaken2')
         txt = pg.inner_text('.blk[data-id="to-lurer.vaken2"]')
         self.assertIn('Babysang', txt)                    # fast tilbud på onsdager
         pg.evaluate("(() => { const L = logRec('2026-10-07'); L.sick = { a: true }; persist(); render(); })()")
+        self.expand(pg, 'to-lurer.vaken2')
         sugg = pg.inner_text('.blk[data-id="to-lurer.vaken2"] .sugg')
         self.assertNotIn('Babysang', sugg)
-        self.assertIn('hjemme', sugg)
+        travel = pg.evaluate("""[...document.querySelectorAll('.blk[data-id="to-lurer.vaken2"] .sg[data-aid]')]
+          .map(b => state.activities.find(a => a.id === b.dataset.aid).travel)""")
+        self.assertTrue(travel and all(t == 'hjemme' for t in travel), travel)
 
     def test_nowbar_start_needs_two_taps(self):
         pg = self.open(when=(2026, 10, 7, 12, 40))
@@ -441,9 +450,11 @@ class DognTest(unittest.TestCase):
         # Nullstillingen gjenkjennes på rollen, ikke på navnet
         pg.evaluate("""() => { const b = state.templates['to-lurer'].blocks.find(x => x.role === 'reset');
                                  b.slot = 'kveldsrutine'; b.title = 'Kveldsrutine'; persist(); render(); }""")
+        self.expand(pg, 'to-lurer.kveld')
         self.assertTrue(pg.is_visible('.blk[data-id="to-lurer.kveld"] .tomorrow'))
         # Flytt rollen «legging» til leggeforberedelsen i bolkeditoren
         pg.evaluate("openBlockSheet('to-lurer.legg', 'to-lurer')")
+        pg.click('#sheet-root details.more-sec > summary')             # rollen ligger under «Mer»
         pg.select_option('#f-role', 'bedtime')
         pg.click('.sh-foot [data-save="tpl"]')
         pg.wait_for_timeout(200)
@@ -455,11 +466,13 @@ class DognTest(unittest.TestCase):
 
     def test_kids_word(self):
         pg = self.open()
+        self.expand(pg, 'to-lurer.middag')
         self.assertIn('Barnene', pg.inner_text('.blk[data-id="to-lurer.middag"]'))
         pg.evaluate("openProfileSheet(false)")
         pg.fill('#p-kw', 'tvillingene')
         pg.click('.sh-foot [data-save]')
         pg.wait_for_timeout(300)
+        self.expand(pg, 'to-lurer.middag')
         self.assertIn('Tvillingene', pg.inner_text('.blk[data-id="to-lurer.middag"]'))
 
     def test_import_is_escaped_and_sanitized(self):
@@ -558,6 +571,89 @@ class DognTest(unittest.TestCase):
         pg.wait_for_timeout(200)
         self.assertEqual(pg.evaluate("blocksFor('2026-10-07').find(b => b.slot === 'kveld').items.map(i => i.text)"), moved)
         self.assertEqual(pg.evaluate("state.templates['to-lurer'].blocks.find(b => b.slot === 'kveld').items[0].text"), before[0])
+
+    # ---------- designrunde 2 ----------
+    def touch_swipe(self, pg, x0, y0, x1, y1, steps=8):
+        cdp = pg.context.new_cdp_session(pg)
+        cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': x0, 'y': y0}]})
+        for i in range(1, steps + 1):
+            cdp.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'x': x0 + (x1 - x0) * i / steps, 'y': y0 + (y1 - y0) * i / steps}]})
+        cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+        pg.wait_for_timeout(500)
+
+    def test_compact_timeline(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        full = pg.eval_on_selector_all('.blk:not(.compact):not(.past)', 'els => els.map(e => e.dataset.id)')
+        self.assertIn('to-lurer.vaken-kort', full)                  # bolken dere er i
+        self.assertIn('to-lurer.lur1', full)                        # neste
+        self.assertIn('to-lurer.middag', pg.eval_on_selector_all('.blk.compact', 'els => els.map(e => e.dataset.id)'))
+        self.assertIn('forslag:', pg.inner_text('.blk[data-id="to-lurer.vaken2"]'))
+        pg.click('.blk[data-id="to-lurer.vaken2"] .head')           # trykk folder ut
+        self.assertTrue(pg.is_visible('.blk[data-id="to-lurer.vaken2"] .sugg'))
+        pg.click('[data-act="toggle-all"]')
+        self.assertEqual(pg.eval_on_selector_all('.blk.compact', 'els => els.length'), 0)
+
+    def test_day_strip_and_bottom_bar(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        self.assertEqual(pg.eval_on_selector_all('#strip .bar > span', 'els => els.length'), 17)
+        self.assertTrue(pg.is_visible('#strip .mark'))
+        box = pg.locator('#strip .strip').bounding_box()
+        pg.mouse.click(box['x'] + box['width'] * 0.99, box['y'] + box['height'] / 2)   # helt til høyre: nullstillingen
+        pg.wait_for_timeout(300)
+        self.assertTrue(pg.evaluate("expanded.has('to-lurer.kveld')"))
+        pg.click('#tab-week'); pg.wait_for_selector('#sheet-root.open')
+        self.assertIn('Ukemeny', pg.inner_text('#sheet-root .sh-head'))
+        pg.evaluate('closeSheet()'); pg.wait_for_timeout(300)
+        pg.evaluate("go(1)")
+        self.assertEqual(pg.get_attribute('#tab-today', 'aria-current'), 'false')
+        pg.click('#tab-today')
+        self.assertEqual(pg.evaluate('view'), '2026-10-07')
+
+    def test_swipe_between_days(self):
+        pg = self.open(when=(2026, 10, 7, 14, 10))
+        self.touch_swipe(pg, 330, 600, 60, 610)
+        self.assertEqual(pg.evaluate('view'), '2026-10-08')
+        self.touch_swipe(pg, 60, 600, 330, 605)
+        self.assertEqual(pg.evaluate('view'), '2026-10-07')
+        self.touch_swipe(pg, 200, 700, 190, 300)                      # loddrett: ingen dagbytte
+        self.assertEqual(pg.evaluate('view'), '2026-10-07')
+        self.touch_swipe(pg, 330, 600, 290, 600)                      # for kort: blir på dagen
+        self.assertEqual(pg.evaluate('view'), '2026-10-07')
+        self.assertEqual(pg.evaluate("document.querySelector('#timeline').style.transform"), '')
+
+    def test_swipe_in_sheets(self):
+        pg = self.open(when=(2026, 10, 7, 14, 10))
+        pg.click('#date'); pg.wait_for_selector('#sheet-root.open .cal'); pg.wait_for_timeout(400)
+        box = pg.locator('.cal').bounding_box()
+        y = box['y'] + box['height'] / 2
+        self.touch_swipe(pg, box['x'] + box['width'] - 20, y, box['x'] + 20, y)
+        self.assertIn('November', pg.inner_text('.cal-m'))
+        head = pg.locator('.sh-head').bounding_box()
+        self.touch_swipe(pg, 200, head['y'] + 20, 200, head['y'] + 260)   # dra ned lukker
+        pg.wait_for_timeout(300)
+        self.assertFalse(pg.evaluate('sheetOpen()'))
+        pg.evaluate('openTasksSheet()'); pg.wait_for_selector('#sheet-root.open'); pg.wait_for_timeout(400)
+        self.touch_swipe(pg, 8, 500, 200, 505)                            # fra venstre kant: tilbake til menyen
+        self.assertIn('Meny', pg.inner_text('#sheet-root .sh-head'))
+
+    def test_rates_and_switches(self):
+        pg = self.open(when=(2026, 10, 7, 13, 40))
+        pg.click('.blk[data-id="to-lurer.middag"] [data-act="rate"][data-kid="a"][data-val="godt"]')
+        self.assertEqual(pg.evaluate("getLog('2026-10-07').meals['to-lurer.middag'].a"), 'godt')
+        pg.click('.blk[data-id="to-lurer.middag"] [data-act="rate"][data-kid="a"][data-val="godt"]')   # samme igjen fjerner
+        self.assertIsNone(pg.evaluate("getLog('2026-10-07').meals['to-lurer.middag'].a ?? null"))
+        pg.evaluate('openProfileSheet(false)'); pg.wait_for_selector('#sheet-root.open [data-show="nowbar"]')
+        pg.click('[data-show="nowbar"]')
+        self.assertEqual(pg.get_attribute('[data-show="nowbar"]', 'aria-checked'), 'false')
+        self.assertTrue(pg.evaluate('!showOn("nowbar")'))
+
+    def test_block_editor_time_first(self):
+        pg = self.open()
+        pg.evaluate("openBlockSheet('to-lurer.middag')"); pg.wait_for_selector('#sheet-root.open #f-start')
+        order = pg.evaluate("[...document.querySelectorAll('#bf > *')].map(e => e.querySelector('h3, summary') && e.querySelector('h3, summary').textContent)")
+        self.assertEqual(order[0], 'Tid')
+        self.assertFalse(pg.is_visible('#f-role'))                     # under «Mer»
+        self.assertEqual(pg.evaluate("[...document.querySelectorAll('.sh-body')].pop().innerText.includes('rubrikk')"), False)
 
 
 if __name__ == '__main__':

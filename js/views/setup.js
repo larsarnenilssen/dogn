@@ -2,22 +2,21 @@
 /* ---------- ark for oppsett: profil, partner og turnus, backup, aktiviteter, import og eksport ---------- */
 
 const placeLabel = p => p ? p.name + ', ' + p.lat.toFixed(3) + ' / ' + p.lon.toFixed(3) : T.profile.notChosen;
-const chipSet = (attr, pairs, cur) => pairs.map(([k, l]) => h`<button type="button" class="chip" ${raw(attr)}="${k}" aria-pressed="${cur(k)}">${l}</button>`);
 
 function openProfileSheet(firstRun) {
   reopen = firstRun ? null : () => openProfileSheet(false);
   const P = T.profile;
   let place = state.place ? clone(state.place) : null;
   const kidRow = k => h`<div class="item" data-kid="${k.id}" data-sort="${k.id}">${dragHandle(k.name || T.common.name)}<input type="text" value="${k.name}" aria-label="${T.common.name}" autocomplete="off"><button type="button" class="icon-btn sm" data-rm aria-label="${T.common.remove}">${ICON_X}</button></div>`;
-  const display = firstRun ? '' : h`<section class="grp"><h3>${P.display}</h3><div class="chips">${chipSet('data-show', Object.entries(P.show), showOn)}</div>
+  const display = firstRun ? '' : h`<section class="grp"><h3>${P.display}</h3><div class="switches">${Object.entries(P.show).map(([k, l]) => switchBtn('data-show', k, showOn(k), l))}</div>
       ${hint(P.showHint)}
-      <span class="lbl">${P.theme}</span><div class="chips">${chipSet('data-theme-set', Object.entries(P.themes), k => (state.settings.theme || 'dark') === k)}</div>
-      <span class="lbl">${P.textSize}</span><div class="chips">${chipSet('data-size-set', Object.entries(P.sizes), k => (Number(state.settings.textSize) || 1) === Number(k))}</div>
+      <span class="lbl">${P.theme}</span>${segRow('data-theme-set', Object.entries(P.themes), k => (state.settings.theme || 'dark') === k)}
+      <span class="lbl">${P.textSize}</span>${segRow('data-size-set', Object.entries(P.sizes), k => (Number(state.settings.textSize) || 1) === Number(k))}
       ${hint(P.themeHint)}</section>`;
   const firstRunParts = !firstRun ? '' : h`<section class="grp"><h3>${P.rhythm}</h3><label for="p-tpl" class="vh">${P.napsAria}</label><select id="p-tpl">${options(Object.values(state.templates).map(t => [t.id, t.name]))}</select>
       ${hint(P.rhythmHint)}</section>
     <section class="grp"><h3>${P.partner}</h3>
-      <button type="button" class="chip" data-p-on aria-pressed="false">${T.common.no}</button>
+      ${switchBtn('data-p-on', '1', false, P.partnerHas)}
       <div class="field" id="p-pn-f" hidden><label for="p-pn">${T.partner.nameInApp}</label><input id="p-pn" type="text" value="${partnerName()}" autocomplete="off"></div>
       ${hint(P.partnerHint)}</section>`;
   openSheet(h`<div class="sh-head"><h2>${firstRun ? P.welcome : P.title}</h2>
@@ -81,10 +80,10 @@ function openProfileSheet(firstRun) {
       }));
       setting('data-theme-set', c => { state.settings.theme = c.dataset.themeSet; sheet.querySelectorAll('[data-theme-set]').forEach(x => x.setAttribute('aria-pressed', x === c)); });
       setting('data-size-set', c => { state.settings.textSize = Number(c.dataset.sizeSet); sheet.querySelectorAll('[data-size-set]').forEach(x => x.setAttribute('aria-pressed', x === c)); });
-      setting('data-show', c => { const k = c.dataset.show, on = !showOn(k); state.settings.show = Object.assign({}, state.settings.show, { [k]: on }); c.setAttribute('aria-pressed', on); });
+      setting('data-show', c => { const k = c.dataset.show, on = !showOn(k); state.settings.show = Object.assign({}, state.settings.show, { [k]: on }); c.setAttribute('aria-checked', on); });
       let pOn = false;
       const pBtn = q('[data-p-on]');
-      if (pBtn) pBtn.addEventListener('click', () => { pOn = !pOn; pBtn.setAttribute('aria-pressed', pOn); pBtn.textContent = pOn ? T.common.yes : T.common.no; q('#p-pn-f').hidden = !pOn; });
+      if (pBtn) pBtn.addEventListener('click', () => { pOn = !pOn; pBtn.setAttribute('aria-checked', pOn); q('#p-pn-f').hidden = !pOn; });
       const imp = q('#f-start-import');
       if (imp) imp.addEventListener('change', e => { const f = e.target.files[0]; if (f) importData(f); e.target.value = ''; });
       q('[data-save]').addEventListener('click', () => {
@@ -112,7 +111,7 @@ function openPartnerSheet() {
   openSheet(h`${headHTML(P.title, true)}
     <div class="sh-body">
       <section class="grp"><h3>${P.group}</h3>
-        <button type="button" class="chip" data-p-on aria-pressed="${!!Pn.enabled}">${Pn.enabled ? P.on : P.isOff}</button>
+        ${switchBtn('data-p-on', '1', !!Pn.enabled, P.rotaOn)}
         <div class="row2">
           <div class="field"><label for="p-name">${P.nameInApp}</label><input id="p-name" type="text" value="${Pn.name}" autocomplete="off"></div>
           <div class="field"><label for="p-com">${P.commute}</label><input id="p-com" type="number" inputmode="numeric" min="0" max="180" value="${Number(Pn.commute) || 0}"></div>
@@ -321,14 +320,14 @@ function openActivitiesSheet() {
   reopen = openActivitiesSheet;
   const A = T.acts;
   const acts = [...state.activities].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'ute' ? 1 : -1) || a.name.localeCompare(b.name));
-  const list = kind => {
-    const rows = acts.filter(a => a.kind === kind).map(a => h`<button type="button" class="row" data-aid="${a.id}"><span class="grow">${a.name}<span class="m">${actMeta(a)}</span></span><span class="r">›</span></button>`);
+  const groups = [['home', a => a.travel === 'hjemme'], ['walk', a => a.travel === 'gange'], ['far', a => a.travel === 'kollektiv' || a.travel === 'bil']];
+  const list = test => {
+    const rows = acts.filter(test).map(a => h`<button type="button" class="row" data-aid="${a.id}"><span class="grow">${a.name}<span class="m">${actMeta(a)}</span></span><span class="r">›</span></button>`);
     return rows.length ? rows : emptyRow(T.common.noneYet);
   };
   openSheet(h`${headHTML(A.title, true)}
     <div class="sh-body">
-      <section class="grp"><h3>${A.inside}</h3><div class="list">${list('inne')}</div></section>
-      <section class="grp"><h3>${A.outside}</h3><div class="list">${list('ute')}</div></section>
+      ${groups.map(([k, test]) => h`<section class="grp"><h3>${A.groups[k]}</h3><div class="list">${list(test)}</div></section>`)}
       <button type="button" class="btn primary wide" data-new>${A.new}</button>
       <section class="grp"><h3>${A.pack}</h3><label for="pk-list" class="vh">${A.packAria}</label>
         <textarea id="pk-list" rows="6">${packList().join('\n')}</textarea>

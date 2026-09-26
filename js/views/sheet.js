@@ -10,7 +10,7 @@ function openSheet(html, mount, goback) {
   const root = $('#sheet-root');
   const seq = ++sheetSeq;
   const wasOpen = root.classList.contains('open');
-  setHtml(root, h`<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true">${html}</div>`);
+  setHtml(root, h`<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab" aria-hidden="true"></div>${html}</div>`);
   root.hidden = false;
   document.body.classList.add('locked');
   if (wasOpen) root.classList.add('open');
@@ -22,6 +22,14 @@ function openSheet(html, mount, goback) {
   const gb = sheet.querySelector('[data-goback]');
   if (gb && goback) gb.addEventListener('click', goback);
   sheet.querySelectorAll('form').forEach(f => f.addEventListener('submit', e => e.preventDefault()));
+  sheet.addEventListener('click', e => {
+    const q = e.target.closest('[data-qm]');
+    if (!q) return;
+    const more = q.closest('.hint').nextElementSibling;
+    more.hidden = !more.hidden;
+    q.setAttribute('aria-expanded', String(!more.hidden));
+    q.setAttribute('aria-label', more.hidden ? T.common.moreInfo : T.common.lessInfo);
+  });
   if (mount) mount(sheet, s => sheet.querySelector(s));
 }
 function closeSheet() {
@@ -42,7 +50,20 @@ const headBack = title => h`<div class="sh-head"><h2>${title}</h2><button type="
 const headMaybeBack = (title, goback) => goback ? headBack(title) : headHTML(title);
 const footSave = (label, attr = 'data-save') => h`<div class="sh-foot"><button type="button" class="btn primary grow" ${raw(attr)}>${label}</button></div>`;
 const navRow = (act, label, meta) => h`<button type="button" class="row" data-nav="${act}"><span class="grow">${label}${meta ? h`<span class="m">${meta}</span>` : ''}</span><span class="r">›</span></button>`;
-const hint = text => h`<p class="hint">${text}</p>`;
+/* Hjelpetekst: første setning vises, resten bak en liten «?» */
+function splitHint(text) {
+  text = String(text);
+  const m = text.length > 90 && text.match(/^(.+?[.!?»])\s+(?=[A-ZÆØÅ«])([\s\S]+)$/);
+  return m ? [m[1], m[2]] : [text, ''];
+}
+const hint = text => {
+  const [a, b] = splitHint(text);
+  return b ? h`<p class="hint">${a} <button type="button" class="qm" data-qm aria-expanded="false" aria-label="${T.common.moreInfo}">?</button></p><p class="hint more" hidden>${b}</p>`
+    : h`<p class="hint">${a}</p>`;
+};
+/* Av/på vises som [x] / [ ], valg mellom flere som en delt knapperad */
+const switchBtn = (attr, val, on, label) => h`<button type="button" class="switch" role="switch" ${raw(attr)}="${val}" aria-checked="${on}">${label}</button>`;
+const segRow = (attr, pairs, cur) => h`<div class="seg" role="group">${pairs.map(([k, l]) => h`<button type="button" ${raw(attr)}="${k}" aria-pressed="${cur(k)}">${l}</button>`)}</div>`;
 const emptyRow = text => h`<div><span class="hint">${text}</span></div>`;
 /* Slett-knapp som først viser en bekreftelse */
 const delConfirm = (label, question, yes) => h`<section class="grp quiet"><button type="button" class="btn link" data-del>${label}</button>${question

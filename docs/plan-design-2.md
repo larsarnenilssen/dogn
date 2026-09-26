@@ -1,4 +1,4 @@
-# Plan: designrunde 2 (godkjent 26.09.2026, «hele pakken»)
+# Plan: designrunde 2 (godkjent 26.09.2026, «hele pakken») – gjennomført i versjon 2.0.0
 
 Rammer: terminalpreget beholdes. Ingen emojier eller bildesymboler. Bruk tegn som
 passer uttrykket (›, –, ·, *, [x]) og korte, tydelige forkortelser. Alt nytt følger
