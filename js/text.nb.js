@@ -330,7 +330,7 @@ const T = {
   profile: {
     notChosen: 'Ikke valgt', welcome: 'Velkommen til Døgn', title: 'Profil',
     haveFile: 'Har du en backup eller startfil?', importFile: 'Importer fil', importHint: 'Ellers setter du opp appen under. Alt kan endres senere under Meny › Profil.',
-    kids: 'Barn', addKid: 'Legg til barn', born: 'Født', due: 'Termin', dueHint: 'Bare hvis barna er født før termin. Da regnes korrigert alder til to år, som helsestasjonen gjør.',
+    kids: 'Barn', addKid: 'Legg til barn', born: 'Født', due: 'Termin', dueHint: 'Bare hvis barnene er født før termin. Da regnes korrigert alder til to år, som helsestasjonen gjør.',
     ages: list => list.join(' · '), ageLine: (name, age, corr) => name + ' ' + age + (corr ? ' (korrigert ' + corr + ')' : ''),
     ageFacts: m => m >= 11 && m < 19 ? 'Fra ett år: skummet- eller lettmelk som drikke, høyst 5 dl om dagen medregnet yoghurt. Overgangen til én lur skjer oftest mellom 12 og 18 mnd.' : m >= 5 && m < 11 ? 'Overgangen fra tre til to lurer skjer oftest mellom 6 og 9 mnd.' : '',
     hsMade: n => plural(n, T.n.gjoremal) + ' om helsestasjonen lagt inn',
