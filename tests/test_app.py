@@ -1040,6 +1040,16 @@ class DognTest(unittest.TestCase):
         self.assertIn('Bleier', share['shop'])
         self.assertEqual([k['name'] for k in share['kids']], ['Ola', 'Kari'])
         self.assertNotIn('token', json.dumps(share))
+        # Partner og turnus: med Takt kan turnus og koder bare leses
+        pg.evaluate('() => openPartnerSheet()'); pg.wait_for_selector('#sheet-root.open #p-com'); pg.wait_for_timeout(400)
+        for sel in ['#p-import', '[data-new-code]', '[data-code]', '[data-p-on]', '[data-sd]']:
+            self.assertEqual(pg.eval_on_selector_all('#sheet-root ' + sel, 'els => els.length'), 0, sel)
+        self.assertIn('A14', pg.inner_text('#sheet-root'))
+        self.assertIn('Takt ikke har sendt', pg.inner_text('#sheet-root'))
+        # Uten Takt kan alt endres igjen, og fravær fra Takt brukes ikke
+        pg.evaluate('() => { sync.cfg.takt = false; openPartnerSheet(); }'); pg.wait_for_timeout(400)
+        self.assertEqual(pg.eval_on_selector_all('#sheet-root #p-import', 'els => els.length'), 1)
+        self.assertIsNone(pg.evaluate("() => taktAway('2026-10-07')"))
 
     def test_share_file_shows_who_sleeps(self):
         pg = self.open()

@@ -79,7 +79,7 @@ const T = {
     moveAria: (title, start) => 'Flytt ' + title + ', starter ' + start,
     asleepFor: d => 'sovet ' + d, showAria: title => 'Vis ' + title, foldAria: title => 'Vis ' + title + ' på én linje', editAria: title => 'Rediger ' + title,
     dishAria: (meal, name) => meal + ': ' + name + '. Trykk for å bytte', swap: 'bytt',
-    pickDish: 'Velg rett', noDish: meal => 'ingen ' + meal.toLowerCase() + ' valgt', kidsSame: 'samme som dere',
+    pickDish: 'Velg rett ›', noDish: meal => 'ingen ' + meal.toLowerCase() + ' valgt', kidsSame: 'samme som dere',
     partnerEats: (name, home) => (home ? '[x] ' : '[ ] ') + name + ' spiser med',
     kidsEat: (w, on) => (on ? '[x] ' : '[ ] ') + cap(w) + ' spiser av middagen', adultsOnly: ' (middagen er for voksne)', kidsOwn: 'egen mat',
     clothes: 'klær', clothesToday: 'klær i dag', ate: 'spiste',
@@ -317,6 +317,8 @@ const T = {
   partner: {
     defaultName: 'Partner', off: ' fri', unknownCode: 'Ukjent kode', customCode: 'egne tider',
     fromTakt: name => 'Turnusen og når ' + name + ' er borte, hentes fra Takt. Endringer gjøres der. * er valgt reise, ~ er beregnet, (+1) er hjem neste dag.',
+    commuteTakt: name => 'Brukes bare de dagene Takt ikke har sendt når ' + name + ' er borte. Ellers bruker Døgn tidene fra Takt, som tar med reisen.',
+    codesTakt: 'Kodene kommer fra Takt.',
     nextTakt: 'Neste tre uker', none: '–',
     noShifts: 'Filen mangler vakter.', noLines: 'Fant ingen linjer med dato og vaktkode.', notRota: 'Filen kunne ikke leses som turnus.',
     imported: n => 'Turnus importert: ' + plural(n, T.n.dag), needTimes: list => 'Legg inn tider for: ' + list,

@@ -123,22 +123,25 @@ function openPartnerSheet() {
   const today = todayISO();
   const days = [...Array(21)].map((_, i) => addDays(view < today ? today : view, i));
   const codeMeta = d => d.kind === 'off' ? P.codeOff : (d.kind === 'night' ? P.codeNight : '') + (d.start && d.end ? d.start + '–' + d.end : P.noTimes);
+  // Med Takt kommer turnus og koder derfra og overskrives ved hver henting: vises bare
+  const fromT = rotaFromTakt(), name = partnerName();
+  const codeInfo = (c, d) => h`<span class="grow">${c}<span class="m">${[d.label, codeMeta(d)].filter(Boolean).join(', ')}</span></span>`;
   openSheet(h`${headHTML(P.title, true)}
     <div class="sh-body">
       <section class="grp"><h3>${P.group}</h3>
-        ${switchBtn('data-p-on', '1', !!Pn.enabled, P.rotaOn)}
+        ${fromT ? h`<p class="hint">${P.fromTakt(name)}</p>` : switchBtn('data-p-on', '1', !!Pn.enabled, P.rotaOn)}
         <div class="field"><label for="p-com">${P.commute}</label><input id="p-com" type="number" inputmode="numeric" min="0" max="180" value="${Number(Pn.commute) || 0}"></div>
-        ${hint(P.nameWhere(partnerName()))}
-        ${hint(P.commuteHint(Pn.name))}
+        ${hint(fromT ? P.commuteTakt(name) : P.commuteHint(name))}
+        ${hint(P.nameWhere(name))}
       </section>
-      <section class="grp"><h3>${P.importHead}</h3>
+      ${fromT ? '' : h`<section class="grp"><h3>${P.importHead}</h3>
         <label class="btn wide" for="p-import">${P.importBtn}</label><input type="file" id="p-import" class="vh" accept=".json,.txt,text/plain,application/json">
         ${hint(P.importHint)}
-      </section>
+      </section>`}
       <section class="grp"><h3>${P.codes}</h3><div class="list">
-        ${codes.map(([c, d]) => h`<button type="button" class="row" data-code="${c}"><span class="grow">${c}<span class="m">${[d.label, codeMeta(d)].filter(Boolean).join(', ')}</span></span><span class="r">›</span></button>`)}
-      </div><button type="button" class="btn wide" data-new-code>${P.newCode}</button></section>
-      ${Pn.source === 'takt' ? h`<section class="grp"><h3>${P.nextTakt}</h3>${hint(P.fromTakt(Pn.name))}<div class="list">
+        ${codes.map(([c, d]) => fromT ? h`<div>${codeInfo(c, d)}</div>` : h`<button type="button" class="row" data-code="${c}">${codeInfo(c, d)}<span class="r">›</span></button>`)}
+      </div>${fromT ? hint(P.codesTakt) : h`<button type="button" class="btn wide" data-new-code>${P.newCode}</button>`}</section>
+      ${fromT ? h`<section class="grp"><h3>${P.nextTakt}</h3><div class="list">
         ${days.map(d => { const ps = partnerStatus(d); return h`<div><span class="grow"><span class="wd">${fmtDateTiny(d)}</span>${ps && ps.away ? h`<span class="m">${T.tl.away(awayText(ps.away))}</span>` : ''}</span>
           <span class="r">${ps && ps.code ? shiftText(ps) : P.none}</span></div>`; })}
       </div></section>` : h`<section class="grp"><h3>${P.next3}</h3><div class="list">
@@ -147,11 +150,11 @@ function openPartnerSheet() {
       </div>${hint(P.emptyHint)}</section>`}
     </div>`,
     (sheet, q) => {
-      q('[data-p-on]').addEventListener('click', () => { commit(Pn.enabled ? P.toastOff : P.toastOn, () => { state.partner.enabled = !state.partner.enabled; }); openPartnerSheet(); });
+      if (q('[data-p-on]')) q('[data-p-on]').addEventListener('click', () => { commit(Pn.enabled ? P.toastOff : P.toastOn, () => { state.partner.enabled = !state.partner.enabled; }); openPartnerSheet(); });
       q('#p-com').addEventListener('change', e => { const v = Math.max(0, Math.min(180, parseInt(e.target.value, 10) || 0)); commit(P.commuteSaved, () => { state.partner.commute = v; }); });
-      q('#p-import').addEventListener('change', e => { const f = e.target.files[0]; if (f) importRota(f); e.target.value = ''; });
+      if (q('#p-import')) q('#p-import').addEventListener('change', e => { const f = e.target.files[0]; if (f) importRota(f); e.target.value = ''; });
       sheet.querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => openCodeSheet(b.dataset.code)));
-      q('[data-new-code]').addEventListener('click', () => openCodeSheet(null));
+      if (q('[data-new-code]')) q('[data-new-code]').addEventListener('click', () => openCodeSheet(null));
       sheet.querySelectorAll('[data-sd]').forEach(s => s.addEventListener('change', () => {
         const d = s.dataset.sd, v = s.value;
         commit(P.shiftToast(fmtDateTiny(d), v), () => { if (v) state.partner.shifts[d] = v; else delete state.partner.shifts[d]; });

@@ -176,7 +176,7 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date, isFull) {
       // Ingen rett valgt: faste retter for dagen først, ellers velg fra banken
       const sugg = fixedFor(date, b.link);
       inner.push(h`<div class="rowline pick-row">${sugg.map(x => h`<button type="button" class="chip sm sugg-dish" data-act="pick-dish" data-meal="${b.link}" data-dish="${x.id}">${x.name}</button>`)}
-        <button type="button" class="btn small ghost pick-dish" data-act="dish" data-meal="${b.link}">${L.pickDish}</button></div>`);
+        <button type="button" class="chip sm pick-dish" data-act="dish" data-meal="${b.link}">${L.pickDish}</button></div>`);
     }
     if (b.link === 'dinner') {
       // Hva barna får: av middagen (med tilpasning), eller det som står i bolken

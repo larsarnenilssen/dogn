@@ -150,7 +150,7 @@ button{font:inherit;color:inherit}
 .dish .dn{font-weight:600;flex:1;min-width:0;overflow-wrap:anywhere}
 .dish .swap{font-size:var(--fs-xs);color:var(--c-meal)}
 .dish .dm,.dish .dk{font-size:var(--fs-sm);color:var(--muted);line-height:1.45}
-.pick-dish{margin-top:var(--sp-2);padding-inline:0;color:var(--c-meal)}
+.chip.pick-dish{color:var(--c-meal);border-color:color-mix(in srgb,var(--c-meal) 50%,transparent);background:var(--field)}
 .rowline{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);margin-top:var(--sp-5)}
 .rowline .rl{font-size:var(--fs-sm);color:var(--muted);margin-right:2px}
 .rates-blk{display:flex;flex-direction:column;gap:var(--sp-2);margin-top:var(--sp-5)}
@@ -407,6 +407,6 @@ body{padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px))}
 .tk-h{font:600 var(--fs-xs) var(--mono);color:var(--c-appt)}
 .checks.tk{width:100%;margin-top:0}
 .checks.tk li>.txt{display:flex;flex-direction:column;padding:var(--sp-3) 0 var(--sp-1) 32px}
-.pick-row{flex-wrap:wrap;gap:var(--sp-3)}
+.pick-row{flex-wrap:wrap;gap:var(--sp-3);align-items:center}
 .chip.sugg-dish{border-color:var(--accent-line);background:var(--accent-dim);color:var(--accent)}
 .list .row.fixed{box-shadow:inset 3px 0 0 var(--accent-line)}

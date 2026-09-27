@@ -55,7 +55,9 @@ function applyTakt(raw) {
 }
 
 /* Fravær en dag fra Takt: { leave, back, backDay, chosenTo, chosenHome } eller null */
-const taktAway = date => (takt.data && takt.data.away[date]) || null;
+const taktAway = date => (taktOn() && takt.data && takt.data.away[date]) || null;
+/* Turnusen kommer fra Takt: da overskrives den ved hver henting og kan ikke endres i Døgn */
+const rotaFromTakt = () => taktOn() && state.partner.source === 'takt';
 /* «06:00* – ~15:48»: * er valgt reise, ~ er beregnet. (+1) når hun kommer hjem neste dag. */
 function awayText(a) {
   const t = (hm, chosen) => chosen ? hm + '*' : '~' + hm;
