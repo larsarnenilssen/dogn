@@ -100,6 +100,8 @@ Målet er at tvillingene er sultne og trøtte til vanlig tid, og at planen holde
 - Flytter du selv en bolk med ±15/30 eller i bolkeditoren, blir det dagens nye plan for den bolken, og de neste tilpasses som over.
 - Våkner barnene sent, trykk **Begge våknet**. Dagen starter da, og resten tas igjen så fort det går.
 - **Nattesøvnen** føres på dagen den slutter: dagsloggen for en dag viser «Sovnet i går» og «Våknet i dag». Trykk på et logget klokkeslett i morgen- eller leggebolken for å rette det. Å rette tiden i etterkant endrer ikke planen; det gjør bare knappene.
+- **Oppvåkninger:** Når barna sover om natten, har nå-kortet knappen **Oppvåkning**. Med to barn velger du hvem. Knappen blir til «… sovnet igjen», og tiden imellom føres som våken i natt. Antall oppvåkninger og minutter våken kan også føres eller rettes i dagsloggen. Blir et barn oppe for dagen, gir «våknet» om morgenen våknetid fra oppvåkningen.
+- **Nattesøvn** er tiden fra sovnet til våknet, minus tiden våken i natt. Den vises i morgenbolken, i dagsloggen og i dagsrapporten. Oversikten har graf for nattesøvn, nattesøvn og oppvåkninger per dag i tabellen, og snitt for våknetid, nattesøvn, oppvåkninger og tid våken om natten.
 - Flytter du leggetid (på leggebolken), følger nullstillingen med, og bolkene før tilpasses fra nå fram til den nye leggetiden.
 - Er det ikke plass innenfor grensene, fordeles bolkene jevnt fram til leggetid.
 - «Start nå» virker direkte på bolken dere er i og den neste. På andre bolker får du et valg: Er bolken passert, foreslås neste bolk av samme type, eller en kopi nå. Ligger den langt fram, foreslås neste bolk av samme type, og måltider kan aldri hoppes over. Nullstilling kan ikke startes før leggetid.

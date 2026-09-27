@@ -33,13 +33,8 @@ function openLogSheet(date) {
         <span class="m">${bName(e.blockId)}</span></span><span class="r">${e.end ? fmtDurShort(toMin(e.end) - toMin(e.start)) : ''}</span></button>`)}</div>` : ''}`;
   };
   const prevNight = addDays(date, -1);
-  const nightFor = k => {
-    const n = nightRec(prevNight, k.id);
-    return h`<div class="field"><span class="lbl">${k.name}</span><div class="row2">
-      <div class="field"><label for="n-a-${k.id}">${T.night.asleep(whenAsleep(prevNight))}</label><input type="time" id="n-a-${k.id}" data-night="${k.id}" data-f="asleep" value="${n.asleep || ''}"></div>
-      <div class="field"><label for="n-w-${k.id}">${T.night.woke(whenWoke(prevNight))}</label><input type="time" id="n-w-${k.id}" data-night="${k.id}" data-f="wake" value="${n.wake || ''}"></div>
-      </div></div>`;
-  };
+  const nightFor = k => h`<div class="night-kid"><div class="lg-sum"><strong>${k.name}</strong><span class="m" data-nsum="${k.id}">${nightSum(nightRec(prevNight, k.id))}</span></div>
+    ${nightFieldsHTML(prevNight, nightRec(prevNight, k.id), 'n-', k.id)}</div>`;
   const health = [...(L.health || [])].sort((a, b) => a.time.localeCompare(b.time));
   const mealRow = b => {
     const r = L.meals[b.id] || {};
@@ -66,10 +61,13 @@ function openLogSheet(date) {
       <button type="button" class="btn wide" data-report>${G.share}</button>
     </div>`,
     (sheet, q) => {
-      sheet.querySelectorAll('[data-night]').forEach(inp => inp.addEventListener('change', () => {
-        const v = isTime(inp.value) ? inp.value : '';
-        commit(null, () => { (logRec(prevNight).night[inp.dataset.night] ??= {})[inp.dataset.f] = v; }, 'timeline');
-      }));
+      const setN = (kid, f) => {
+        commit(null, () => setNight(prevNight, kid, f), 'timeline');
+        const sum = sheet.querySelector('[data-nsum="' + kid + '"]');
+        if (sum) sum.textContent = nightSum(nightRec(prevNight, kid));
+      };
+      sheet.querySelectorAll('[data-night]').forEach(inp => inp.addEventListener('change', () => setN(inp.dataset.night, { [inp.dataset.f]: inp.value })));
+      bindSteppers(sheet, (st, v) => setN(st.dataset.stepper, { wakes: v }));
       sheet.querySelectorAll('[data-lrate]').forEach(btn => btn.addEventListener('click', () => {
         commit(null, () => setRate(date, btn.dataset.lrate, btn.dataset.kid, btn.dataset.val), 'timeline');
         openLogSheet(date);
@@ -94,23 +92,59 @@ function openLogSheet(date) {
     });
 }
 
+/* Kort sammendrag av en natt: nattesøvn, oppvåkninger, eller at barnet er våkent nå */
+function nightSum(n) {
+  const Nt = T.night, len = nightLen(n);
+  if (n.upAt) return Nt.upSince(n.upAt);
+  if (!len) return n.wakes ? Nt.wakesShort(n.wakes) : '';
+  return Nt.slept(fmtDurShort(len.net)) + (len.wakes ? ' · ' + Nt.wakesShort(len.wakes) : '');
+}
+/* Feltene for én natt: sovnet, våknet, oppvåkninger og minutter våken. pre og kid gir unike id-er. */
+function nightFieldsHTML(nightDate, n, pre, kid) {
+  const Nt = T.night, id = s => pre + s + '-' + kid;
+  return h`<div class="row2">
+      <div class="field"><label for="${id('a')}">${Nt.asleep(whenAsleep(nightDate))}</label><input type="time" id="${id('a')}" data-night="${kid}" data-f="asleep" value="${n.asleep || ''}"></div>
+      <div class="field"><label for="${id('w')}">${Nt.woke(whenWoke(nightDate))}</label><input type="time" id="${id('w')}" data-night="${kid}" data-f="wake" value="${n.wake || ''}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><span class="lbl" id="${id('c')}">${Nt.wakes}</span>${stepperHTML(kid, n.wakes || 0, id('c'), MAX_WAKES)}</div>
+      <div class="field"><label for="${id('u')}">${Nt.up}</label><input type="number" inputmode="numeric" min="0" max="${MAX_UP}" step="5" id="${id('u')}" data-night="${kid}" data-f="up" value="${n.up || ''}" placeholder="0"></div>
+    </div>`;
+}
 function openNightSheet(nightDate, kid, back) {
   const n = nightRec(nightDate, kid), Nt = T.night;
   reopen = null;
   openSheet(h`${headMaybeBack(Nt.title(kidName(kid), fmtDateTiny(addDays(nightDate, 1))), back)}
     <form class="sh-body" id="ntf" novalidate>
-      <section class="grp"><h3>${T.nap.times}</h3><div class="row2">
-        <div class="field"><label for="nt-a">${Nt.asleep(whenAsleep(nightDate))}</label><input type="time" id="nt-a" value="${n.asleep || ''}"></div>
-        <div class="field"><label for="nt-w">${Nt.woke(whenWoke(nightDate))}</label><input type="time" id="nt-w" value="${n.wake || ''}"></div>
-      </div>${hint(Nt.hint)}</section>
+      <section class="grp"><h3>${T.nap.times}</h3>${nightFieldsHTML(nightDate, n, 'nt-', kid)}
+        <p class="hint" data-nsum>${nightSum(n)}</p>${hint(Nt.hint)}</section>
     </form>
     ${footSave(T.common.save)}`,
     (sheet, q) => {
+      const read = () => ({ asleep: q('#nt-a-' + kid).value, wake: q('#nt-w-' + kid).value, wakes: Number(q('[data-stepper] output').textContent), up: q('#nt-u-' + kid).value });
+      const preview = () => { const f = read(); q('[data-nsum]').textContent = nightSum({ ...f, wakes: toCount(f.wakes, MAX_WAKES), up: toCount(f.up, MAX_UP), upAt: f.wake ? '' : n.upAt }); };
+      sheet.querySelectorAll('[data-night]').forEach(inp => inp.addEventListener('input', preview));
+      bindSteppers(sheet, preview);
       q('[data-save]').addEventListener('click', () => {
-        commit(Nt.saved, () => setNight(nightDate, kid, q('#nt-a').value, q('#nt-w').value));
+        commit(Nt.saved, () => setNight(nightDate, kid, read()));
         if (back) back(); else closeSheet();
       });
     }, back);
+}
+/* Hvem våknet, eller hvem sovnet igjen, når flere barn er aktuelle */
+function openKidChoice(title, kids, run) {
+  reopen = null;
+  const btn = (val, label, primary) => h`<button type="button" class="btn wide${primary ? ' primary' : ''}" data-kc="${val}">${label}</button>`;
+  openSheet(h`${headHTML(title)}
+    <div class="sh-body"><section class="grp">${kids.map(k => btn(k, kidName(k), false))}${kids.length > 1 ? btn('*', kids.length === state.kids.length ? groupWord() : kids.map(kidName).join(T.kids.and), false) : ''}
+      ${hint(T.night.wakeHint)}</section>
+      <button type="button" class="btn wide" data-close>${T.night.cancel}</button></div>`,
+    sheet => sheet.addEventListener('click', e => {
+      const b = e.target.closest('[data-kc]');
+      if (!b) return;
+      closeSheet();
+      commit('', () => run(b.dataset.kc === '*' ? kids : [b.dataset.kc]));
+    }));
 }
 
 function openNapSheet(date, blockId, kid, back) {
@@ -157,15 +191,16 @@ function openHistorySheet() {
     const L = getLog(d);
     return h`<tr data-day="${d}"><td>${fmtDateTiny(d)}${L.note ? h` <span class="acc">#</span>` : ''}${L.sick && Object.values(L.sick).some(Boolean) ? h` <span class="late">${Hs.sick}</span>` : ''}</td>
       ${state.kids.map(k => cell(napTotal(d, k.id) ? fmtDurShort(napTotal(d, k.id)) : ''))}
-      ${state.kids.map(k => cell((L.night[k.id] || {}).asleep))}</tr>`;
+      ${state.kids.map(k => { const len = nightLen(nightEnding(d, k.id)); return cell(len ? h`${fmtDurShort(len.net)}${len.wakes ? h`<br><span class="faint">${len.wakes}</span>` : ''}` : ''); })}</tr>`;
   };
   openSheet(h`${headHTML(Hs.title, true)}
     <div class="sh-body">
       <section class="grp"><h3>${Hs.chart}</h3>${napChartHTML([...days].reverse())}</section>
+      <section class="grp"><h3>${Hs.chartNight}</h3>${nightChartHTML([...days].reverse())}</section>
       <section class="grp"><h3>${Hs.avg}</h3>${statsHTML()}</section>
       <section class="grp"><h3>${Hs.last14}</h3><div class="tblwrap"><table class="tbl"><thead><tr><th>${Hs.thDay}</th>
         ${state.kids.map(k => h`<th>${Hs.thNap(k.name.charAt(0))}</th>`)}
-        ${state.kids.map(k => h`<th>${Hs.thEve(k.name.charAt(0))}</th>`)}</tr></thead><tbody>
+        ${state.kids.map(k => h`<th>${Hs.thNight(k.name.charAt(0))}</th>`)}</tr></thead><tbody>
         ${days.map(row)}
       </tbody></table></div>
       ${hint(Hs.hint)}</section>
@@ -176,17 +211,29 @@ function openHistorySheet() {
     });
 }
 
-/* Graf over lur per dag. Fargene kommer fra --chart-1 … --chart-3 i tokens.css. */
+/* Linjegraf per dag, ett barn per linje. Fargene kommer fra --chart-1 … --chart-3 i tokens.css.
+   vals[barn][dag] er minutter eller null. Tipsene viser tekst fra tips[barn][dag]. */
 const seriesVar = i => 'var(--chart-' + (i % 3 + 1) + ')';
 function napChartHTML(days) {
-  const W = 340, H = 170, L = 34, R = 10, Tp = 14, B = 26;
   const vals = state.kids.map(k => days.map(d => napTotal(d, k.id) || null));
-  const max = Math.max(60, ...vals.flat().filter(v => v != null));
+  return lineChartHTML(days, vals, vals.map(a => a.map(v => v != null ? fmtDurShort(v) : '–')), T.history.chart, false);
+}
+function nightChartHTML(days) {
+  const lens = state.kids.map(k => days.map(d => nightLen(nightEnding(d, k.id))));
+  const vals = lens.map(a => a.map(l => l ? l.net : null));
+  const tips = lens.map(a => a.map(l => l ? fmtDurShort(l.net) + (l.wakes ? ' · ' + T.night.wakesShort(l.wakes) : '') : '–'));
+  return lineChartHTML(days, vals, tips, T.history.chartNight, true);
+}
+function lineChartHTML(days, vals, tips, what, fromMin) {
+  const W = 340, H = 170, L = 34, R = 10, Tp = 14, B = 26;
+  const got = vals.flat().filter(v => v != null);
+  const max = Math.max(60, ...got);
   const top = Math.ceil(max / 60) * 60;
+  const bottom = fromMin && got.length ? Math.max(0, Math.min(top - 120, Math.floor((Math.min(...got) - 30) / 60) * 60)) : 0;
   const x = i => L + (W - L - R) * (days.length === 1 ? 0.5 : i / (days.length - 1));
-  const y = v => Tp + (H - Tp - B) * (1 - v / top);
+  const y = v => Tp + (H - Tp - B) * (1 - (v - bottom) / (top - bottom));
   const grid = [];
-  for (let hr = 0; hr <= top; hr += 60) grid.push(h`<line x1="${L}" x2="${W - R}" y1="${y(hr)}" y2="${y(hr)}" class="ch-grid"/><text x="${L - 6}" y="${y(hr) + 4}" class="ch-ax" text-anchor="end">${T.history.axis(hr / 60)}</text>`);
+  for (let hr = bottom; hr <= top; hr += 60) grid.push(h`<line x1="${L}" x2="${W - R}" y1="${y(hr)}" y2="${y(hr)}" class="ch-grid"/><text x="${L - 6}" y="${y(hr) + 4}" class="ch-ax" text-anchor="end">${T.history.axis(hr / 60)}</text>`);
   days.forEach((d, i) => { if ((days.length - 1 - i) % 2 === 0) grid.push(h`<text x="${x(i)}" y="${H - 8}" class="ch-ax" text-anchor="middle">${parseISO(d).getDate() + '.'}</text>`); });
   const lines = [];
   vals.forEach((arr, si) => {
@@ -197,24 +244,25 @@ function napChartHTML(days) {
   });
   const hits = days.map((d, i) => h`<rect x="${(x(i) - (W - L - R) / days.length / 2).toFixed(1)}" y="${Tp}" width="${((W - L - R) / days.length).toFixed(1)}" height="${H - Tp - B}" fill="transparent" data-ci="${i}"/>`);
   const legend = h`<div class="ch-legend">${state.kids.map((k, i) => h`<span><i style="background:${seriesVar(i)}"></i>${k.name}</span>`)}</div>`;
-  const data = JSON.stringify(days.map((d, i) => ({ d: fmtDateTiny(d), v: vals.map(a => a[i]) })));
-  return h`${legend}<div class="ch-wrap"><svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="${T.history.chartAria(days.length)}">${grid}${lines}<line class="ch-cross" x1="0" x2="0" y1="${Tp}" y2="${H - B}" visibility="hidden"/>${hits}</svg><div class="ch-tip" hidden></div></div>
-    <script type="application/json" class="ch-data">${raw(data.replace(/</g, '\\u003c'))}</script>`;
+  const data = JSON.stringify(days.map((d, i) => ({ d: fmtDateTiny(d), v: tips.map(a => a[i]) })));
+  return h`<div class="ch-box">${legend}<div class="ch-wrap"><svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="${T.history.chartAria(what, days.length)}">${grid}${lines}<line class="ch-cross" x1="0" x2="0" y1="${Tp}" y2="${H - B}" visibility="hidden"/>${hits}</svg><div class="ch-tip" hidden></div></div>
+    <script type="application/json" class="ch-data">${raw(data.replace(/</g, '\\u003c'))}</script></div>`;
 }
 function bindChart(sheet) {
-  const svg = sheet.querySelector('.chart');
-  if (!svg) return;
-  const data = JSON.parse(sheet.querySelector('.ch-data').textContent);
-  const tip = sheet.querySelector('.ch-tip'), cross = svg.querySelector('.ch-cross');
-  const show = r => {
-    const i = Number(r.dataset.ci), cx = Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2;
-    cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('visibility', 'visible');
-    tip.hidden = false;
-    setHtml(tip, h`<strong>${data[i].d}</strong>${state.kids.map((k, j) => h`<span><i style="background:${seriesVar(j)}"></i>${k.name + ' ' + (data[i].v[j] != null ? fmtDurShort(data[i].v[j]) : '–')}</span>`)}`);
-    tip.style.left = Math.min(Math.max(cx / 340 * 100, 18), 82) + '%';
-  };
-  svg.querySelectorAll('[data-ci]').forEach(r => { r.addEventListener('pointerenter', () => show(r)); r.addEventListener('click', () => show(r)); });
-  svg.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+  sheet.querySelectorAll('.ch-box').forEach(box => {
+    const svg = box.querySelector('.chart');
+    const data = JSON.parse(box.querySelector('.ch-data').textContent);
+    const tip = box.querySelector('.ch-tip'), cross = svg.querySelector('.ch-cross');
+    const show = r => {
+      const i = Number(r.dataset.ci), cx = Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2;
+      cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('visibility', 'visible');
+      tip.hidden = false;
+      setHtml(tip, h`<strong>${data[i].d}</strong>${state.kids.map((k, j) => h`<span><i style="background:${seriesVar(j)}"></i>${k.name + ' ' + data[i].v[j]}</span>`)}`);
+      tip.style.left = Math.min(Math.max(cx / 340 * 100, 18), 82) + '%';
+    };
+    svg.querySelectorAll('[data-ci]').forEach(r => { r.addEventListener('pointerenter', () => show(r)); r.addEventListener('click', () => show(r)); });
+    svg.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+  });
 }
 function statsHTML() {
   const today = todayISO(), Hs = T.history;
@@ -227,6 +275,10 @@ function statsHTML() {
     [Hs.statCount, s => s.count, v => String(v).replace('.', ',')],
     [Hs.statFirst, s => s.first, f],
     [Hs.statBed, s => s.bed, v => toHM(v)],
+    [Hs.statWoke, s => s.woke, v => toHM(v)],
+    [Hs.statNight, s => s.night, f],
+    [Hs.statWakes, s => s.wakes, v => String(v).replace('.', ',')],
+    [Hs.statUp, s => s.up, f],
   ];
   const st = state.kids.map(k => ({ a: sleepStats(k.id, last), b: sleepStats(k.id, prev) }));
   return h`<div class="tblwrap"><table class="tbl"><thead><tr><th>${Hs.statsHead}</th>${state.kids.map(k => h`<th>${k.name}</th>`)}</tr></thead><tbody>

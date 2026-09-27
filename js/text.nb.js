@@ -23,6 +23,7 @@ const T = {
   n: {
     dag: ['dag', 'dager'], bolk: ['bolk', 'bolker'], rett: ['rett', 'retter'], aktivitet: ['aktivitet', 'aktiviteter'],
     gjoremal: ['gjøremål', 'gjøremål'], punkt: ['punkt', 'punkter'], enkeltdag: ['enkeltdag', 'enkeltdager'],
+    oppv: ['oppvåkning', 'oppvåkninger'],
   },
 
   types: { prep: 'Forberedelse', meal: 'Måltid', sleep: 'Søvn', awake: 'Våkentid', routine: 'Rutine' },
@@ -98,6 +99,8 @@ const T = {
     left: (title, dur) => title + ', ' + dur + ' igjen', dayStarts: t => 'Dagen starter ' + t, awakeFor: d => ', våken ' + d,
     next: (t, title) => 'neste ' + t + ' ' + title, last: 'siste bolk i dag',
     woke: who => who + ' våknet', slept: who => who + ' sovnet',
+    nightWake: 'Oppvåkning', backAsleep: who => who + ' sovnet igjen',
+    night: d => 'Natt' + (d ? ', sovet ' + d : ''), upFor: (who, d) => who + ' våken ' + d, dayStartsTomorrow: t => 'dagen starter ' + t + ' i morgen',
     start: 'start nå', again: 'trykk igjen', startAria: 'Start neste bolk nå og flytt resten av dagen',
 
   },
@@ -219,19 +222,25 @@ const T = {
     title: (kid, d) => kid + ', natt til ' + d,
     asleep: when => 'Sovnet ' + when, woke: when => 'Våknet ' + when,
     tonight: 'i kveld', yesterday: 'i går', today: 'i dag', tomorrow: 'i morgen', evening: d => d + ' kveld',
-    hint: 'Tom tid betyr ikke logget.', saved: 'Nattesøvn lagret',
+    hint: 'Tom tid betyr ikke logget. Nattesøvn er tiden fra sovnet til våknet, minus tiden våken i natt.', saved: 'Nattesøvn lagret',
+    wakes: 'Oppvåkninger', up: 'Våken i natt, min', fewer: 'Én færre', more: 'Én til',
+    slept: d => 'sov ' + d, wakesShort: n => n + ' oppv.', upSince: t => 'våken siden ' + t,
+    whoWoke: 'Hvem våknet?', whoBack: 'Hvem sovnet igjen?', cancel: 'Avbryt',
+    wakeHint: 'Trykk «sovnet igjen» når det er stille. Tiden imellom føres som våken i natt.',
+    upToast: (who, t) => who + ' våken ' + t + '.', backToast: (who, t, d) => who + ' sovnet igjen ' + t + ', våken ' + d + '.',
   },
   nap: {
     title: (kid, blk) => kid + ', ' + blk, times: 'Tider', del: 'Slett luren fra loggen', saved: 'Lur lagret', deleted: 'Lur slettet fra loggen',
   },
 
   history: {
-    title: 'Oversikt', chart: 'Lur per dag', avg: 'Snitt', last14: 'Siste 14 dager',
-    thDay: 'dag', thNap: k => 'lur ' + k, thEve: k => 'kveld ' + k, sick: 'syk',
-    hint: 'Trykk på en dag for å åpne dagsloggen. # betyr at dagen har notat. Grafen og snittene viser tendenser. Kortere lur 2, senere legging eller lang våkentid før 1. lur kan være tegn på at det nærmer seg én lur.',
-    chartAria: n => 'Lur per dag, siste ' + n + ' dager. Se tabellen under for tallene.', axis: h => h + 't',
+    title: 'Oversikt', chart: 'Lur per dag', chartNight: 'Nattesøvn', avg: 'Snitt', last14: 'Siste 14 dager',
+    thDay: 'dag', thNap: k => 'lur ' + k, thNight: k => 'natt ' + k, sick: 'syk',
+    hint: 'Trykk på en dag for å åpne dagsloggen. # betyr at dagen har notat. Natten står på dagen den slutter, og tallet under er oppvåkninger. Kortere lur 2, senere legging eller lang våkentid før 1. lur kan være tegn på at det nærmer seg én lur.',
+    chartAria: (what, n) => what + ', siste ' + n + ' dager. Se tabellen under for tallene.', axis: h => h + 't',
     statsHead: 'snitt', statNap: 'lur per dag', statCount: 'antall lurer', statFirst: 'våken før 1. lur', statBed: 'sovnet om kvelden',
-    statsHint: 'Siste 7 dager, forrige 7 i parentes. «Våken før 1. lur» krever at du fører «våknet» for natten i dagsloggen.',
+    statNight: 'nattesøvn', statWakes: 'oppvåkninger', statUp: 'våken om natten', statWoke: 'våknet om morgenen',
+    statsHint: 'Siste 7 dager, forrige 7 i parentes. Nattetallene og «våken før 1. lur» krever at natten er ført med både sovnet og våknet.',
   },
 
   tasks: {
@@ -363,7 +372,7 @@ const T = {
   },
 
   report: {
-    head: d => 'Døgn, ' + d, nap: list => 'lur ' + list, sleeping: s => 'fra ' + s + ', sover fortsatt', noNap: 'ingen lur logget', slept: t => '. Sovnet ' + t, woke: t => 'våknet ' + t + ', ',
+    head: d => 'Døgn, ' + d, nap: list => 'lur ' + list, sleeping: s => 'fra ' + s + ', sover fortsatt', noNap: 'ingen lur logget', slept: t => '. Sovnet ' + t, woke: t => 'våknet ' + t + ', ', night: (d, w) => 'natt ' + d + (w ? ' (' + plural(w, T.n.oppv) + ')' : '') + ', ',
     food: 'Mat: ', did: 'Gjorde: ', dinner: 'Middag: ', appts: 'Avtaler: ', note: 'Notat: ',
     shareTitle: d => 'Døgn ' + d, copied: 'Dagsrapporten er kopiert', sheet: 'Dagsrapport', copyHint: 'Kopier teksten:',
   },

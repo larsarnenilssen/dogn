@@ -235,10 +235,10 @@ class DognTest(unittest.TestCase):
         pg.click('#nowbar [data-nb="act"]')                         # «Begge våknet» 08:10
         self.expand(pg, 'to-lurer.mme-morgen')
         pg.click('.blk[data-id="to-lurer.mme-morgen"] [data-act="night-edit"][data-kid="a"]')
-        pg.wait_for_selector('#sheet-root.open #nt-w')
-        self.assertEqual(pg.input_value('#nt-w'), '08:10')
-        self.assertIn('i dag', pg.text_content('label[for="nt-w"]'))
-        pg.fill('#nt-w', '08:00')
+        pg.wait_for_selector('#sheet-root.open #nt-w-a')
+        self.assertEqual(pg.input_value('#nt-w-a'), '08:10')
+        self.assertIn('i dag', pg.text_content('label[for="nt-w-a"]'))
+        pg.fill('#nt-w-a', '08:00')
         pg.click('.sh-foot [data-save]')
         pg.wait_for_timeout(300)
         self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a"), {'asleep': '19:05', 'wake': '08:00'})
@@ -253,6 +253,43 @@ class DognTest(unittest.TestCase):
         pg.dispatch_event('#n-a-a', 'change')
         self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a.asleep"), '19:20')
         self.assertEqual(pg.evaluate("getLog('2026-10-07').night.a || null"), None)
+
+    def test_night_wakings_from_nowbar_and_history(self):
+        pg = self.open(when=(2026, 10, 6, 19, 5))
+        pg.click('#nowbar [data-nb="act"]')                         # «Begge sovnet» 19:05
+        pg.clock.set_system_time(datetime.datetime(2026, 10, 7, 2, 10, tzinfo=TZ))
+        pg.evaluate('tick()')
+        self.assertEqual(pg.text_content('#nowbar [data-nb="act"]').strip(), 'Oppvåkning')
+        pg.click('#nowbar [data-nb="act"]')                         # to barn: velg hvem
+        pg.click('#sheet-root.open [data-kc="a"]')
+        self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a.upAt"), '02:10')
+        self.assertIn('våken', pg.text_content('#nowbar .nb-1'))
+        pg.clock.set_system_time(datetime.datetime(2026, 10, 7, 2, 35, tzinfo=TZ))
+        pg.evaluate('tick()')
+        pg.click('#nowbar [data-nb="act"]')                         # «Trygve sovnet igjen»
+        self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a"), {'asleep': '19:05', 'wakes': 1, 'up': 25})
+        # Lyder våkner 05:40 og blir oppe; «Begge våknet» 06:30 fører våknet 05:40 for ham
+        pg.clock.set_system_time(datetime.datetime(2026, 10, 7, 5, 40, tzinfo=TZ))
+        pg.evaluate("commit('', () => logNightWakeNow('2026-10-06', ['b']))")
+        pg.clock.set_system_time(datetime.datetime(2026, 10, 7, 6, 30, tzinfo=TZ))
+        pg.evaluate("commit('', () => logWakeNow('2026-10-07', ['a', 'b']))")
+        self.assertEqual(pg.evaluate("getLog('2026-10-06').night.b"), {'asleep': '19:05', 'wake': '05:40'})
+        self.assertEqual(pg.evaluate("nightLen(getLog('2026-10-06').night.a).net"), 11 * 60 + 25 - 25)
+        # Dagsloggen: teller og minutter våken kan rettes
+        pg.evaluate("openLogSheet('2026-10-07')")
+        pg.wait_for_selector('#sheet-root.open #n-u-a')
+        self.assertIn('sov 11t00', pg.text_content('[data-nsum="a"]'))
+        pg.click('[data-stepper="a"] [data-step="1"]')
+        pg.fill('#n-u-a', '40')
+        pg.dispatch_event('#n-u-a', 'change')
+        self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a.wakes"), 2)
+        self.assertIn('sov 10t45 · 2 oppv.', pg.text_content('[data-nsum="a"]'))
+        # Oversikten har graf og snitt for natten
+        pg.evaluate("closeSheet(); openHistorySheet()")
+        pg.wait_for_selector('#sheet-root.open .ch-box + .ch-box, #sheet-root.open .grp .ch-box')
+        self.assertEqual(pg.eval_on_selector_all('#sheet-root.open .ch-box', 'els => els.length'), 2)
+        self.assertIn('nattesøvn', pg.text_content('#sheet-root.open'))
+        self.assertIn('natt 10t45 (2 oppvåkninger)', pg.evaluate("dayReport('2026-10-07')"))
 
     def test_start_passed_block_offers_next_of_same_type(self):
         pg = self.open(when=(2026, 10, 7, 14, 0))

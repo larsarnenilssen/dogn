@@ -52,10 +52,67 @@ function logSleepNow(date, blockId, kids) {
 const wakeLogDate = date => addDays(date, -1);
 /* Natten lagres på datoen for kvelden den starter. Den vises på dagen den slutter. */
 function nightRec(nightDate, kid) { return getLog(nightDate).night[kid] || {}; }
-function setNight(nightDate, kid, asleep, wake) {
+/* Oppvåkninger: antall (wakes) og minutter våken i alt (up). upAt er en oppvåkning som pågår. */
+const MAX_WAKES = 30, MAX_UP = 720;
+const toCount = (v, max) => { const x = Math.round(Number(v)); return Number.isFinite(x) ? Math.min(max, Math.max(0, x)) : 0; };
+function setNight(nightDate, kid, f) {
   const n = (logRec(nightDate).night[kid] ??= {});
-  n.asleep = isTime(asleep) ? asleep : '';
-  n.wake = isTime(wake) ? wake : '';
+  if ('asleep' in f) n.asleep = isTime(f.asleep) ? f.asleep : '';
+  if ('wake' in f) { n.wake = isTime(f.wake) ? f.wake : ''; if (n.wake) delete n.upAt; }
+  for (const [k, max] of [['wakes', MAX_WAKES], ['up', MAX_UP]]) {
+    if (!(k in f)) continue;
+    const v = toCount(f[k], max);
+    if (v) n[k] = v; else delete n[k];
+  }
+}
+/* Nattesøvn: fra sovnet til våknet, minus tiden våken i natt */
+function nightLen(n) {
+  if (!n || !isTime(n.asleep) || !isTime(n.wake)) return null;
+  const span = (toMin(n.wake) - toMin(n.asleep) + 1440) % 1440;
+  if (!span) return null;
+  return { span, net: Math.max(0, span - (n.up || 0)), wakes: n.wakes || 0, up: n.up || 0 };
+}
+const nightEnding = (date, kid) => nightRec(addDays(date, -1), kid);
+const kidIds = () => state.kids.map(k => k.id);
+/* Oppvåkninger som pågår: i kveld, eller natten til i dag fram til midt på dagen */
+function openWakes(date, now) {
+  const tries = [date];
+  if (now < 12 * 60) tries.push(addDays(date, -1));
+  for (const nd of tries) {
+    const N = getLog(nd).night;
+    const kids = kidIds().filter(k => N[k] && N[k].upAt && !N[k].wake);
+    if (kids.length) return { nightDate: nd, kids };
+  }
+  return null;
+}
+/* Natten som pågår: etter leggetid i kveld, eller før morgenbolken når natten til i dag ikke er avsluttet */
+function nightNow(date, blocks, now) {
+  if (date !== todayISO()) return null;
+  const sleeping = nd => { const N = getLog(nd).night; return kidIds().filter(k => N[k] && N[k].asleep && !N[k].wake && !N[k].upAt); };
+  const nb = nightBlock(blocks);
+  if (nb && now >= toMin(nb.start)) { const kids = sleeping(date); if (kids.length) return { nightDate: date, kids }; }
+  const wb = wakeBlock(blocks) || blocks[0];
+  if (!wb || now < toMin(wb.start)) { const nd = addDays(date, -1), kids = sleeping(nd); if (kids.length && now < 12 * 60) return { nightDate: nd, kids }; }
+  return null;
+}
+function logNightWakeNow(nightDate, kids) {
+  const t = toHM(nowMin()), N = logRec(nightDate).night;
+  kids.forEach(k => { const n = (N[k] ??= {}); if (!n.upAt) n.upAt = t; });
+  return T.night.upToast(whoText(kids), t);
+}
+function logBackAsleepNow(nightDate, kids) {
+  const now = nowMin(), N = logRec(nightDate).night;
+  let longest = 0;
+  kids.forEach(k => {
+    const n = N[k];
+    if (!n || !n.upAt) return;
+    const d = (now - toMin(n.upAt) + 1440) % 1440;
+    n.wakes = toCount((n.wakes || 0) + 1, MAX_WAKES);
+    n.up = toCount((n.up || 0) + d, MAX_UP);
+    delete n.upAt;
+    longest = Math.max(longest, d);
+  });
+  return T.night.backToast(whoText(kids), toHM(now), fmtDurShort(longest));
 }
 const whenAsleep = nightDate => { const t = todayISO(); return nightDate === t ? T.night.tonight : nightDate === addDays(t, -1) ? T.night.yesterday : T.night.evening(fmtDateTiny(nightDate)); };
 const whenWoke = nightDate => { const d = addDays(nightDate, 1), t = todayISO(); return d === t ? T.night.today : d === addDays(t, 1) ? T.night.tomorrow : fmtDateTiny(d); };
@@ -79,7 +136,7 @@ function morningOpen(date, blocks, now) {
 function logWakeNow(date, kids) {
   const L = logRec(wakeLogDate(date)), now = nowMin(), t = toHM(now);
   const allBefore = state.kids.every(k => wokeAt(date, k.id));
-  kids.forEach(kid => { (L.night[kid] ??= {}).wake = t; });
+  kids.forEach(kid => { const n = (L.night[kid] ??= {}); n.wake = n.upAt || t; delete n.upAt; });
   let msg = T.sleep.wokeUp(whoText(kids), t);
   const allNow = state.kids.every(k => wokeAt(date, k.id));
   const wb = wakeBlock(blocksFor(date));
@@ -135,18 +192,22 @@ function toggleSick(date, kid) {
 
 /* ---------- søvnanalyse ---------- */
 function sleepStats(kid, days) {
-  const naps = [], counts = [], firstWin = [], beds = [];
+  const naps = [], counts = [], firstWin = [], beds = [], nights = [], wakes = [], ups = [], woke = [];
   days.forEach(d => {
     const L = getLog(d);
     const list = L.sleep.filter(e => e.kid === kid && e.start && e.end).sort((a, b) => a.start.localeCompare(b.start));
     if (list.length) { naps.push(list.reduce((s, e) => s + toMin(e.end) - toMin(e.start), 0)); counts.push(list.length); }
     const prevN = getLog(addDays(d, -1)).night[kid];
     if (list.length && prevN && prevN.wake) firstWin.push(toMin(list[0].start) - toMin(prevN.wake));
+    const len = nightLen(prevN);
+    if (len) { nights.push(len.net); wakes.push(len.wakes); ups.push(len.up); woke.push(toMin(prevN.wake)); }
     const n = L.night[kid];
     if (n && n.asleep) beds.push(toMin(n.asleep));
   });
   const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
-  return { nap: avg(naps), count: counts.length ? Math.round(counts.reduce((x, y) => x + y, 0) / counts.length * 10) / 10 : null, first: avg(firstWin), bed: avg(beds), n: naps.length };
+  const avg1 = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length * 10) / 10 : null;
+  return { nap: avg(naps), count: avg1(counts), first: avg(firstWin), bed: avg(beds), n: naps.length,
+    night: avg(nights), wakes: avg1(wakes), up: avg(ups), woke: avg(woke) };
 }
 
 /* ---------- dagsrapport (ren tekst, for deling) ---------- */
@@ -158,7 +219,8 @@ function dayReport(date) {
     const n = L.night[k.id] || {};
     const parts = naps.map(e => e.end ? e.start + '–' + e.end + ' (' + fmtDurShort(toMin(e.end) - toMin(e.start)) + ')' : R.sleeping(e.start));
     const w = wokeAt(date, k.id);
-    out.push(k.name + ': ' + (w ? R.woke(w) : '') + (parts.length ? R.nap(parts.join(', ')) : R.noNap) + (n.asleep ? R.slept(n.asleep) : '') + '.');
+    const len = nightLen(nightEnding(date, k.id));
+    out.push(k.name + ': ' + (w ? R.woke(w) : '') + (len ? R.night(fmtDurShort(len.net), len.wakes) : '') + (parts.length ? R.nap(parts.join(', ')) : R.noNap) + (n.asleep ? R.slept(n.asleep) : '') + '.');
   });
   const meals = blocks.filter(b => L.meals[b.id]).map(b => b.title + ' ' + state.kids.map(k => k.name.charAt(0) + ' ' + (L.meals[b.id][k.id] ? T.rates[L.meals[b.id][k.id]] : '–')).join(', '));
   if (meals.length) out.push(R.food + meals.join('; ') + '.');

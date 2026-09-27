@@ -223,9 +223,10 @@ function nightLogHTML(date, b) {
   const isToday = date === todayISO(), S = T.sleep;
   const N = getLog(date).night;
   const rowsH = state.kids.map(k => {
-    const a = N[k.id] && N[k.id].asleep;
+    const n = N[k.id] || {}, a = n.asleep;
+    const extra = n.upAt ? ' · ' + T.night.upSince(n.upAt) : n.wakes ? ' · ' + T.night.wakesShort(n.wakes) : '';
     return h`<div class="lg-row"><span class="kn">${k.name}</span>
-      <button type="button" class="lg-t" data-act="night-edit" data-night="${date}" data-kid="${k.id}">${a ? S.asleepAt(a) : S.notLogged}</button>
+      <button type="button" class="lg-t" data-act="night-edit" data-night="${date}" data-kid="${k.id}">${a ? S.asleepAt(a) + extra : S.notLogged}</button>
       ${isToday && !a ? h`<button type="button" class="btn small" data-act="night-now" data-kid="${k.id}">${S.asleep}</button>` : ''}</div>`;
   });
   const none = state.kids.every(k => !(N[k.id] && N[k.id].asleep));
@@ -236,9 +237,10 @@ function nightLogHTML(date, b) {
 function morningLogHTML(date) {
   const isToday = date === todayISO(), S = T.sleep;
   const rowsH = state.kids.map(k => {
-    const w = wokeAt(date, k.id);
+    const w = wokeAt(date, k.id), len = nightLen(nightEnding(date, k.id));
+    const extra = len ? ' · ' + fmtDurShort(len.net) + (len.wakes ? ' · ' + T.night.wakesShort(len.wakes) : '') : '';
     return h`<div class="lg-row"><span class="kn">${k.name}</span>
-      <button type="button" class="lg-t" data-act="night-edit" data-night="${addDays(date, -1)}" data-kid="${k.id}">${w ? S.wokeAt(w) : S.notLogged}</button>
+      <button type="button" class="lg-t" data-act="night-edit" data-night="${addDays(date, -1)}" data-kid="${k.id}">${w ? S.wokeAt(w) + extra : S.notLogged}</button>
       ${isToday && !w ? h`<button type="button" class="btn small" data-act="wake-now" data-kid="${k.id}">${S.awake}</button>` : ''}</div>`;
   });
   const none = state.kids.every(k => !wokeAt(date, k.id));
@@ -345,16 +347,19 @@ function nowModel() {
   if (!blocks.length) return null;
   let cur = -1;
   blocks.forEach((b, i) => { if (toMin(b.start) <= now) cur = i; });
-  if (cur >= 0 && now >= endOf(blocks, cur)) return null;
-  const b = cur >= 0 ? blocks[cur] : null;
-  const next = cur >= 0 ? blocks[cur + 1] : blocks[0];
+  const over = cur >= 0 && now >= endOf(blocks, cur);          // etter siste bolk i kveld
+  const ow = openWakes(date, now), nn = nightNow(date, blocks, now);
+  if (over && !ow && !nn) return null;
+  const b = cur >= 0 && !over ? blocks[cur] : null;
+  const next = over ? null : cur >= 0 ? blocks[cur + 1] : blocks[0];
   const ids = state.kids.map(k => k.id);
   const nb = nightBlock(blocks);
   let act = null;
   const napState = blk => ids.map(k => { const e = napEntry(date, k, blk.id); return !e ? 'none' : (!e.end ? 'open' : 'done'); });
   const who = list => list.length > 1 && list.length === ids.length ? groupWord() : list.map(kidName).join(T.kids.and);
+  if (ow) act = { kind: 'back', night: ow.nightDate, kids: ow.kids, label: N.backAsleep(who(ow.kids)) };
   const on = openNap(date);
-  if (on) act = { kind: 'sleep', block: on.blockId, kids: on.kids, label: N.woke(who(on.kids)) };
+  if (!act && on) act = { kind: 'sleep', block: on.blockId, kids: on.kids, label: N.woke(who(on.kids)) };
   if (!act && b && b.type === 'sleep') {
     const st = napState(b);
     const open = ids.filter((k, i) => st[i] === 'open'), none = ids.filter((k, i) => st[i] === 'none');
@@ -374,13 +379,25 @@ function nowModel() {
   if (!act && next && next.type === 'sleep' && toMin(next.start) - now <= 45 && napState(next).every(x => x === 'none')) {
     act = { kind: 'sleep', block: next.id, kids: ids, label: N.slept(groupWord()) };
   }
+  if (!act && nn) act = { kind: 'nightwake', night: nn.nightDate, kids: nn.kids, label: N.nightWake };
   let line1 = b ? N.left(b.title || T.types[b.type], fmtDur(Math.max(1, endOf(blocks, cur) - now))) : N.dayStarts(blocks[0].start);
-  if (b && b.type !== 'sleep') {
+  const inNight = ow || nn;
+  if (ow) {
+    const since = Math.min(...ow.kids.map(k => (now - toMin(getLog(ow.nightDate).night[k].upAt) + 1440) % 1440));
+    line1 = N.upFor(who(ow.kids), fmtDurShort(since));
+  } else if (nn && !b) {
+    const N0 = getLog(nn.nightDate).night;
+    const slept = Math.max(...nn.kids.map(k => (now - toMin(N0[k].asleep) + 1440) % 1440));
+    line1 = N.night(slept >= 30 ? fmtDurShort(slept) : '');
+  }
+  if (b && b.type !== 'sleep' && !inNight) {
     const w = lastWake(date);
     if (w && toMin(w) <= now) line1 += N.awakeFor(fmtDurShort(now - toMin(w)));
   }
   const start = next && !(act && act.block === next.id) ? { kind: 'start', block: next.id } : null;
-  return { line1, line2: next ? N.next(next.start, next.title || T.types[next.type]) : N.last, act, start };
+  let line2 = next ? N.next(next.start, next.title || T.types[next.type]) : N.last;
+  if (over) { const tb = blocksFor(addDays(date, 1)); line2 = tb.length ? N.dayStartsTomorrow(tb[0].start) : ''; }
+  return { line1, line2, act, start };
 }
 function renderNowbar() {
   const el = $('#nowbar');
@@ -400,6 +417,11 @@ function nowbarAction(act) {
   if (act.kind === 'sleep') commit('', () => logSleepNow(view, act.block, act.kids));
   else if (act.kind === 'night') commit('', () => logNightNow(view, act.block, act.kids));
   else if (act.kind === 'wake') commit('', () => logWakeNow(view, act.kids));
+  else if (act.kind === 'nightwake' || act.kind === 'back') {
+    const run = act.kind === 'back' ? kids => logBackAsleepNow(act.night, kids) : kids => logNightWakeNow(act.night, kids);
+    if (act.kids.length > 1) { openKidChoice(act.kind === 'back' ? T.night.whoBack : T.night.whoWoke, act.kids, run); return; }
+    commit('', () => run(act.kids));
+  }
   else if (act.kind === 'start') startNow(act.block);
   scrollToNow();
 }

@@ -65,6 +65,21 @@ const hint = text => {
 const switchBtn = (attr, val, on, label) => h`<button type="button" class="switch" role="switch" ${raw(attr)}="${val}" aria-checked="${on}">${label}</button>`;
 const segRow = (attr, pairs, cur) => h`<div class="seg" role="group">${pairs.map(([k, l]) => h`<button type="button" ${raw(attr)}="${k}" aria-pressed="${cur(k)}">${l}</button>`)}</div>`;
 const emptyRow = text => h`<div><span class="hint">${text}</span></div>`;
+/* Teller med − og +. bindSteppers kaller onChange(element, ny verdi). */
+const stepperHTML = (key, val, labelId, max) => h`<div class="stepper" role="group" aria-labelledby="${labelId}" data-stepper="${key}" data-max="${max}">
+  <button type="button" data-step="-1" aria-label="${T.night.fewer}"${val > 0 ? '' : raw(' disabled')}>−</button><output aria-live="polite">${val}</output><button type="button" data-step="1" aria-label="${T.night.more}"${val < max ? '' : raw(' disabled')}>+</button></div>`;
+function bindSteppers(root, onChange) {
+  root.querySelectorAll('[data-stepper]').forEach(st => st.addEventListener('click', e => {
+    const b = e.target.closest('[data-step]');
+    if (!b) return;
+    const out = st.querySelector('output'), max = Number(st.dataset.max);
+    const v = Math.min(max, Math.max(0, Number(out.textContent) + Number(b.dataset.step)));
+    out.textContent = v;
+    st.querySelector('[data-step="-1"]').disabled = v <= 0;
+    st.querySelector('[data-step="1"]').disabled = v >= max;
+    onChange(st, v);
+  }));
+}
 /* Slett-knapp som først viser en bekreftelse */
 const delConfirm = (label, question, yes) => h`<section class="grp quiet"><button type="button" class="btn link" data-del>${label}</button>${question
   ? h`<div class="confirm" data-confirm hidden><p class="hint">${question}</p><div class="btnrow"><button type="button" class="btn small danger" data-del-yes>${yes}</button></div></div>` : ''}</section>`;

@@ -245,7 +245,12 @@ function sanitize(s, base) {
       L.sleep.forEach(e => { e.kid = str(e.kid); e.blockId = str(e.blockId); e.start = optTime(e.start); e.end = optTime(e.end); });
       if (!obj(L.night)) L.night = {};
       cleanObj(L.night, (k, n) => obj(n));
-      for (const n of Object.values(L.night)) { if ('asleep' in n) n.asleep = optTime(n.asleep); if ('wake' in n) n.wake = optTime(n.wake); }
+      for (const n of Object.values(L.night)) {
+        if ('asleep' in n) n.asleep = optTime(n.asleep);
+        if ('wake' in n) n.wake = optTime(n.wake);
+        if ('upAt' in n) { n.upAt = optTime(n.upAt); if (!n.upAt) delete n.upAt; }
+        for (const [k, max] of [['wakes', 30], ['up', 720]]) if (k in n) { const v = Math.round(Number(n[k])); if (Number.isFinite(v) && v > 0) n[k] = Math.min(max, v); else delete n[k]; }
+      }
       if (!obj(L.meals)) L.meals = {};
       cleanObj(L.meals, (k, r) => obj(r));
       for (const r of Object.values(L.meals)) cleanObj(r, (k, v) => Object.keys(T.rates).includes(v));

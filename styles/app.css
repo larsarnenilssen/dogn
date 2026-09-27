@@ -257,6 +257,13 @@ details.grp>summary::-webkit-details-marker{display:none}
 details.grp>summary::before{content:"+ ";color:var(--faint)}
 details.grp[open]>summary::before{content:"– "}
 .hint{color:var(--muted);font-size:var(--fs-sm);line-height:1.55;margin:0}
+.hint:empty{display:none}
+.stepper{display:flex;align-items:stretch;border:1px solid var(--field-line);border-radius:var(--r);background:var(--field);min-height:46px;overflow:hidden}
+.stepper button{flex:0 0 44px;border:none;background:none;color:var(--ink);font-family:var(--mono);font-size:var(--fs-lg);cursor:pointer}
+.stepper button:disabled{color:var(--faint);cursor:default}
+.stepper output{flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:var(--fs-lg);border-inline:1px solid var(--line-soft)}
+.night-kid{display:flex;flex-direction:column;gap:var(--sp-4)}
+.night-kid+.night-kid{border-top:1px solid var(--line-soft);padding-top:var(--sp-6)}
 .hint.version{text-align:center;padding-top:var(--sp-1)}
 .warn-text{color:var(--danger)}
 .sel-sm{width:auto;min-width:6.5rem;min-height:40px;padding-block:var(--sp-2)}
