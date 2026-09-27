@@ -5,11 +5,21 @@ const ICON_X = raw('<svg viewBox="0 0 24 24" width="18" height="18" fill="none" 
 
 /* Åpner et ark. html lages med h``. mount(sheet) kobler til knappene.
    goback: funksjonen for «Tilbake»-knappen (data-goback), hvis arket har en. */
+let lastTap = null;  // siste knapp eller felt som ble trykket på i et ark
 let sheetSeq = 0;   // hindrer at et ark som allerede er lukket, åpnes av animasjonen
 function openSheet(html, mount, goback) {
   const root = $('#sheet-root');
   const seq = ++sheetSeq;
   const wasOpen = root.classList.contains('open');
+  // Samme ark tegnes på nytt etter et valg (samme tittel): behold plassen i arket
+  const title = el => { const t = el && el.querySelector('.sh-head h2'); return t ? t.textContent : null; };
+  const oldTitle = wasOpen ? title(root) : null, oldBody = root.querySelector('.sh-body');
+  const keep = oldBody ? oldBody.scrollTop : 0;
+  // Det som sist ble trykket på, holdes på samme sted på skjermen når arket tegnes på nytt
+  const anchor = wasOpen && lastTap && root.contains(lastTap) ? lastTap : null;
+  const anchorKey = anchor ? focusSelector(anchor) : null, anchorTop = anchor ? anchor.getBoundingClientRect().top : 0;
+  const focusKey = wasOpen && document.activeElement && root.contains(document.activeElement) ? focusSelector(document.activeElement) : null;
+  if (!root.dataset.tapWatch) { root.dataset.tapWatch = '1'; root.addEventListener('click', e => { lastTap = e.target.closest('button, input, select, textarea, label') || null; }, true); }
   setHtml(root, h`<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab" aria-hidden="true"></div>${html}</div>`);
   root.hidden = false;
   document.body.classList.add('locked');
@@ -31,6 +41,20 @@ function openSheet(html, mount, goback) {
     q.setAttribute('aria-label', more.hidden ? T.common.moreInfo : T.common.lessInfo);
   });
   if (mount) mount(sheet, s => sheet.querySelector(s));
+  if (wasOpen && oldTitle !== null && oldTitle === title(root)) {
+    const body = sheet.querySelector('.sh-body');
+    const again = anchorKey && sheet.querySelector(anchorKey);
+    if (body) body.scrollTop = keep;
+    if (body && again) body.scrollTop += again.getBoundingClientRect().top - anchorTop;
+    const f = focusKey && sheet.querySelector(focusKey);
+    if (f && document.activeElement === document.body) f.focus({ preventScroll: true });
+  }
+}
+/* En velger som finner igjen samme knapp eller felt etter at arket er tegnet på nytt */
+function focusSelector(el) {
+  if (el.id) return '#' + CSS.escape(el.id);
+  const attrs = [...el.attributes].filter(a => a.name.startsWith('data-')).map(a => '[' + a.name + '="' + CSS.escape(a.value) + '"]').join('');
+  return attrs ? el.tagName.toLowerCase() + attrs : null;
 }
 function closeSheet() {
   const root = $('#sheet-root');

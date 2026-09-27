@@ -59,6 +59,10 @@ $('#nowbar').addEventListener('click', e => {
 });
 
 $('#timeline').addEventListener('click', e => {
+  const el = e.target.closest('button, input'), blk = el && el.closest('.blk'), key = el && focusSelector(el);
+  tlTap = blk && key ? { sel: '.blk[data-id="' + CSS.escape(blk.dataset.id) + '"] ' + key, at: Date.now() } : null;
+}, true);
+$('#timeline').addEventListener('click', e => {
   const qs = e.target.closest('[data-qshift]');
   if (qs) {
     const id = qs.closest('.blk').dataset.id;

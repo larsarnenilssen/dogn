@@ -86,6 +86,7 @@ function bannerHTML() {
   return out;
 }
 
+let tlTap = null;   // { sel, at }: siste knapp eller felt som ble trykket på i tidslinjen
 function renderTimeline() {
   if (!state) return;
   const date = view, today = todayISO(), isToday = date === today, now = nowMin();
@@ -124,7 +125,10 @@ function renderTimeline() {
   if (blocks.length) marks.filter(k => k.m >= endOf(blocks, blocks.length - 1)).forEach(k => out.push(sunRow(k)));
   if (!blocks.length) out.push(h`<p class="hint empty">${T.tl.empty}</p>`);
   else out.push(h`<div class="endrow"><button type="button" class="btn small ghost" data-act="toggle-all">${showAll ? T.tl.showCompact : T.tl.showAll}</button></div>`);
+  // Det som nettopp ble trykket på, blir stående der det sto, selv om noe over endrer høyde
+  const anc = tlTap && Date.now() - tlTap.at < 1500 ? document.querySelector(tlTap.sel) : null, top0 = anc ? anc.getBoundingClientRect().top : 0;
   setHtml($('#timeline'), out);
+  if (anc) { const again = document.querySelector(tlTap.sel); if (again) window.scrollBy(0, again.getBoundingClientRect().top - top0); tlTap = null; }
   renderStrip();
   renderNowbar();
 }

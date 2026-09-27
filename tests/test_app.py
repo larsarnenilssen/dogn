@@ -682,6 +682,30 @@ class DognTest(unittest.TestCase):
         self.expand(pg, 'to-lurer.kvelds')
         self.assertIn('Kari spiser med', pg.inner_text('.blk[data-id="to-lurer.kvelds"] [data-act="wife"]'))
 
+    def test_sheets_keep_their_place_when_redrawn(self):
+        pg = self.open(when=(2026, 10, 7, 18, 0))
+        def check(open_js, sel, what):
+            pg.evaluate('closeSheet(); ' + open_js); pg.wait_for_timeout(450)
+            pg.eval_on_selector(sel, 'e => e.scrollIntoView({ block: "center" })')
+            self.assertGreater(pg.evaluate("document.querySelector('#sheet-root .sh-body').scrollTop"), 50, what)
+            top = lambda: pg.eval_on_selector(sel, 'e => Math.round(e.getBoundingClientRect().top)')
+            before = top()
+            pg.click(sel); pg.wait_for_timeout(150)
+            self.assertLess(abs(top() - before), 2, what)                  # knappen står der den sto
+        check("openLogSheet(view)", '[data-lrate="to-lurer.kvelds"][data-kid="a"][data-val="godt"]', 'spiste, barn 1')
+        check("openLogSheet(view)", '[data-lrate="to-lurer.kvelds"][data-kid="b"][data-val="lite"]', 'spiste, barn 2')
+        self.assertEqual(pg.evaluate("getLog(view).meals['to-lurer.kvelds']"), {'a': 'godt', 'b': 'lite'})
+        check("openWeekSheet()", '[data-kd="3"]', 'ukedager i menyen')
+        check("openShopSheet()", '[data-shopday="4"]', 'handledag')
+        # Tidslinjen: det som ble trykket på, står der det sto
+        pg.evaluate('closeSheet()'); pg.wait_for_timeout(300)
+        pg.evaluate("blocksFor(view).forEach(b => expanded.add(b.id)); renderTimeline()")
+        for sel in ['.blk[data-id="to-lurer.middag"] [data-act="rate"][data-kid="b"][data-val="godt"]', '.blk[data-id="to-lurer.kvelds"] [data-act="kidsdin"]']:
+            pg.eval_on_selector(sel, 'e => e.scrollIntoView({ block: "center" })'); pg.wait_for_timeout(100)
+            top = lambda: pg.eval_on_selector(sel, 'e => Math.round(e.getBoundingClientRect().top)')
+            before = top(); pg.click(sel); pg.wait_for_timeout(150)
+            self.assertLess(abs(top() - before), 2, sel)
+
     def test_snow_play_needs_cold(self):
         pg = self.open(when=(2026, 10, 7, 11, 35))
         self.assertNotIn('a-sno', pg.evaluate("suggest(view, 11*60+30, 13*60+30).list.map(a => a.id)"))
