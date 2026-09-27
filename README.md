@@ -162,9 +162,13 @@ så de kan aldri overskrive hverandre. Formatet står i `docs/deling.md`.
   kan fortsatt overstyre.
 - **Delte punkter:** Gjøremål og avtaler hun deler, står øverst på dagen under «Fra …». Gjøremål kan krysses
   av, og hun ser det i Takt. Varer hun deler, havner på handlelisten under «Andre varer».
-- **Dagen hjemme:** Døgn sender dagen i går, i dag og i morgen til Takt: bolkene, hvem som sover, middag,
-  avtaler og handlelisten. Det skjer høyst hvert femte minutt, og etter et halvt minutt når barna sovner
-  eller våkner.
+- **Dagen hjemme:** Døgn sender dagen i går, i dag og i morgen til Takt: bolkene, søvn og natt, måltider
+  som er vurdert, aktiviteter, helse, middag, avtaler og handlelisten. Det skjer høyst hvert femte minutt, og
+  etter 20 sekunder når barna sovner eller våkner, eller når helse eller sykdom føres.
+- **Merknader:** Døgn merker det som skiller seg ut, og Takt viser det øverst i rødt eller gult: feber (fra 38,0)
+  eller sykdom, medisin, kort eller urolig natt, lite lur og dårlig matlyst. Natt og lur sammenlignes med snittet
+  de siste 14 dagene, så de merkes først når minst 7 dager er logget. Reglene står i `docs/deling.md`.
+- **Beskjed:** Under notatet i dagsloggen velger du **Bare her**, **Vis i Takt** (gul linje) eller **Viktig** (rød).
 
 Deling slås på automatisk når backup til GitHub er koblet til, og kan slås av under **Meny › Backup › Deling
 med Takt**. Takt hentes når appen åpnes og hver halvtime.

@@ -15,6 +15,7 @@ const TYPE_KEYS = Object.keys(T.types);
 const ROLE_KEYS = Object.keys(T.roles);
 const ACT_TAG_KEYS = Object.keys(T.tags);
 const SHOP_CAT_KEYS = Object.keys(T.shopCats);
+const NOTE_TAKT = ['', 'show', 'important'];   // notatet i loggen: bare i Døgn, vis i Takt, viktig i Takt
 
 /* Feil med en melding som kan vises til brukeren */
 class UserError extends Error {}
@@ -320,6 +321,7 @@ function sanitize(s, base) {
       cleanObj(L.meals, (k, r) => obj(r));
       for (const r of Object.values(L.meals)) cleanObj(r, (k, v) => Object.keys(T.rates).includes(v));
       L.note = str(L.note);
+      if ('noteTakt' in L && (!NOTE_TAKT.includes(L.noteTakt) || !L.noteTakt)) delete L.noteTakt;
       if ('health' in L) {
         L.health = arr(L.health).filter(x => obj(x) && isTime(x.time));
         ids(L.health, 'h-');

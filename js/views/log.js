@@ -57,7 +57,8 @@ function openLogSheet(date) {
         ${hint(G.ratesHint)}
       </section>
       <section class="grp"><h3>${T.common.note}</h3><label for="l-note" class="vh">${G.noteAria}</label>
-        <textarea id="l-note" rows="4" placeholder="${G.notePh}">${L.note}</textarea></section>
+        <textarea id="l-note" rows="4" placeholder="${G.notePh}">${L.note}</textarea>
+        ${shareOn() ? h`${segRow('data-nt', NOTE_TAKT.map(k => [k, G.noteTakt[k]]), k => k === (L.noteTakt || ''))}${hint(G.noteTaktHint(partnerName()))}` : ''}</section>
       <button type="button" class="btn wide" data-report>${G.share}</button>
     </div>`,
     (sheet, q) => {
@@ -88,7 +89,12 @@ function openLogSheet(date) {
         openLogSheet(date);
       });
       const note = q('#l-note');
-      note.addEventListener('input', () => commit(null, () => { logRec(date).note = note.value; }, 'none'));
+      note.addEventListener('input', () => { commit(null, () => { logRec(date).note = note.value; }, 'none'); if (getLog(date).noteTakt) shareSoon(); });
+      sheet.querySelectorAll('[data-nt]').forEach(b => b.addEventListener('click', () => {
+        commit(null, () => { const Lr = logRec(date); if (b.dataset.nt) Lr.noteTakt = b.dataset.nt; else delete Lr.noteTakt; }, 'none');
+        sheet.querySelectorAll('[data-nt]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        shareSoon();
+      }));
     });
 }
 

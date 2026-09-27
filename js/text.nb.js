@@ -238,6 +238,8 @@ const T = {
     healthHint: 'For temperatur, medisin og symptomer. Appen gir ikke råd om dosering. Når et barn er sykt, foreslås bare aktiviteter hjemme.',
     meals: 'Måltider', noMeals: 'Ingen måltider i dagens plan.', ratesHint: 'Trykk på valget igjen for å fjerne det.',
     noteAria: 'Notat for dagen', notePh: 'Hva gikk bra, hva bør endres?', share: 'Del dagsrapport',
+    noteTakt: { '': 'Bare her', show: 'Vis i Takt', important: 'Viktig' },
+    noteTaktHint: n => '«Vis i Takt» gir en gul linje øverst hos ' + n + ', «Viktig» en rød.',
     healthToast: (kid, kind, value, time) => 'Helse: ' + kid + ', ' + kind.toLowerCase() + (value ? ' ' + value : '') + ' kl. ' + time,
   },
 

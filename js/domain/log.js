@@ -204,12 +204,15 @@ function lastHealth(kind, date) {
   const L = getLog(date);
   return (L.health || []).filter(h => h.kind === kind).sort((a, b) => b.time.localeCompare(a.time))[0] || null;
 }
+/* Helse og sykdom sendes til Takt om et øyeblikk */
 function addHealth(date, h) {
+  shareSoon();
   const L = logRec(date);
   (L.health ??= []).push(h);
   if (h.kind === 'temp' || h.kind === 'med' || h.kind === 'sym') (L.sick ??= {})[h.kid] = true;
 }
 function toggleSick(date, kid) {
+  shareSoon();
   const L = logRec(date);
   L.sick ??= {};
   if (L.sick[kid]) delete L.sick[kid]; else L.sick[kid] = true;
@@ -232,7 +235,7 @@ function sleepStats(kid, days) {
   const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
   const avg1 = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length * 10) / 10 : null;
   return { nap: avg(naps), count: avg1(counts), first: avg(firstWin), bed: avg(beds), n: naps.length,
-    night: avg(nights), wakes: avg1(wakes), up: avg(ups), woke: avg(woke) };
+    night: avg(nights), nights: nights.length, wakes: avg1(wakes), up: avg(ups), woke: avg(woke) };
 }
 
 /* ---------- dagsrapport (ren tekst, for deling) ---------- */

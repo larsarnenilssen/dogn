@@ -1063,5 +1063,53 @@ class DognTest(unittest.TestCase):
         self.assertTrue(all(b['start'] and b['end'] for b in blocks))
 
 
+    # Ti vanlige dager (natt 19:00–06:30, lur 90 min), så en urolig natt og feber i dag
+    SHARE_HISTORY = """() => {
+      const t = todayISO();
+      for (let i = 1; i <= 10; i++) {
+        const nd = addDays(t, -i - 1), d = addDays(t, -i);
+        commit(null, () => {
+          for (const k of ['a', 'b']) setNight(nd, k, { asleep: '19:00', wake: '06:30' });
+          for (const k of ['a', 'b']) logRec(d).sleep.push({ id: 's-' + k + i, kid: k, blockId: 'x', start: '12:00', end: i === 1 && k === 'a' ? '12:20' : '13:30' });
+        });
+      }
+      commit(null, () => { setNight(addDays(t, -1), 'b', { asleep: '21:00', wake: '04:30', wakes: 5 }); });
+      commit(null, () => {
+        addHealth(t, { id: 'h-1', kid: 'b', kind: 'temp', value: '38,6', time: '08:50' });
+        addHealth(t, { id: 'h-2', kid: 'b', kind: 'med', value: 'paracet', time: '09:00' });
+        blocksFor(t).filter(isKidMeal).slice(0, 2).forEach(b => setRate(t, b.id, 'b', 'lite'));
+        Object.assign(logRec(t), { note: 'Falt på lekeplassen, går fint', noteTakt: 'important' });
+      });
+    }"""
+
+    def test_share_file_details_and_flags(self):
+        pg = self.open()
+        pg.evaluate(self.SHARE_HISTORY)
+        f = pg.evaluate('() => shareFile()')
+        self.assertEqual(f['usual']['a'], {'night': 690, 'wakes': 0, 'nap': 83})
+        day = f['days']['2026-10-07']
+        self.assertEqual(day['nights']['b'], {'asleep': '21:00', 'wake': '04:30', 'net': 450, 'wakes': 5, 'up': 0})
+        self.assertEqual(day['note'], {'text': 'Falt på lekeplassen, går fint', 'important': True})
+        self.assertEqual(day['lastLog'], '09:00')
+        self.assertEqual([x['kind'] for x in day['health']], ['temp', 'med'])
+        self.assertEqual(len([m for m in day['meals'] if m['rates'].get('b') == 'lite']), 2)
+        flags = [(x['kind'], x['level'], x['kid']) for x in day['flags']]
+        self.assertEqual(flags, [('fever', 'high', 'b'), ('med', 'note', 'b'), ('night', 'note', 'b'), ('food', 'note', 'b')])
+        self.assertEqual(day['flags'][0]['temp'], 38.6)
+        # I går: luren til Ola var kort. Lurene i dag er ikke over ennå, så de merkes ikke.
+        self.assertIn(('nap', 'note', 'a'), [(x['kind'], x['level'], x['kid']) for x in f['days']['2026-10-06']['flags']])
+        # Notatet sendes bare når det er merket for Takt, og valget vises bare når deling er på
+        pg.evaluate("() => { delete logRec(todayISO()).noteTakt; }")
+        self.assertIsNone(pg.evaluate("() => shareFile().days['2026-10-07'].note"))
+        pg.evaluate("() => openLogSheet(todayISO())")
+        self.assertEqual(pg.locator('[data-nt]').count(), 0)
+        pg.evaluate("() => closeSheet()")
+        self._fake_github(pg, {})
+        pg.evaluate("() => openLogSheet(todayISO())")
+        pg.click('[data-nt="show"]')
+        self.assertEqual(pg.evaluate("() => getLog(todayISO()).noteTakt"), 'show')
+        self.assertEqual(pg.evaluate("() => shareFile().days['2026-10-07'].flags.length"), 4)
+
+
 if __name__ == '__main__':
     unittest.main()
