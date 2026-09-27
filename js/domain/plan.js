@@ -260,6 +260,7 @@ function applySetup(o) {
   state.place = o.place;
   state.leave = o.leave;
   if (o.kidsWord) state.settings.kidsWord = o.kidsWord;
+  if ('due' in o) state.settings.due = o.due;
   if (!state.meta.setupDone) {
     state.schedule = [{ from: o.leave.start, templateId: o.templateId || state.schedule[0].templateId }];
     state.tasks.forEach(t => { if (t.id in SEED_TASK_OFFSETS && t.rule) t.rule.start = addDays(o.leave.start, SEED_TASK_OFFSETS[t.id]); });

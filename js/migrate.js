@@ -4,7 +4,7 @@
    for trinn, og sanitize() retter eller fjerner verdier som ikke har riktig
    form (for eksempel fra en fil som er redigert for hånd). Gyldige data
    endres ikke. */
-const DATA_VERSION = 11;
+const DATA_VERSION = 12;
 /* Startdata som kom til senere, og som legges til hos eksisterende brukere */
 const ADDED_V11 = ['a-lykt', 'a-havre', 'a-is', 'a-sansepose', 'a-kontakt', 'a-torkle', 'a-rulle', 'a-gaa', 'a-trapp', 'a-bamse', 'a-album', 'a-tegne', 'a-vindu', 'a-toy', 'a-rydde', 'a-vannmal', 'a-sno', 'a-kongler'];
 const ADDED_V9 = {
@@ -14,6 +14,7 @@ const ADDED_V9 = {
 const TYPE_KEYS = Object.keys(T.types);
 const ROLE_KEYS = Object.keys(T.roles);
 const ACT_TAG_KEYS = Object.keys(T.tags);
+const SHOP_CAT_KEYS = Object.keys(T.shopCats);
 
 /* Feil med en melding som kan vises til brukeren */
 class UserError extends Error {}
@@ -131,6 +132,12 @@ function migrate(s) {
     seedActivities().filter(a => ADDED_V11.includes(a.id) && !have.has(a.id)).forEach(a => s.activities.push(a));
     s.version = 11;
   }
+  if (s.version < 12) {
+    // v12: faste varer på handlelisten. Alder, hvem som spiser middagen og handledag er nye, valgfrie felt.
+    s.shop = s.shop || {};
+    if (!Array.isArray(s.shop.staples)) s.shop.staples = defaultStaples();
+    s.version = 12;
+  }
   (s.dishes || []).forEach(d => { if (d && !Array.isArray(d.ingredients)) d.ingredients = []; });
   s.shop = Object.assign({ checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() }, s.shop || {});
   if (!s.settings.theme) s.settings.theme = 'dark';
@@ -162,7 +169,7 @@ function sanitize(s, base) {
   if (!obj(s.leave) || !isDate(s.leave.start) || !isDate(s.leave.end)) s.leave = base.leave;
   s.kids = arr(s.kids).filter(obj);
   ids(s.kids, 'b-');
-  s.kids.forEach(k => { k.name = str(k.name); });
+  s.kids.forEach(k => { k.name = str(k.name); if ('born' in k && !isDate(k.born)) delete k.born; });
   if (!s.kids.length) s.kids = base.kids;
   if (!obj(s.place) || !Number.isFinite(s.place.lat) || !Number.isFinite(s.place.lon)) s.place = null;
   else s.place.name = str(s.place.name);
@@ -212,6 +219,7 @@ function sanitize(s, base) {
     d.weekday = Math.round(num(d.weekday, 0, 0, 7));
     d.kids = str(d.kids); d.prep = str(d.prep); d.dayBefore = str(d.dayBefore);
     d.ingredients = arr(d.ingredients).map(str).filter(Boolean);
+    d.for = oneOf(d.for, ['alle', 'voksne'], 'alle');
   });
 
   s.activities = arr(s.activities).filter(obj);
@@ -253,12 +261,23 @@ function sanitize(s, base) {
   if (!obj(S.show)) S.show = {};
   for (const k of Object.keys(S.show)) S.show[k] = S.show[k] !== false;
   S.kidsWord = str(S.kidsWord).trim() || T.kids.word;
+  S.kidsDinnerDays = wdays(S.kidsDinnerDays);
+  S.shopDay = oneOf(Number(S.shopDay), [0, 1, 2, 3, 4, 5, 6, 7], 0);
+  S.due = isDate(S.due) ? S.due : '';
+  if ('napHintUntil' in S && !isDate(S.napHintUntil)) delete S.napHintUntil;
+  if ('hsMade' in S) { if (S.hsMade && typeof S.hsMade === 'object' && !Array.isArray(S.hsMade)) cleanObj(S.hsMade, (k, v) => v === true); else S.hsMade = {}; }
 
   if (!obj(s.shop.checked)) s.shop.checked = {};
   s.shop.extra = arr(s.shop.extra).filter(obj);
   ids(s.shop.extra, '');
   s.shop.extra.forEach(x => { x.text = str(x.text); });
   s.shop.pantry = arr(s.shop.pantry).map(str).filter(Boolean);
+  s.shop.staples = arr(s.shop.staples).filter(obj);
+  ids(s.shop.staples, 'st-');
+  s.shop.staples.forEach(x => { x.text = str(x.text); x.every = oneOf(Number(x.every), [7, 14, 28], 7); x.last = isDate(x.last) ? x.last : ''; });
+  if (!obj(s.shop.cats)) s.shop.cats = {};
+  cleanObj(s.shop.cats, (k, v) => SHOP_CAT_KEYS.includes(v));
+  s.shop.boughtThrough = isDate(s.shop.boughtThrough) ? s.shop.boughtThrough : '';
 
   cleanObj(s.days, (d, rec) => isDate(d) && obj(rec));
   for (const d of Object.values(s.days)) {
@@ -267,6 +286,7 @@ function sanitize(s, base) {
     if ('templateId' in d && typeof d.templateId !== 'string') delete d.templateId;
     if ('picks' in d) { if (obj(d.picks)) cleanObj(d.picks, (k, v) => typeof v === 'string'); else delete d.picks; }
     if ('wife' in d && typeof d.wife !== 'boolean') delete d.wife;
+    if ('kidsDin' in d && typeof d.kidsDin !== 'boolean') delete d.kidsDin;
     if ('log' in d) {
       if (!obj(d.log)) { delete d.log; continue; }
       const L = d.log;

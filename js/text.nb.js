@@ -21,6 +21,7 @@ const T = {
 
   // Flertall: [entall, flertall]
   n: {
+    vare: ['vare', 'varer'],
     dag: ['dag', 'dager'], bolk: ['bolk', 'bolker'], rett: ['rett', 'retter'], aktivitet: ['aktivitet', 'aktiviteter'],
     gjoremal: ['gjøremål', 'gjøremål'], punkt: ['punkt', 'punkter'], enkeltdag: ['enkeltdag', 'enkeltdager'],
     oppv: ['oppvåkning', 'oppvåkninger'],
@@ -34,6 +35,7 @@ const T = {
   ratesShort: { godt: 'godt', middels: 'midd.', lite: 'lite' },
   travel: { hjemme: 'hjemme', gange: 'gå/vogn', kollektiv: 'buss/bybane', bil: 'bil' },
   kinds: { inne: 'inne', ute: 'ute' },
+  shopCats: { frukt: 'Frukt og grønt', kjott: 'Kjøtt og fisk', meieri: 'Meieri og egg', brod: 'Brød og bakst', torr: 'Tørrvarer og hermetikk', frys: 'Frys', baby: 'Baby og hygiene', annet: 'Annet' },
   tags: { rolig: 'rolig', bevegelse: 'bevegelse', sanser: 'sanser', sprak: 'sang og språk', natur: 'natur', sosialt: 'sosialt', hverdag: 'hverdag', utflukt: 'utflukt' },
   health: { temp: 'Temperatur', med: 'Medisin', sym: 'Symptom', other: 'Annet' },
   wmo: { 0: 'klart', 1: 'lettskyet', 2: 'delvis skyet', 3: 'overskyet', 45: 'tåke', 48: 'tåke', 51: 'lett yr', 53: 'yr', 55: 'tett yr', 56: 'underkjølt yr', 57: 'underkjølt yr',
@@ -79,6 +81,7 @@ const T = {
     dishAria: (meal, name) => meal + ': ' + name + '. Trykk for å bytte', swap: 'bytt',
     pickDish: 'Velg rett fra banken',
     partnerEats: (name, home) => (home ? '[x] ' : '[ ] ') + name + ' spiser med',
+    kidsEat: (w, on) => (on ? '[x] ' : '[ ] ') + cap(w) + ' spiser av middagen', adultsOnly: ' (middagen er for voksne)', kidsOwn: 'egen mat',
     clothes: 'klær', clothesToday: 'klær i dag', ate: 'spiste',
     rememberFrom: d => 'Husk fra ' + d, late: n => plural(n, T.n.dag) + ' på etterskudd', lateCount: n => n + ' på etterskudd',
     sugg: list => 'forslag: ' + list.join(' · '), showAll: 'Vis alle detaljer', showCompact: 'Vis kompakt',
@@ -86,6 +89,16 @@ const T = {
     openLog: 'Åpne dagslogg', shareReport: 'Del dagsrapport', exportBackup: 'Eksporter backup',
     shiftHead: 'Flytt (min). Bolkene etter tilpasses fram til leggetid.', shiftHeadBed: 'Flytt leggetid (min). Nullstilling flyttes like mye.', startsNow: 'Starter nå',
     alreadyNow: title => title + ' starter allerede nå',
+  },
+  hs: {
+    k12: '12-månederskontrollen', k15: '15-månederskontrollen med MMR-vaksine', k17: 'gruppekonsultasjonen ved 17–18 mnd', k24: '2-årskontrollen',
+    task: (what, who) => 'Sjekk at ' + what + ' for ' + who + ' er avtalt med helsestasjonen',
+  },
+  naps: {
+    nth: n => ['første', 'andre', 'tredje', 'fjerde'][n - 1] || n + '.',
+    sign: (nth, n, days) => cap(nth) + ' lur var kort eller uteble ' + n + ' av de siste ' + days + ' dagene.',
+    age: (who, age, fewer) => ' ' + cap(who) + ' er ' + age + (fewer === 1 ? '. Overgangen til én lur skjer oftest mellom 12 og 18 mnd.' : '. Overgangen til to lurer skjer oftest mellom 6 og 9 mnd.'),
+    try: name => 'Se malen «' + name + '»', later: 'Ikke nå', laterToast: 'Forslaget kommer tidligst igjen om en uke',
   },
 
   sleep: {
@@ -107,7 +120,7 @@ const T = {
   },
 
   sheet: { dialog: 'Ark' },
-  nav: { label: 'Hovedmeny', today: 'i dag', week: 'uke', add: '+', addAria: 'Legg til husk, avtale, helse eller bolk', log: 'logg', more: 'mer' },
+  nav: { label: 'Hovedmeny', today: 'i dag', week: 'mat', add: '+', addAria: 'Legg til husk, avtale, helse eller bolk', log: 'logg', more: 'mer' },
 
   // Når bolker flyttes eller startes: leggetid står, resten tilpasses
   fit: {
@@ -171,6 +184,8 @@ const T = {
     toastReset: 'Dagen følger malen igjen', toastUses: name => 'Dagen bruker ' + name, toastFollows: 'Dagen følger planen',
   },
 
+  food: { menu: 'Meny', shop: 'Handle', aria: 'Meny eller handleliste' },
+
   week: {
     title: 'Ukemeny', from: d => 'Uke fra ' + d, prev: 'Forrige uke', next: 'Neste uke',
     noDinner: 'ingen middag valgt', manual: ', valgt selv', lunch: name => 'lunsj: ' + name,
@@ -179,6 +194,10 @@ const T = {
     shop: 'Handleliste for uken', regenHead: 'Lag menyen på nytt',
     regenHint: d => 'Gjelder dager fra og med i morgen (' + d + '). Retter du har valgt selv, beholdes.',
     regen: 'Lag ny meny fra i morgen', regenToast: d => 'Ny meny fra ' + d,
+    withKids: w => ' · med ' + w, kidsHead: w => cap(w) + ' spiser av middagen',
+    kidsHint: w => 'Velg dagene ' + w + ' spiser av middagen dere lager, og legg til flere dager etter hvert. Da velger menyen retter som passer for alle. Andre dager får ' + w + ' det som står i bolken. Én enkelt dag endrer du i middagsbolken.',
+    kidsOwnCount: (w, n, what) => n ? cap(w) + ' trenger ' + (what || 'egen mat').toLowerCase() + ' til middag ' + plural(n, T.n.dag) + ' denne uken.' : cap(w) + ' spiser av middagen hele uken.',
+    kidsToast: (w, n) => cap(w) + ' spiser av middagen ' + plural(n, T.n.dag) + ' i uken',
   },
 
   swap: {
@@ -190,7 +209,8 @@ const T = {
   },
 
   dish: {
-    meta: (min, cat, wd) => min + ' min, ' + cat + (wd ? ', fast ' + wd : ''),
+    meta: (min, cat, wd, adults) => min + ' min, ' + cat + (wd ? ', fast ' + wd : '') + (adults ? ', bare voksne' : ''),
+    forWho: 'Hvem', forOpts: { alle: 'Alle', voksne: 'Bare voksne' }, forHint: w => '«Bare voksne» brukes ikke de dagene ' + w + ' spiser av middagen.',
     bankTitle: 'Middagsbank', dinners: 'Middager', newDinner: 'Ny middag', lunches: 'Lunsjer', newLunch: 'Ny lunsj',
     lunchHint: 'Lunsj kommer bare på menyen på faste dager, eller når du velger den selv.', none: 'Ingen retter ennå.',
     fish: 'Fisk', fishPerWeek: 'Fiskemiddager per uke',
@@ -310,7 +330,10 @@ const T = {
   profile: {
     notChosen: 'Ikke valgt', welcome: 'Velkommen til Døgn', title: 'Profil',
     haveFile: 'Har du en backup eller startfil?', importFile: 'Importer fil', importHint: 'Ellers setter du opp appen under. Alt kan endres senere under Meny › Profil.',
-    kids: 'Barn', addKid: 'Legg til barn',
+    kids: 'Barn', addKid: 'Legg til barn', born: 'Født', due: 'Termin', dueHint: 'Bare hvis barna er født før termin. Da regnes korrigert alder til to år, som helsestasjonen gjør.',
+    ages: list => list.join(' · '), ageLine: (name, age, corr) => name + ' ' + age + (corr ? ' (korrigert ' + corr + ')' : ''),
+    ageFacts: m => m >= 11 && m < 19 ? 'Fra ett år: skummet- eller lettmelk som drikke, høyst 5 dl om dagen medregnet yoghurt. Overgangen til én lur skjer oftest mellom 12 og 18 mnd.' : m >= 5 && m < 11 ? 'Overgangen fra tre til to lurer skjer oftest mellom 6 og 9 mnd.' : '',
+    hsMade: n => plural(n, T.n.gjoremal) + ' om helsestasjonen lagt inn',
     kidsWord: 'Samlebetegnelse', kidsWordHint: 'Brukes i teksten, for eksempel «Til barnene» eller «Guttene spiser». Skriv for eksempel barnene, guttene eller jentene.',
     place: 'Sted', searchPh: 'Søk etter sted, for eksempel Nesttun', searchAria: 'Søk etter sted', search: 'Søk', geo: 'Bruk posisjonen min',
     placeHint: 'Stedet brukes til værmelding, soloppgang og solnedgang.', home: 'Hjemme',
@@ -387,7 +410,8 @@ const T = {
   },
 
   add: {
-    title: 'Legg til', tabs: { husk: 'Husk', avtale: 'Avtale', helse: 'Helse', bolk: 'Bolk i dag' },
+    title: 'Legg til', tabs: { husk: 'Husk', handle: 'Handle', avtale: 'Avtale', helse: 'Helse', bolk: 'Bolk i dag' },
+    shopHint: 'Varen kommer under «Andre varer» på handlelisten.',
     healthHint: 'Barnet merkes som sykt for dagen. Dagsloggen viser alt.',
     remember: 'Husk', rememberAria: 'Hva skal du huske', rememberPh: 'For eksempel Kjøp bleier', when: 'Når',
     whenOpts: { lur: 'Neste lur', kveld: 'I kveld', morgen: 'I morgen' },
@@ -398,7 +422,16 @@ const T = {
   },
 
   shop: {
-    title: 'Handleliste', range: (a, b) => a + ' til ' + b, prev: 'Forrige 7 dager', next: 'Neste 7 dager',
+    title: 'Handleliste', range: (a, b) => a + ' til ' + b, prev: 'Tidligere', next: 'Senere',
+    forDinners: 'Til middagene', staples: 'Faste varer', staplesHint: 'Kommer på listen igjen når det er gått så lang tid siden de sist ble handlet.',
+    every: { 7: 'hver uke', 14: 'annenhver uke', 28: 'hver måned' }, stapleAria: name => 'Hvor ofte ' + name,
+    staplePh: 'For eksempel Bleier', notDue: n => plural(n, T.n.vare) + ' er ikke på listen denne gangen',
+    done: 'Ferdig handlet', doneHint: 'Fjerner avkrysningene og det som er handlet. Varer til middagene som ikke er krysset av, flyttes til «Andre varer».',
+    doneToast: (n, k) => plural(n, T.n.vare) + ' handlet' + (k ? ', ' + k + ' flyttet til andre varer' : ''),
+    day: 'Handledag', dayNone: 'Ingen fast', dayHint: 'Listen gjelder fram til neste handledag. På handledagen står «Handle» som gjøremål.',
+    task: n => 'Handle, ' + plural(n, T.n.vare), taskSub: 'Handlelisten ligger under «mat»',
+    moveTitle: name => 'Flytt ' + name, moveAria: name => 'Velg kategori for ' + name, moved: (name, cat) => name + ' ligger nå under ' + cat.toLowerCase(),
+    added: text => text + ' er lagt på handlelisten', nextTrip: 'Neste handletur',
     empty: 'Ingen varer. Legg inn ingredienser på rettene i middagsbanken.', missing: list => 'Mangler ingredienser: ' + list + '.',
     other: 'Andre varer', addPh: 'For eksempel Bleier str. 4', addAria: 'Legg til vare', removeAria: name => 'Fjern ' + name,
     share: 'Del listen', clear: 'Nullstill avkrysninger', pantry: 'Har alltid hjemme', pantryAria: 'Varer som ikke skal på listen, én per linje',

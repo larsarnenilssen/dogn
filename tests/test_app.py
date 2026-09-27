@@ -122,7 +122,7 @@ class DognTest(unittest.TestCase):
     def test_first_run_setup(self):
         pg = self.open(setup=False)
         pg.wait_for_selector('#p-kids')
-        inputs = pg.query_selector_all('#p-kids .item input')
+        inputs = pg.query_selector_all('#p-kids .item [data-kname]')
         inputs[0].fill('Emil')
         inputs[1].fill('Ida')
         pg.fill('#p-ls', '2026-10-01')
@@ -510,6 +510,94 @@ class DognTest(unittest.TestCase):
         self.assertNotIn('l-dobbel', acts)
         self.assertEqual(acts['l-farlig']['url'], '')
         self.assertEqual(pg.eval_on_selector_all('#sheet-root img', 'els => els.length'), 0)
+
+    def test_kids_eat_dinner_on_chosen_days(self):
+        pg = self.open(when=(2026, 10, 7, 17, 0))   # onsdag
+        pg.evaluate("""commit(null, () => {
+          state.dishes.push({ id: 'd-sterk', name: 'Sterk curry', meal: 'dinner', minutes: 30, cat: 'kylling', weekday: 0, for: 'voksne', kids: '', prep: '', dayBefore: '', ingredients: [] });
+          state.settings.kidsDinnerDays = [2, 4]; state.menu = {}; state.menuWeeks = {};
+        })""")
+        for d in ['2026-10-06', '2026-10-08', '2026-10-13', '2026-10-15']:          # tirsdager og torsdager
+            self.assertNotEqual(pg.evaluate("d => dishFor(d, 'dinner').id", d), 'd-sterk')
+        pg.evaluate("commit(null, () => setMenu('2026-10-07', 'dinner', 'd-fiskekaker', true))")
+        self.expand(pg, 'to-lurer.kvelds')
+        blk = '.blk[data-id="to-lurer.kvelds"]'
+        self.assertIn('Ferdiglaget', pg.inner_text(blk + ' .dk-line'))
+        self.assertEqual(pg.get_attribute(blk + ' [data-act="kidsdin"]', 'aria-pressed'), 'false')
+        pg.click(blk + ' [data-act="kidsdin"]')                        # i dag spiser de med
+        self.assertTrue(pg.evaluate("kidsEat('2026-10-07')"))
+        self.assertNotIn('Ferdiglaget', pg.inner_text(blk + ' .dk-line'))
+        pg.click(blk + ' [data-act="kidsdin"]')                        # tilbake til vanlig: ingen overstyring lagret
+        self.assertIsNone(pg.evaluate("state.days['2026-10-07'].kidsDin ?? null"))
+        pg.click('#tab-week'); pg.wait_for_selector('#sheet-root.open [data-kd="3"]'); pg.wait_for_timeout(400)
+        pg.click('[data-kd="3"]')
+        self.assertEqual(pg.evaluate('state.settings.kidsDinnerDays'), [2, 3, 4])
+
+    def test_shopping_list_by_aisle_with_staples(self):
+        pg = self.open(when=(2026, 10, 9, 9, 5))    # fredag
+        cats = pg.evaluate("['Eggnudler', 'Kokosmelk', 'Grøtris', 'Revet ost', 'Wokgrønnsaker', 'Laksefilet', 'Bleier', 'Paprika', 'Tortillalefser'].map(shopCat)")
+        self.assertEqual(cats, ['torr', 'torr', 'torr', 'meieri', 'frys', 'kjott', 'baby', 'frukt', 'brod'])
+        self.assertEqual(pg.evaluate("splitAmount('400 g Kjøttdeig')"), {'amount': '400 g', 'name': 'Kjøttdeig'})
+        pg.evaluate("commit(null, () => { state.settings.shopDay = 5; })")
+        has_task = "Object.values(genRows(view, blocksFor(view))).flat().some(r => r.id === 'gen-shop')"
+        self.assertTrue(pg.evaluate(has_task))                          # gjøremål på handledagen
+        pg.click('#tab-week'); pg.wait_for_selector('#sheet-root.open [data-food="shop"]'); pg.wait_for_timeout(400)
+        pg.click('[data-food="shop"]'); pg.wait_for_selector('#sheet-root.open [data-shop-done]')
+        groups = pg.eval_on_selector_all('.shop-grp > .lbl', 'els => els.map(e => e.textContent)')
+        self.assertIn('Baby og hygiene', groups)
+        self.assertEqual(groups, [g for g in ['Frukt og grønt', 'Kjøtt og fisk', 'Meieri og egg', 'Brød og bakst', 'Tørrvarer og hermetikk', 'Frys', 'Baby og hygiene', 'Annet'] if g in groups])
+        period = pg.evaluate('shopPeriod()')
+        self.assertEqual((period['start'], period['end']), ('2026-10-09', '2026-10-15'))
+        bleier = pg.evaluate("state.shop.staples.find(x => x.text === 'Bleier').id")
+        pg.check('[data-shop="st:%s"]' % bleier)
+        vs = pg.evaluate("state.shop.staples.find(x => x.text === 'Våtservietter').id")
+        pg.check('[data-shop="st:%s"]' % vs)
+        first = pg.get_attribute('.shop-grp [data-shop]:not([data-shop^="st:"])', 'data-shop')
+        pg.check('[data-shop="%s"]' % first)
+        pg.click('[data-shop-done]'); pg.wait_for_timeout(300)
+        self.assertEqual(pg.evaluate("state.shop.staples.find(x => x.text === 'Bleier').last"), '2026-10-09')
+        self.assertEqual(pg.evaluate('state.shop.boughtThrough'), '2026-10-15')
+        self.assertEqual(pg.evaluate('Object.keys(state.shop.checked).length'), 0)
+        self.assertEqual(pg.evaluate('shopPeriod().start'), '2026-10-16')
+        self.assertTrue(pg.evaluate('state.shop.extra.length > 0'))     # ukrysset middagsvare flyttet til andre varer
+        nxt = pg.evaluate("shopList().staples.map(x => x.text)")
+        self.assertIn('Bleier', nxt)                                    # hver uke: med igjen neste tur
+        self.assertNotIn('Våtservietter', nxt)                          # annenhver uke: ikke neste tur
+        self.assertFalse(pg.evaluate(has_task))
+        # flytt en vare til en annen kategori
+        pg.evaluate("openShopCatSheet('Paprika', () => openShopSheet())"); pg.wait_for_selector('#sheet-root.open [data-cat="annet"]')
+        pg.click('[data-cat="annet"]'); pg.wait_for_timeout(300)
+        self.assertEqual(pg.evaluate("shopCat('paprika')"), 'annet')
+        # legg til fra +
+        pg.evaluate('closeSheet()'); pg.wait_for_timeout(300)
+        pg.evaluate("openAddSheet('handle')"); pg.wait_for_selector('#sheet-root.open #q-shop')
+        pg.fill('#q-shop', 'Tannbørste'); pg.click('.sh-foot [data-save]'); pg.wait_for_timeout(300)
+        self.assertIn('Tannbørste', pg.evaluate('state.shop.extra.map(x => x.text)'))
+
+    def test_age_health_visits_and_nap_advice(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        # Sju dager der andre lur uteble
+        pg.evaluate("""commit(null, () => { for (let i = 1; i <= 7; i++) { const d = addDays('2026-10-07', -i);
+          for (const k of ['a', 'b']) logRec(d).sleep.push({ id: 's-' + i + k, kid: k, blockId: 'to-lurer.lur1', start: '09:15', end: '10:30' }); } })""")
+        pg.evaluate("openProfileSheet(false)"); pg.wait_for_selector('#sheet-root.open [data-kborn]')
+        for el in pg.query_selector_all('[data-kborn]'):
+            el.fill('2025-09-22')
+        pg.click('.sh-foot [data-save]'); pg.wait_for_timeout(400)
+        self.assertEqual(pg.evaluate("state.kids.map(k => k.born)"), ['2025-09-22', '2025-09-22'])
+        tasks = pg.evaluate("state.tasks.filter(t => t.text.includes('helsestasjonen')).map(t => [t.text, t.rule.start])")
+        self.assertIn(['Sjekk at 15-månederskontrollen med MMR-vaksine for barnene er avtalt med helsestasjonen', '2026-12-01'], tasks)
+        self.assertEqual(len(tasks), 3)                                   # 12 mnd er passert
+        pg.evaluate("openProfileSheet(false)"); pg.wait_for_selector('#sheet-root.open [data-kborn]')
+        pg.click('.sh-foot [data-save]'); pg.wait_for_timeout(400)
+        self.assertEqual(pg.evaluate("state.tasks.filter(t => t.text.includes('helsestasjonen')).length"), 3)   # ikke dobbelt
+        banner = pg.inner_text('#timeline .banner.stack')
+        self.assertIn('Andre lur var kort eller uteble 7 av de siste 7 dagene', banner)
+        self.assertIn('1 år', banner)
+        pg.click('[data-act="nap-later"]')
+        self.assertEqual(pg.eval_on_selector_all('#timeline .banner.stack', 'els => els.length'), 0)
+        # Et barn på sju måneder får ikke forslaget
+        pg.evaluate("commit(null, () => { delete state.settings.napHintUntil; state.kids.forEach(k => { k.born = '2026-03-01'; }); })")
+        self.assertIsNone(pg.evaluate("napAdvice('2026-10-07')"))
 
     def test_snow_play_needs_cold(self):
         pg = self.open(when=(2026, 10, 7, 11, 35))

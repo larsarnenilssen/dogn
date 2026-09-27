@@ -57,6 +57,13 @@ function bannerHTML() {
   const out = [sickBannerHTML(view)], B = T.banner;
   if (!store.ok) out.push(h`<div class="banner warn">${B.noStorage}</div>`);
   const today = todayISO();
+  const na = view === today ? napAdvice(today) : null;
+  if (na) {
+    const Np = T.naps, ages = state.kids.map(k => kidAge(k, today)).filter(Boolean);
+    const ageTxt = na.age != null && ages.length ? Np.age(state.kids.length > 1 ? kidsWord() : state.kids[0].name, fmtAge(na.age), na.fewer) : '';
+    out.push(h`<div class="banner stack"><span>${Np.sign(Np.nth(na.nth), na.signs, na.days) + ageTxt}</span>
+      <div class="btnrow"><button type="button" class="btn small" data-act="tpls">${Np.try(na.tpl.name)}</button><button type="button" class="btn small ghost" data-act="nap-later">${Np.later}</button></div></div>`);
+  }
   if (view === today && syncOn()) {
     const c = sync.cfg;
     if (c.lastError) out.push(h`<div class="banner warn"><span>${B.syncError(c.lastError)}</span><button type="button" class="btn small" data-act="sync">${B.retry}</button></div>`);
@@ -149,12 +156,18 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date, isFull) {
       inner.push(h`<button type="button" class="dish" data-act="dish" data-meal="${b.link}" aria-label="${L.dishAria(T.meals[b.link], dish.name)}">
         <span class="dh"><span class="dn">${dish.name}</span><span class="swap">${L.swap}</span></span>
         <span class="dm">${dishMeta(dish)}</span>
-        ${dish.kids ? h`<span class="dk">${T.kids.forKids(kidsWord()) + dish.kids}</span>` : ''}</button>`);
+        ${b.link !== 'dinner' && dish.kids ? h`<span class="dk">${T.kids.forKids(kidsWord()) + dish.kids}</span>` : ''}</button>`);
     } else if (b.type === 'meal' && (b.boys || b.adults)) {
       inner.push(h`<dl class="meal">${b.boys ? h`<dt>${cap(kidsWord())}</dt><dd>${b.boys}</dd>` : ''}${b.adults ? h`<dt>${T.kids.adults}</dt><dd>${b.adults}</dd>` : ''}</dl>`);
       if (b.link) inner.push(h`<button type="button" class="btn small ghost pick-dish" data-act="dish" data-meal="${b.link}">${L.pickDish}</button>`);
     }
     if (b.link === 'dinner') {
+      // Hva barna får: av middagen (med tilpasning), eller det som står i bolken
+      const kw = kidsWord(), ke = kidsEat(date), adults = dish && dish.for === 'voksne';
+      const own = b.boys || L.kidsOwn;
+      const kidsText = ke && dish && !adults ? (dish.kids || dish.name) : own + (ke && adults ? L.adultsOnly : '');
+      if (dish) inner.push(h`<p class="dk-line"><span class="dk-k">${cap(kw)}</span>${kidsText}</p>`);
+      inner.push(h`<div class="rowline"><button type="button" class="chip sm plain" data-act="kidsdin" aria-pressed="${ke}">${L.kidsEat(kw, ke)}</button></div>`);
       const ph = partnerHome(date);
       inner.push(h`<div class="rowline"><button type="button" class="chip sm plain" data-act="wife" aria-pressed="${ph.home}">${L.partnerEats(partnerName(), ph.home) + (ph.manual ? ' *' : '')}</button>
         ${ph.ps && ph.ps.code ? h`<span class="rl">${shiftText(ph.ps)}</span>` : ''}</div>`);

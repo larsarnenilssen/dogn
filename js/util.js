@@ -23,6 +23,13 @@ const fmtDateTiny = s => { const d = parseISO(s); return T.date.wdShort[isoWd(s)
 const wdShort = n => T.date.wdShort[n - 1];
 const isoWeek = s => { const d = parseISO(s); d.setDate(d.getDate() + 4 - (d.getDay() || 7)); return Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 86400000 + 1) / 7); };
 const fmtDur = m => m < 60 ? m + ' ' + T.unit.min : (m % 60 ? Math.floor(m / 60) + ' ' + T.unit.hour + ' ' + (m % 60) + ' ' + T.unit.min : (m / 60) + ' ' + T.unit.hour);
+/* Alder i hele måneder mellom to datoer (ÅÅÅÅ-MM-DD) */
+function monthsBetween(a, b) {
+  const [ay, am, ad] = a.split('-').map(Number), [by, bm, bd] = b.split('-').map(Number);
+  return (by - ay) * 12 + (bm - am) - (bd < ad ? 1 : 0);
+}
+const fmtAge = m => m < 12 ? m + ' mnd' : Math.floor(m / 12) + ' år' + (m % 12 ? ' ' + (m % 12) + ' mnd' : '');
+const addMonths = (d, n) => { const [y, m, dd] = d.split('-').map(Number); const x = new Date(y, m - 1 + n, dd); return iso(x); };
 const fmtDurShort = m => m < 60 ? m + T.unit.minShort : Math.floor(m / 60) + T.unit.hour + pad(m % 60);
 const signed = m => (m > 0 ? '+' : '−') + fmtDur(Math.abs(m));
 const fmtStamp = isoStr => { const d = new Date(isoStr); return (iso(d) === todayISO() ? T.date.today : fmtDateShort(iso(d))) + ' ' + T.date.at(pad(d.getHours()) + ':' + pad(d.getMinutes())); };

@@ -386,3 +386,16 @@ body{padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px))}
 .act-filter .seg button{flex:1}
 .act-filter .chips{gap:var(--sp-2)}
 .act-filter .chip{min-height:34px;padding:4px 10px;font-size:var(--fs-xs)}
+.dk-line{margin:var(--sp-4) 0 0;font-size:var(--fs-md);display:flex;gap:var(--sp-5);line-height:1.45}
+.dk-k{color:var(--muted);flex:none}
+.food-tabs{align-self:stretch;display:flex;flex:none}
+.food-tabs button{flex:1}
+.shop-grp{display:flex;flex-direction:column;gap:var(--sp-2)}
+.shop-grp+.shop-grp{margin-top:var(--sp-4)}
+.shop-grp>.lbl{color:var(--accent)}
+.cat-btn{font-family:var(--mono);color:var(--muted)}
+#sh-staples .item select{width:auto;flex:none}
+.banner.stack{flex-direction:column;align-items:flex-start}
+.kid-born{width:auto;flex:0 0 9.6rem}
+.checks.shop .txt{min-width:0}
+.checks.shop small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

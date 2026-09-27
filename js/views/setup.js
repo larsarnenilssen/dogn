@@ -7,7 +7,10 @@ function openProfileSheet(firstRun) {
   reopen = firstRun ? null : () => openProfileSheet(false);
   const P = T.profile;
   let place = state.place ? clone(state.place) : null;
-  const kidRow = k => h`<div class="item" data-kid="${k.id}" data-sort="${k.id}">${dragHandle(k.name || T.common.name)}<input type="text" value="${k.name}" aria-label="${T.common.name}" autocomplete="off"><button type="button" class="icon-btn sm" data-rm aria-label="${T.common.remove}">${ICON_X}</button></div>`;
+  const kidRow = k => h`<div class="item" data-kid="${k.id}" data-sort="${k.id}">${dragHandle(k.name || T.common.name)}<input type="text" value="${k.name}" aria-label="${T.common.name}" autocomplete="off" data-kname><input type="date" class="kid-born" value="${k.born || ''}" aria-label="${P.born}" data-kborn><button type="button" class="icon-btn sm" data-rm aria-label="${T.common.remove}">${ICON_X}</button></div>`;
+  const today = todayISO();
+  const ageLines = state.kids.map(k => { const a = kidAge(k, today); return a ? P.ageLine(k.name, fmtAge(a.m), a.corr != null ? fmtAge(a.corr) : '') : ''; }).filter(Boolean);
+  const facts = devAge(today) != null ? P.ageFacts(devAge(today)) : '';
   const display = firstRun ? '' : h`<section class="grp"><h3>${P.display}</h3><div class="switches">${Object.entries(P.show).map(([k, l]) => switchBtn('data-show', k, showOn(k), l))}</div>
       ${hint(P.showHint)}
       <span class="lbl">${P.theme}</span>${segRow('data-theme-set', Object.entries(P.themes), k => (state.settings.theme || 'dark') === k)}
@@ -27,6 +30,9 @@ function openProfileSheet(firstRun) {
         ${hint(P.importHint)}</section>` : ''}
       <section class="grp"><h3>${P.kids}</h3><div class="items" id="p-kids">${state.kids.map(kidRow)}</div>
         <button type="button" class="btn small wide" data-add-kid>${P.addKid}</button>
+        ${ageLines.length ? h`<p class="hint">${P.ages(ageLines)}</p>` : ''}${facts ? hint(facts) : ''}
+        <div class="field"><label for="p-due">${P.due}</label><input type="date" id="p-due" value="${state.settings.due || ''}"></div>
+        ${hint(P.dueHint)}
         <div class="field"><label for="p-kw">${P.kidsWord}</label><input id="p-kw" type="text" value="${kidsWord()}" autocomplete="off" autocapitalize="off"></div>
         ${hint(P.kidsWordHint)}</section>
       <section class="grp"><h3>${P.place}</h3>
@@ -87,14 +93,19 @@ function openProfileSheet(firstRun) {
       const imp = q('#f-start-import');
       if (imp) imp.addEventListener('change', e => { const f = e.target.files[0]; if (f) importData(f); e.target.value = ''; });
       q('[data-save]').addEventListener('click', () => {
-        const kids = [...sheet.querySelectorAll('#p-kids .item')].map(r => ({ id: r.dataset.kid, name: r.querySelector('input').value.trim() })).filter(k => k.name);
+        const kids = [...sheet.querySelectorAll('#p-kids .item')].map(r => {
+          const k = { id: r.dataset.kid, name: r.querySelector('[data-kname]').value.trim() }, born = r.querySelector('[data-kborn]').value;
+          if (isDate(born)) k.born = born;
+          return k;
+        }).filter(k => k.name);
         if (!kids.length) { toast(P.needName); return; }
         const ls = q('#p-ls').value, le = q('#p-le').value;
         if (!isDate(ls) || !isDate(le) || le < ls) { toast(P.checkDates); return; }
-        const o = { kids, place, leave: { start: ls, end: le }, kidsWord: q('#p-kw').value.trim() || T.kids.word };
+        const due = q('#p-due').value;
+        const o = { kids, place, leave: { start: ls, end: le }, kidsWord: q('#p-kw').value.trim() || T.kids.word, due: isDate(due) ? due : '' };
         if (firstRun) { o.templateId = q('#p-tpl').value; o.partnerEnabled = pOn; o.partnerName = pOn ? (q('#p-pn').value.trim() || T.partner.defaultName) : null; }
         closeSheet();
-        commit(firstRun ? P.ready : P.saved, () => applySetup(o));
+        commit(firstRun ? P.ready : P.saved, () => { applySetup(o); const n = planHealthVisits(); return n ? (firstRun ? P.ready : P.saved) + '. ' + P.hsMade(n) : ''; });
         if (firstRun) { view = todayISO(); render(); scrollToNow(); }
       });
     });

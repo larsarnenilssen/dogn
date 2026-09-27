@@ -238,3 +238,62 @@ function dayReport(date) {
 
 /* ---------- avtaler ---------- */
 function apptsFor(date) { return (state.appts || []).filter(a => a.date === date).sort((a, b) => a.start.localeCompare(b.start)); }
+
+/* ---------- alder ----------
+   Alder regnes fra fødselsdato. Med termindato (for barn født før termin) brukes
+   korrigert alder til to år, slik helsestasjonen gjør, til søvn og utvikling. */
+function kidAge(k, date) {
+  if (!k || !isDate(k.born)) return null;
+  const m = monthsBetween(k.born, date), due = state.settings.due;
+  const corr = due && due > k.born && diffDays(k.born, due) <= 120 && m < 24 ? Math.max(0, monthsBetween(due, date)) : null;
+  return { m, corr, dev: corr != null ? corr : m };
+}
+/* Yngste alder (korrigert) blant barna, eller null når ingen fødselsdato er kjent */
+function devAge(date) {
+  const ages = state.kids.map(k => kidAge(k, date)).filter(Boolean);
+  return ages.length ? Math.min(...ages.map(a => a.dev)) : null;
+}
+/* Helsestasjonen: et gjøremål tre uker før hver kontroll, lagt inn én gang per kontroll */
+const HS_VISITS = [[12, 'k12'], [15, 'k15'], [17, 'k17'], [24, 'k24']];
+function planHealthVisits() {
+  const today = todayISO(), S = state.settings;
+  const made = (S.hsMade && typeof S.hsMade === 'object') ? S.hsMade : (S.hsMade = {});
+  const rb = resetBlock(blocksFor(today));
+  let n = 0;
+  [...new Set(state.kids.map(k => k.born).filter(isDate))].forEach(born => {
+    const same = state.kids.filter(k => k.born === born);
+    const who = same.length > 1 && same.length === state.kids.length ? kidsWord() : same.map(k => k.name).join(T.kids.and);
+    HS_VISITS.forEach(([mo, key]) => {
+      const id = born + ':' + mo, at = addMonths(born, mo);
+      if (made[id] || at < today) return;
+      const start = addDays(at, -21) < today ? today : addDays(at, -21);
+      state.tasks.push({ id: 't-' + uid(), text: T.hs.task(T.hs[key], who), slot: rb ? rb.slot : 'kveld', type: rb ? rb.type : 'routine', rule: { kind: 'once', start } });
+      made[id] = true; n++;
+    });
+  });
+  return n;
+}
+/* Tegn på færre lurer: siste lur i planen var kort (under 40 min) eller uteble
+   minst 3 av de siste dagene med søvnlogg. Alderen avgjør om det er aktuelt. */
+function napAdvice(date) {
+  const S = state.settings;
+  if (S.napHintUntil && date < S.napHintUntil) return null;
+  const sleeps = blocksFor(date).filter(b => b.type === 'sleep');
+  if (sleeps.length < 2) return null;
+  const age = devAge(date), need = sleeps.length === 2 ? 11 : 5;
+  if (age != null && age < need) return null;
+  const fewer = Object.values(state.templates).find(t => t.blocks.filter(b => b.type === 'sleep').length === sleeps.length - 1);
+  if (!fewer) return null;
+  let logged = 0, signs = 0;
+  for (let i = 1; i <= 7; i++) {
+    const d = addDays(date, -i), L = getLog(d);
+    const sl = blocksFor(d).filter(b => b.type === 'sleep');
+    if (sl.length !== sleeps.length || !L.sleep.some(e => e.start)) continue;
+    logged++;
+    const last = sl[sl.length - 1];
+    const short = state.kids.filter(k => { const e = napEntry(d, k.id, last.id); return !e || (e.end && toMin(e.end) - toMin(e.start) < 40); }).length;
+    if (short * 2 >= state.kids.length) signs++;
+  }
+  if (logged < 4 || signs < 3) return null;
+  return { nth: sleeps.length, signs, days: logged, age, tpl: fewer, fewer: sleeps.length - 1 };
+}

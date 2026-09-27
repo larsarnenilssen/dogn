@@ -3,6 +3,9 @@
    Dette er innhold, ikke grensesnitt. Brukeren kan endre alt i appen. */
 const DEFAULT_PACK = ['Bleier, fire per barn', 'Våtservietter og stelleunderlag', 'Skift til alle', 'Mat, vann og smekker', 'Regntrekk og ullteppe', 'Ekstra lue og votter'];
 const DEFAULT_PANTRY = ['Salt', 'Pepper', 'Olivenolje', 'Hvetemel', 'Kanel', 'Soyasaus'];
+/* Faste varer: kommer på handlelisten igjen når det er gått så mange dager siden de sist ble handlet */
+const DEFAULT_STAPLES = [['Melk', 7], ['Havregryn', 14], ['Frukt', 7], ['Brød', 7], ['Bleier', 7], ['Våtservietter', 14]];
+const defaultStaples = () => DEFAULT_STAPLES.map(([text, every]) => ({ id: 'st-' + uid(), text, every, last: '' }));
 const SEED_TASK_OFFSETS = { 't-stov-oppe': 0, 't-stov-nede': 2, 't-bad-oppe': 1, 't-bad-nede': 8, 't-bad': 3 };
 const SEED_INGREDIENTS = {
   'd-pizza': ['Pizzabunn eller mel og gjær', 'Tomatsaus', 'Revet ost', 'Skinke', 'Paprika'],
@@ -221,8 +224,8 @@ function seed() {
     activities: seedActivities(),
     menu: {},
     menuWeeks: {},
-    settings: { fishPerWeek: 2, show: { nowbar: true, tomorrow: true, gear: true }, packList: DEFAULT_PACK.slice(), theme: 'dark', textSize: 1, kidsWord: T.kids.word },
-    shop: { checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() },
+    settings: { fishPerWeek: 2, show: { nowbar: true, tomorrow: true, gear: true }, packList: DEFAULT_PACK.slice(), theme: 'dark', textSize: 1, kidsWord: T.kids.word, kidsDinnerDays: [], shopDay: 0, due: '' },
+    shop: { checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice(), staples: defaultStaples(), cats: {}, boughtThrough: '' },
     appts: [],
     days: {},
     meta: { created: todayISO(), lastExport: null, setupDone: false }

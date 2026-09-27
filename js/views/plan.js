@@ -508,11 +508,14 @@ function openAddSheet(mode) {
       <div class="field"><label for="q-when">${A.when}</label><select id="q-when">${options(Object.entries(A.whenOpts), 'lur')}</select></div>
       ${hint(A.rememberHint)}
     </section>`;
+  if (mode === 'handle') body = h`<section class="grp"><h3>${T.shop.title}</h3>
+      <label for="q-shop" class="vh">${T.shop.addAria}</label><input id="q-shop" type="text" placeholder="${T.shop.addPh}" autocomplete="off">
+      ${hint(A.shopHint)}</section>`;
   if (mode === 'avtale') body = apptFormHTML({ date: view, start: '10:00', minutes: 60, title: '', where: '', note: '' });
   if (mode === 'bolk') body = h`<section class="grp">${hint(A.blockHint(view === todayISO() ? T.date.today : fmtDateTiny(view)))}<button type="button" class="btn primary wide" data-bolk>${A.newBlock}</button></section>`;
   openSheet(h`${headHTML(A.title)}
     <form class="sh-body" id="qa" novalidate>
-      <div class="chips">${['husk', 'avtale', 'helse', 'bolk'].map(tab)}</div>
+      <div class="chips">${['husk', 'handle', 'avtale', 'helse', 'bolk'].map(tab)}</div>
       ${body}
     </form>
     ${mode === 'bolk' ? '' : footSave(mode === 'avtale' ? T.appt.save : T.common.add)}`,
@@ -528,6 +531,16 @@ function openAddSheet(mode) {
           const tg = reminderTarget(q('#q-when').value);
           closeSheet();
           commit(A.remembered(text, tg.label), () => { state.tasks.push({ id: 't-' + uid(), text, slot: tg.slot, type: tg.type, rule: { kind: 'once', start: tg.date } }); });
+        });
+      }
+      if (mode === 'handle') {
+        setTimeout(() => q('#q-shop').focus(), 300);
+        q('#q-shop').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); q('[data-save]').click(); } });
+        q('[data-save]').addEventListener('click', () => {
+          const text = q('#q-shop').value.trim();
+          if (!text) { q('#q-shop').focus(); return; }
+          closeSheet();
+          commit(T.shop.added(text), () => { state.shop.extra.push({ id: uid(), text }); });
         });
       }
       if (mode === 'avtale') bindApptForm(sheet, null);

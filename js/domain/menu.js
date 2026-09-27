@@ -2,6 +2,18 @@
 /* ---------- middagsbank, ukemeny og handleliste ---------- */
 const weekStart = d => addDays(d, 1 - isoWd(d));
 function dishById(id) { return state.dishes.find(x => x.id === id); }
+/* Om barna spiser av middagen en dag: valgt for dagen, ellers faste ukedager */
+function kidsEat(date) {
+  const d = state.days[date];
+  if (d && typeof d.kidsDin === 'boolean') return d.kidsDin;
+  return (state.settings.kidsDinnerDays || []).includes(isoWd(date));
+}
+function toggleKidsEat(date) {
+  const next = !kidsEat(date), d = dayRec(date);
+  delete d.kidsDin;
+  if (kidsEat(date) !== next) d.kidsDin = next;
+}
+const forAll = x => x.for !== 'voksne';
 function setMenu(d, meal, dish, manual) { (state.menu[d] ??= {})[meal] = { dish, manual }; }
 function lastServed(dishId, before) {
   let last = null;
@@ -42,13 +54,16 @@ function generateWeek(ws, from) {
     // Fyll resten med retten som er spist for lengst siden, men unngå samme type to dager på rad.
     let queue = others.length ? others.slice() : stale(pool);
     const catOf = i => { if (i < 0) { const m = state.menu[addDays(free[0], -1)]; const di = m && m[meal] && dishById(m[meal].dish); return di ? di.cat : ''; } return slots[i] ? slots[i].cat : ''; };
+    // Dager barna spiser av middagen, får bare retter som passer for alle.
     for (let i = 0; i < slots.length; i++) {
       if (slots[i]) continue;
       if (!queue.length) queue = others.length ? others.slice() : stale(pool);
       const prevCat = catOf(i - 1), nextCat = i + 1 < slots.length && slots[i + 1] ? slots[i + 1].cat : '';
-      let j = queue.findIndex(x => x.cat !== prevCat && x.cat !== nextCat);
-      if (j < 0) j = queue.findIndex(x => x.cat !== prevCat);
-      if (j < 0) j = 0;
+      const ok = meal === 'dinner' && kidsEat(free[i]) ? forAll : () => true;
+      let j = queue.findIndex(x => ok(x) && x.cat !== prevCat && x.cat !== nextCat);
+      if (j < 0) j = queue.findIndex(x => ok(x) && x.cat !== prevCat);
+      if (j < 0) j = queue.findIndex(ok);
+      if (j < 0) { const alt = stale(pool).find(ok); if (alt) { slots[i] = alt; continue; } j = 0; }
       slots[i] = queue.splice(j, 1)[0];
     }
     free.forEach((d, i) => setMenu(d, meal, slots[i].id, false));
@@ -74,7 +89,7 @@ function dishFor(date, meal) {
   return m && m.dish ? dishById(m.dish) || null : null;
 }
 function dishMeta(d) {
-  return T.dish.meta(d.minutes, T.cats[d.cat], Number(d.weekday) ? wdShort(d.weekday).toLowerCase() : '');
+  return T.dish.meta(d.minutes, T.cats[d.cat], Number(d.weekday) ? wdShort(d.weekday).toLowerCase() : '', d.for === 'voksne');
 }
 /* Forberedelser som følger av menyen: i luren før måltidet, og kvelden før. */
 function genRows(date, blocks) {
@@ -89,6 +104,13 @@ function genRows(date, blocks) {
     const target = before.filter(x => x.type === 'sleep').pop() || before.pop();
     add(target, { id: 'gen-prep-' + b.link, text: T.dish.genPrep(T.meals[b.link], dish.name), sub: dish.prep || '', gen: true });
   });
+  // Handledag: «Handle» i den lengste våkenbolken, til det er handlet
+  const today = todayISO();
+  if (Number(state.settings.shopDay) === isoWd(date) && date >= today && !(state.shop.boughtThrough >= date)) {
+    const n = openCount(shopList(shopPeriod(date > today ? date : null)));
+    const awake = blocks.map((b, i) => ({ b, len: endOf(blocks, i) - toMin(b.start) })).filter(x => x.b.type === 'awake').sort((a, b) => b.len - a.len)[0];
+    if (n && awake) add(awake.b, { id: 'gen-shop', text: T.shop.task(n), sub: T.shop.taskSub, gen: true });
+  }
   const tomorrow = addDays(date, 1);
   const eve = resetBlock(blocks);
   if (!syncOn() && isoWd(date) === 7) add(eve, { id: 'gen-backup', text: T.backupTask.text, sub: T.backupTask.sub, gen: true });
@@ -100,8 +122,40 @@ function genRows(date, blocks) {
   return map;
 }
 
-/* Handleliste: ingrediensene fra rettene i en periode, uten varer man alltid har hjemme */
+/* ---------- handleliste ----------
+   Perioden går fra dagen etter forrige handletur (eller i dag) fram til neste handledag.
+   Varene er ingrediensene i rettene, faste varer som er på tur, og andre varer. */
 const normItem = t => t.trim().toLowerCase();
+const AMOUNT_RE = /^\s*((?:\d+(?:[.,]\d+)?|½|¼|¾)(?:\s*(?:g|gram|kg|dl|l|ml|cl|stk|ss|ts|pk|pakke|pakker|boks|bokser|fedd|neve|klype|skive|skiver|beger|glass|pose|poser))?\.?)\s+(.+)$/i;
+function splitAmount(text) {
+  const m = String(text).match(AMOUNT_RE);
+  return m ? { amount: m[1].trim(), name: m[2].trim() } : { amount: '', name: String(text).trim() };
+}
+/* Hvor varen står i butikken. Rekkefølgen betyr noe: hermetikk og frys før råvarene. */
+const SHOP_RULES = [
+  ['baby', /bleie|våtserviett|morsmelkerstatning|(^|\s)mme(\s|$)|smekke|tannkrem|såpe|sjampo|bomull|barnemat|klemmepose/],
+  ['torr', /nudler|pasta|spaghetti|makaroni|i hvit saus|i tomatsaus|hermetisk|boks|hakkede tomater|tomatsaus|tomatsuppe|tomatpuré|kokosmelk|bønner|linser|kikerter|mais/],
+  ['frys', /frossen|frosne|fryst|wokgrønnsaker|erter|fiskepinner|\bis\b|iskrem/],
+  ['brod', /brød|lefse|tortilla|pizzabunn|knekkebrød|rundstykke|pita|baguett|lompe/],
+  ['meieri', /melk|fløte|rømme|yoghurt|\bost\b|ost$|revet ost|smør|egg|kesam|cottage|crème|kremost|skyr/],
+  ['kjott', /filet|kjøtt|kylling|laks|torsk|\bsei\b|sei$|fisk|skinke|bacon|pølse|karbonade|kalkun|reke|svin|storfe|lam|biff|farse/],
+  ['frukt', /eple|banan|pære|appelsin|klementin|drue|bær|frukt|grønnsak|gulrot|gulrøtter|potet|brokkoli|blomkål|paprika|agurk|tomat|løk|spinat|salat|avokado|squash|sitron|lime|ingefær|persille|koriander|basilikum|purre|kål|sopp|selleri|rødbet/],
+  ['torr', /ris|pasta|spaghetti|makaroni|nudler|havregryn|gryn|mel\b|mel$|sukker|krydder|buljong|olje|soyasaus|gjær|rosin|müsli|nøtt|frø|honning|sirup|eddik|sennep|ketchup|majones/],
+];
+function shopCat(name) {
+  const k = normItem(name), known = state.shop.cats && state.shop.cats[k];
+  if (known) return known;
+  for (const [cat, re] of SHOP_RULES) if (re.test(k)) return cat;
+  return 'annet';
+}
+function shopPeriod(from) {
+  const today = todayISO(), bt = state.shop.boughtThrough;
+  const start = from || (bt && bt >= today ? addDays(bt, 1) : today);
+  const day = Number(state.settings.shopDay) || 0;
+  let days = 7;
+  if (day) { days = 1; while (isoWd(addDays(start, days)) !== day) days++; }
+  return { start, days, end: addDays(start, days - 1) };
+}
 function shopItems(from, days) {
   const pantry = new Set((state.shop.pantry || []).map(normItem));
   const map = new Map();
@@ -111,16 +165,47 @@ function shopItems(from, days) {
       const dish = dishFor(d, meal);
       if (!dish) continue;
       (dish.ingredients || []).forEach(ing => {
-        const k = normItem(ing);
+        const { amount, name } = splitAmount(ing);
+        const k = normItem(name);
         if (!k || pantry.has(k)) return;
-        if (!map.has(k)) map.set(k, { key: k, name: ing.trim(), dishes: [] });
+        if (!map.has(k)) map.set(k, { key: k, name, dishes: [], amounts: [], cat: shopCat(name) });
         const it = map.get(k);
         if (!it.dishes.includes(dish.name)) it.dishes.push(dish.name);
+        if (amount) it.amounts.push(amount);
       });
     }
   }
   return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'nb'));
 }
+/* Faste varer som er på tur: det er gått (nesten) så lang tid siden de sist ble handlet */
+const stapleDue = (x, start) => !x.last || diffDays(x.last, start) >= x.every - 1;
+function shopList(p) {
+  p = p || shopPeriod();
+  const items = shopItems(p.start, p.days);
+  const have = new Set(items.map(x => x.key));
+  const staples = (state.shop.staples || []).filter(x => stapleDue(x, p.start) && !have.has(normItem(x.text)));
+  return { p, items, staples, extra: state.shop.extra || [] };
+}
+const openCount = L => L.items.filter(x => !state.shop.checked[x.key]).length + L.staples.filter(x => !state.shop.checked['st:' + x.id]).length + L.extra.filter(x => !state.shop.checked['x:' + x.id]).length;
+/* Ferdig handlet: faste varer får ny dato, handlede andre varer fjernes, og middagsvarer som
+   ikke ble krysset av, flyttes til andre varer, så de ikke forsvinner når perioden går videre. */
+function finishShopping(L) {
+  const C = state.shop.checked, today = todayISO();
+  let n = 0, moved = 0;
+  L.staples.forEach(x => { if (C['st:' + x.id]) { const s = state.shop.staples.find(y => y.id === x.id); if (s) s.last = today; n++; } });
+  const keepExtra = state.shop.extra.filter(x => !C['x:' + x.id]);
+  n += state.shop.extra.length - keepExtra.length;
+  const extraKeys = new Set(keepExtra.map(x => normItem(x.text)));
+  L.items.forEach(it => {
+    if (C[it.key]) { n++; return; }
+    if (!extraKeys.has(it.key)) { keepExtra.push({ id: uid(), text: it.name }); moved++; }
+  });
+  state.shop.extra = keepExtra;
+  state.shop.checked = {};
+  state.shop.boughtThrough = L.p.end;
+  return T.shop.doneToast(n, moved);
+}
+function setShopCat(name, cat) { state.shop.cats[normItem(name)] = cat; }
 function missingIngredients(from, days) {
   return [...new Set(Array.from({ length: days }, (_, i) => addDays(from, i)).flatMap(d => ['dinner', 'lunch'].map(m => dishFor(d, m))).filter(x => x && !(x.ingredients || []).length).map(x => x.name))];
 }
