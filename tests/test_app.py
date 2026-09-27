@@ -1077,6 +1077,15 @@ class DognTest(unittest.TestCase):
         self.assertIn('Bleier', share['shop'])
         self.assertEqual([k['name'] for k in share['kids']], ['Ola', 'Kari'])
         self.assertNotIn('token', json.dumps(share))
+        # Kalenderen: avtalen fra Takt får prikk og står i listen for måneden
+        pg.evaluate("() => { commit(null, () => state.tasks.push({ id: 't-x', text: 'Sjekk kontrollen', slot: 'kveld', type: 'routine', rule: { kind: 'once', start: '2026-10-20' } })); openCalendarSheet('2026-10'); }")
+        pg.wait_for_selector('#sheet-root.open .cal'); pg.wait_for_timeout(400)
+        self.assertEqual(pg.eval_on_selector_all('.cal [data-go="2026-10-07"] .dot:not(.ring)', 'els => els.length'), 1)
+        self.assertEqual(pg.eval_on_selector_all('.cal [data-go="2026-10-20"] .dot.ring', 'els => els.length'), 1)
+        month = pg.inner_text('#sheet-root .list')
+        self.assertIn('13:00 Frisør', month)
+        self.assertIn('fra Partner', month)
+        self.assertIn('Sjekk kontrollen', month)
         # Partner og turnus: med Takt kan turnus og koder bare leses
         pg.evaluate('() => openPartnerSheet()'); pg.wait_for_selector('#sheet-root.open #p-com'); pg.wait_for_timeout(400)
         for sel in ['#p-import', '[data-new-code]', '[data-code]', '[data-p-on]', '[data-sd]']:

@@ -2,6 +2,14 @@
 /* ---------- kalender: hopp til en vilkårlig dag ----------
    Åpnes ved å trykke på datoen i toppen. Viser en måned med ukenummer,
    partnerens vakter, avtaler og huskepunkter, og dager med egne endringer. */
+/* Avtaler og huskepunkter i en periode: egne, og det partneren har delt fra Takt */
+function calItems(from, to) {
+  const out = [];
+  (state.appts || []).forEach(a => { if (a.date >= from && a.date <= to) out.push({ date: a.date, time: a.start, text: a.title, appt: true }); });
+  state.tasks.forEach(t => { const s = t.rule && t.rule.kind === 'once' && t.rule.start; if (s && s >= from && s <= to && !completions(t.id).length) out.push({ date: s, time: '', text: t.text, appt: false }); });
+  if (taktOn() && takt.data) takt.data.items.forEach(x => { if (x.date && x.date >= from && x.date <= to && x.kind !== 'shop' && !taktDone(x)) out.push({ date: x.date, time: x.time, text: x.title, appt: x.kind === 'appt', takt: true }); });
+  return out.sort((a, b) => (a.date + (a.time || '99')).localeCompare(b.date + (b.time || '99')));
+}
 function openCalendarSheet(month) {
   month = month || view.slice(0, 7);
   const C = T.cal, today = todayISO();
@@ -11,8 +19,10 @@ function openCalendarSheet(month) {
   const weeks = [];
   for (let ws = weekStart(first); ws <= last; ws = addDays(ws, 7)) weeks.push(ws);
   const L = state.leave;
-  const marks = new Set([...(state.appts || []).map(a => a.date),
-    ...state.tasks.filter(t => t.rule && t.rule.kind === 'once' && t.rule.start && !completions(t.id).length).map(t => t.rule.start)]);
+  const items = calItems(weekStart(first), addDays(weekStart(first), weeks.length * 7 - 1));
+  const marks = new Map();
+  items.forEach(x => { const m = marks.get(x.date) || {}; m[x.appt ? 'appt' : 'todo'] = true; marks.set(x.date, m); });
+  const inMonth = items.filter(x => x.date.slice(0, 7) === month);
   const shift = d => partnerOn() ? shiftKind(partnerStatus(d), true) : '';
   const cell = d => {
     const cls = ['day'];
@@ -23,9 +33,10 @@ function openCalendarSheet(month) {
     if (isoWd(d) >= 6) cls.push('weekend');
     const rec = state.days[d];
     const own = !!(rec && (rec.blocks || rec.templateId));
-    return h`<button type="button" class="${cls.join(' ')}" data-go="${d}" aria-label="${fmtDateLong(d)}"${d === view ? raw(' aria-current="date"') : ''}>
+    const mk = marks.get(d) || {};
+    return h`<button type="button" class="${cls.join(' ')}" data-go="${d}" aria-label="${fmtDateLong(d) + (mk.appt ? C.hasAppt : '') + (mk.todo ? C.hasTodo : '')}"${d === view ? raw(' aria-current="date"') : ''}>
       <span class="n">${parseISO(d).getDate()}${own ? '*' : ''}</span>
-      <span class="c">${shift(d)}</span>${marks.has(d) ? h`<span class="dot" aria-hidden="true"></span>` : ''}</button>`;
+      <span class="c">${shift(d)}</span>${mk.appt ? h`<span class="dot" aria-hidden="true"></span>` : ''}${mk.todo ? h`<span class="dot ring" aria-hidden="true"></span>` : ''}</button>`;
   };
   const prevM = iso(new Date(y, m - 2, 1)).slice(0, 7), nextM = iso(new Date(y, m, 1)).slice(0, 7);
   openSheet(h`${headHTML(C.title)}
@@ -41,6 +52,10 @@ function openCalendarSheet(month) {
         <div class="row2"><button type="button" class="btn small" data-go="${today}">${C.today}</button><button type="button" class="btn small" data-go="${addDays(today, 1)}">${C.tomorrow}</button></div>
         ${hint(C.hint(partnerOn() ? partnerName() : ''))}
       </section>
+      ${inMonth.length ? h`<section class="grp"><h3>${C.inMonth(T.date.mo[m - 1])}</h3><div class="list">
+        ${inMonth.map(x => h`<button type="button" class="row" data-go="${x.date}"><span class="grow"><span class="wd">${fmtDateTiny(x.date)}</span> ${(x.time ? x.time + ' ' : '') + x.text}
+          <span class="m">${(x.appt ? C.appt : C.todo) + (x.takt ? C.fromTakt(partnerName()) : '')}</span></span><span class="r">›</span></button>`)}
+      </div></section>` : ''}
     </div>`,
     sheet => {
       sheet.addEventListener('click', e => {

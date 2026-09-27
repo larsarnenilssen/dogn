@@ -147,7 +147,8 @@ const T = {
 
   cal: {
     title: 'Velg dag', prev: 'Forrige måned', next: 'Neste måned', week: 'uke', today: 'I dag', tomorrow: 'I morgen',
-    hint: partner => 'Prikk: avtale eller noe å huske. Stjerne: dagen har egne endringer.' + (partner ? ' Under datoen står vakten til ' + partner + '.' : '') + ' Dager utenfor permisjonen er nedtonet.',
+    hasAppt: ', avtale', hasTodo: ', noe å huske', inMonth: mo => 'I ' + mo, appt: 'avtale', todo: 'husk', fromTakt: name => ', fra ' + name,
+    hint: partner => 'Prikk er avtale, ring er noe å huske. Stjerne: dagen har egne endringer.' + (partner ? ' Under datoen står vakten til ' + partner + '.' : '') + ' Dager utenfor permisjonen er nedtonet.',
   },
 
   block: {
