@@ -23,9 +23,10 @@ function openWeekSheet(ws) {
     const ph = partnerHome(d);
     const pinfo = partnerOn() || ph.manual ? W.partnerShort(partnerName(), ph.home, ph.ps && ph.ps.code ? shiftText(ph.ps) : '') : '';
     const withKids = kidsEat(d) && (!din || din.for !== 'voksne') ? W.withKids(kidsWord()) : '';
+    const sugg = din ? [] : fixedFor(d, 'dinner');
     return h`<button type="button" class="row${d === today ? ' cur' : ''}" data-day="${d}"><span class="grow">
       <span class="wd">${fmtDateTiny(d)}</span> ${din ? din.name : h`<span class="m inline">${W.noDinner}</span>`}
-      <span class="m">${(din ? dishMeta(din) : '') + (m.dinner && m.dinner.manual ? W.manual : '') + withKids}</span>${pinfo ? h`<span class="m">${pinfo.trim()}</span>` : ''}
+      <span class="m">${(din ? dishMeta(din) : sugg.length ? W.sugg(sugg.map(x => x.name).join(', ')) : '') + (din && autoMenu() && m.dinner && m.dinner.manual ? W.manual : '') + withKids}</span>${pinfo ? h`<span class="m">${pinfo.trim()}</span>` : ''}
       ${lun ? h`<span class="m">${W.lunch(lun.name)}</span>` : ''}
       </span><span class="r">›</span></button>`;
   };
@@ -36,19 +37,20 @@ function openWeekSheet(ws) {
     <div class="sh-body">
       ${foodTabs('menu')}
       <section class="grp"><h3>${W.from(fmtDateShort(ws))}</h3>
+        ${switchBtn('data-auto', '1', autoMenu(), W.auto)}
         <div class="row2"><button type="button" class="btn small" data-wk="-7">${W.prev}</button><button type="button" class="btn small" data-wk="7">${W.next}</button></div>
         <div class="list">${days.map(dayRow)}</div>
-        ${hint(W.hint)}
+        ${hint(autoMenu() ? W.hint : W.manualHint)}
       </section>
       <section class="grp"><h3>${W.kidsHead(kw)}</h3>
         <div class="chips">${T.date.wdShort.map((w, i) => h`<button type="button" class="chip" data-kd="${i + 1}" aria-pressed="${kd.includes(i + 1)}">${w}</button>`)}</div>
         <p class="hint">${W.kidsOwnCount(kw, ownDays, dinBlock && dinBlock.boys)}</p>
         ${hint(W.kidsHint(kw))}
       </section>
-      <section class="grp"><h3>${W.regenHead}</h3>
+      ${autoMenu() ? h`<section class="grp"><h3>${W.regenHead}</h3>
         ${hint(W.regenHint(fmtDateShort(tomorrow)))}
         <button type="button" class="btn wide" data-regen>${W.regen}</button>
-      </section>
+      </section>` : ''}
     </div>`,
     (sheet, q) => {
       sheet.querySelectorAll('[data-wk]').forEach(b => b.addEventListener('click', () => openWeekSheet(addDays(ws, Number(b.dataset.wk)))));
@@ -60,8 +62,13 @@ function openWeekSheet(ws) {
         commit(W.kidsToast(kw, next.length), () => { state.settings.kidsDinnerDays = next; regenerateFrom(addDays(todayISO(), 1)); });
         openWeekSheet(ws);
       }));
-      q('[data-regen]').addEventListener('click', () => {
+      if (q('[data-regen]')) q('[data-regen]').addEventListener('click', () => {
         commit(W.regenToast(fmtDateShort(tomorrow)), () => regenerateFrom(tomorrow));
+        openWeekSheet(ws);
+      });
+      q('[data-auto]').addEventListener('click', () => {
+        const on = !autoMenu();
+        commit(on ? W.autoOn : W.autoOff, () => { state.settings.autoMenu = on; if (on) regenerateFrom(tomorrow); });
         openWeekSheet(ws);
       });
     });
@@ -72,8 +79,9 @@ function openSwapSheet(date, meal, back) {
   const cur = dishFor(date, meal);
   const m = state.menu[date] && state.menu[date][meal];
   const list = state.dishes.filter(x => x.meal === meal)
-    .map(x => ({ x, l: lastServed(x.id, date) }))
-    .sort((a, b) => (a.l || '').localeCompare(b.l || '') || a.x.name.localeCompare(b.x.name));
+    .map(x => ({ x, l: lastServed(x.id, date), f: Number(x.weekday) === isoWd(date) }))
+    .sort((a, b) => (b.f - a.f) || (a.l || '').localeCompare(b.l || '') || a.x.name.localeCompare(b.x.name));
+  const auto = autoMenu();
   const afterSave = () => { if (back) back(); else closeSheet(); };
   reopen = null;
   const current = cur ? h`<section class="grp"><h3>${S.current}</h3>
@@ -83,15 +91,15 @@ function openSwapSheet(date, meal, back) {
         ${cur.dayBefore ? h`<span class="m">${S.dayBefore + cur.dayBefore}</span>` : ''}
       </div>
       <div class="row2"><button type="button" class="btn small" data-edit-dish="${cur.id}">${S.editDish}</button>
-      ${m && m.manual ? h`<button type="button" class="btn small" data-auto>${S.toAuto}</button>` : h`<button type="button" class="btn small" data-none>${S.noDish}</button>`}</div>
+      ${auto && m && m.manual ? h`<button type="button" class="btn small" data-auto>${S.toAuto}</button>` : h`<button type="button" class="btn small" data-none>${S.noDish}</button>`}</div>
     </section>`
-    : (m && m.manual ? h`<section class="grp">${hint(S.noneChosen)}<button type="button" class="btn small wide" data-auto>${S.toAutoLong}</button></section>` : '');
+    : (auto && m && m.manual ? h`<section class="grp">${hint(S.noneChosen)}<button type="button" class="btn small wide" data-auto>${S.toAutoLong}</button></section>` : '');
   openSheet(h`${headMaybeBack(S.title(T.meals[meal], fmtDateTiny(date)), back)}
     <div class="sh-body">
       ${current}
-      <section class="grp"><h3>${S.other}</h3><div class="list">
-        ${list.map(({ x, l }) => h`<button type="button" class="row${cur && cur.id === x.id ? ' cur' : ''}" data-pick="${x.id}"><span class="grow">${x.name}
-          <span class="m">${dishMeta(x)}</span></span><span class="r">${l ? T.unit.daysAgo(diffDays(l, date)) : S.isNew}</span></button>`)}
+      <section class="grp"><h3>${cur ? S.other : S.pick}</h3><div class="list">
+        ${list.map(({ x, l, f }) => h`<button type="button" class="row${cur && cur.id === x.id ? ' cur' : ''}${f ? ' fixed' : ''}" data-pick="${x.id}"><span class="grow">${x.name}
+          <span class="m">${dishMeta(x)}</span></span><span class="r">${l ? T.unit.daysAgo(diffDays(l, date)) : auto ? S.isNew : ''}</span></button>`)}
       </div>${hint(S.hint)}</section>
     </div>`,
     (sheet, q) => {
@@ -101,9 +109,9 @@ function openSwapSheet(date, meal, back) {
         afterSave();
       }));
       const none = q('[data-none]');
-      if (none) none.addEventListener('click', () => { commit(S.none(T.meals[meal]), () => setMenu(date, meal, null, true)); afterSave(); });
-      const auto = q('[data-auto]');
-      if (auto) auto.addEventListener('click', () => {
+      if (none) none.addEventListener('click', () => { commit(S.none(T.meals[meal]), () => { if (auto) setMenu(date, meal, null, true); else if (state.menu[date]) delete state.menu[date][meal]; }); afterSave(); });
+      const toAuto = q('[data-auto]');
+      if (toAuto) toAuto.addEventListener('click', () => {
         commit(S.auto, () => { delete state.menu[date][meal]; generateWeek(weekStart(date), date); });
         afterSave();
       });
@@ -225,6 +233,7 @@ function openShopSheet(from) {
       ${foodTabs('shop')}
       <section class="grp"><h3>${P.range(fmtDateTiny(p.start), fmtDateTiny(p.end))}</h3>
         <div class="row2"><button type="button" class="btn small" data-wk="-1">${P.prev}</button><button type="button" class="btn small" data-wk="1">${P.next}</button></div>
+        ${!autoMenu() && !Array.from({ length: p.days }, (_, k) => addDays(p.start, k)).some(d => dishFor(d, 'dinner') || dishFor(d, 'lunch')) ? h`<p class="hint">${P.noDinners}</p>` : ''}
         ${groups.length ? groups.map(([c, r]) => h`<div class="shop-grp"><span class="lbl">${T.shopCats[c]}</span><ul class="checks shop">${r.map(x => x.html)}</ul></div>`) : hint(P.empty)}
         ${missing.length ? hint(P.missing(missing.join(', '))) : ''}
       </section>

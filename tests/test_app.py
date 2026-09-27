@@ -61,6 +61,7 @@ SETUP_JS = """() => {
                place: { name: 'Bergen', lat: 60.39, lon: 5.32 },
                leave: { start: '2026-10-01', end: '2026-12-31' },
                templateId: 'to-lurer', partnerEnabled: true, partnerName: 'Partner' });
+  state.settings.autoMenu = true;   // testene av menyen bruker automatisk meny
   state.partner.codes = Object.assign(state.partner.codes, { A: { label: 'Aftenvakt', kind: 'work', start: '14:30', end: '22:00' } });
   state.partner.shifts = { '2026-10-07': 'D', '2026-10-08': 'A', '2026-10-09': 'F' };
   state.activities.push({ id: 'x-sang', name: 'Babysang', kind: 'inne', minutes: 60, weather: 'any', travel: 'gange',
@@ -511,6 +512,7 @@ class DognTest(unittest.TestCase):
         self.assertNotIn('a-gulv', acts)                                   # slettede aktiviteter kommer ikke tilbake
         self.assertIn('a-sanse', acts)
         self.assertTrue(pg.evaluate("state.dishes.find(d => d.id === 'd-sei').ingredients.length > 0"))
+        self.assertFalse(pg.evaluate('state.settings.autoMenu'))          # v13: middag velges dag for dag
         # v10: aktivitetene som fulgte med, får kategorier
         self.assertEqual(pg.evaluate("state.activities.find(a => a.id === 'a-skog').tags"), ['natur', 'bevegelse'])
         self.assertEqual(pg.evaluate("state.activities.find(a => a.id === 'a-egen').tags"), ['sprak', 'sosialt'])   # forslag ut fra navnet
@@ -637,6 +639,48 @@ class DognTest(unittest.TestCase):
         for code in ['openShopSheet()', 'openWeekSheet()', 'openLogSheet(view)', 'openProfileSheet(false)', "openSuggestSheet(view, 'to-lurer.vaken2')", 'openHistorySheet()']:
             pg.evaluate('closeSheet(); ' + code); pg.wait_for_timeout(450)
             self.assertEqual(pg.evaluate(wide), [], code)
+
+    def test_dinners_are_chosen_day_by_day(self):
+        pg = self.open(when=(2026, 10, 9, 9, 5))    # fredag
+        pg.evaluate("commit(null, () => { state.settings.autoMenu = false; state.menu = {}; state.menuWeeks = {}; })")
+        self.assertIsNone(pg.evaluate("dishFor('2026-10-09', 'dinner')"))
+        gen = "Object.values(genRows(view, blocksFor(view))).flat().map(r => r.id)"
+        self.assertNotIn('gen-prep-dinner', pg.evaluate(gen))         # ingen forberedelser uten valgt middag
+        self.assertEqual(pg.evaluate("shopList().items.length"), 0)
+        self.expand(pg, 'to-lurer.kvelds')
+        blk = '.blk[data-id="to-lurer.kvelds"]'
+        self.assertIn('ingen middag valgt', pg.inner_text(blk))
+        self.assertTrue(pg.is_visible(blk + ' [data-act="kidsdin"]'))   # barna og partneren står uansett
+        self.assertTrue(pg.is_visible(blk + ' [data-act="wife"]'))
+        chip = blk + ' [data-act="pick-dish"]'
+        self.assertEqual(pg.inner_text(chip), 'Pizza')                   # fast på fredag
+        pg.click(chip)
+        self.assertEqual(pg.evaluate("dishFor('2026-10-09', 'dinner').name"), 'Pizza')
+        self.assertIn('gen-prep-dinner', pg.evaluate(gen))
+        self.assertIn('pizzabunn eller mel og gjær', pg.evaluate("shopList().items.map(i => i.key)"))
+        # En dag fram i tid huskes, og faste retter står først
+        pg.evaluate("openSwapSheet('2026-10-10', 'dinner', null)"); pg.wait_for_selector('#sheet-root.open [data-pick]'); pg.wait_for_timeout(400)
+        self.assertIn('Taco', pg.inner_text('#sheet-root [data-pick]'))
+        pg.click('#sheet-root [data-pick]'); pg.wait_for_timeout(300)
+        self.assertEqual(pg.evaluate("state.menu['2026-10-10'].dinner.manual"), True)
+        self.assertEqual(pg.evaluate("dishFor('2026-10-10', 'dinner').name"), 'Taco')
+        pg.evaluate("openSwapSheet('2026-10-10', 'dinner', null)"); pg.wait_for_selector('#sheet-root.open [data-none]'); pg.wait_for_timeout(400)
+        pg.click('[data-none]'); pg.wait_for_timeout(300)
+        self.assertIsNone(pg.evaluate("dishFor('2026-10-10', 'dinner')"))
+        # Automatisk meny kan slås på igjen
+        pg.evaluate("openWeekSheet()"); pg.wait_for_selector('#sheet-root.open [data-auto]'); pg.wait_for_timeout(400)
+        pg.click('[data-auto]'); pg.wait_for_timeout(300)
+        self.assertTrue(pg.evaluate('state.settings.autoMenu'))
+        self.assertIsNotNone(pg.evaluate("dishFor('2026-10-13', 'dinner')"))
+
+    def test_partner_display_name(self):
+        pg = self.open(when=(2026, 10, 7, 17, 0))
+        pg.evaluate("openProfileSheet(false)"); pg.wait_for_selector('#sheet-root.open #p-pname'); pg.wait_for_timeout(400)
+        pg.fill('#p-pname', 'Kari')
+        pg.click('.sh-foot [data-save]'); pg.wait_for_timeout(400)
+        self.assertEqual(pg.evaluate('partnerName()'), 'Kari')
+        self.expand(pg, 'to-lurer.kvelds')
+        self.assertIn('Kari spiser med', pg.inner_text('.blk[data-id="to-lurer.kvelds"] [data-act="wife"]'))
 
     def test_snow_play_needs_cold(self):
         pg = self.open(when=(2026, 10, 7, 11, 35))

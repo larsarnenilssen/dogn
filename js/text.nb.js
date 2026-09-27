@@ -79,7 +79,7 @@ const T = {
     moveAria: (title, start) => 'Flytt ' + title + ', starter ' + start,
     asleepFor: d => 'sovet ' + d, showAria: title => 'Vis ' + title, foldAria: title => 'Vis ' + title + ' på én linje', editAria: title => 'Rediger ' + title,
     dishAria: (meal, name) => meal + ': ' + name + '. Trykk for å bytte', swap: 'bytt',
-    pickDish: 'Velg rett fra banken',
+    pickDish: 'Velg rett', noDish: meal => 'ingen ' + meal.toLowerCase() + ' valgt', kidsSame: 'samme som dere',
     partnerEats: (name, home) => (home ? '[x] ' : '[ ] ') + name + ' spiser med',
     kidsEat: (w, on) => (on ? '[x] ' : '[ ] ') + cap(w) + ' spiser av middagen', adultsOnly: ' (middagen er for voksne)', kidsOwn: 'egen mat',
     clothes: 'klær', clothesToday: 'klær i dag', ate: 'spiste',
@@ -188,7 +188,9 @@ const T = {
 
   week: {
     title: 'Ukemeny', from: d => 'Uke fra ' + d, prev: 'Forrige uke', next: 'Neste uke',
-    noDinner: 'ingen middag valgt', manual: ', valgt selv', lunch: name => 'lunsj: ' + name,
+    noDinner: 'ingen middag valgt', manual: ', valgt selv', lunch: name => 'lunsj: ' + name, sugg: list => 'fast: ' + list,
+    auto: 'Lag menyen automatisk', autoOn: 'Menyen lages automatisk fra i morgen', autoOff: 'Du velger middag selv',
+    manualHint: 'Trykk på en dag for å velge middag. Bare dager med valgt middag gir forberedelser i luren og varer på handlelisten. Faste retter foreslås på sine dager.',
     partnerShort: (name, home, shift) => (home ? '[x] ' : '[ ] ') + name + (home ? '' : shift ? ' · ' + shift : ''),
     hint: 'Trykk på en dag for å bytte rett. Faste retter står på sine dager, fisk spres utover uken, og ellers kommer retten som er spist for lengst siden.',
     shop: 'Handleliste for uken', regenHead: 'Lag menyen på nytt',
@@ -203,7 +205,7 @@ const T = {
   swap: {
     title: (meal, d) => meal + ' ' + d, current: 'Valgt nå', prep: 'Forberedelse: ', dayBefore: 'Dagen før: ',
     editDish: 'Rediger retten', toAuto: 'Tilbake til auto', noDish: 'Ingen rett', noneChosen: 'Ingen rett valgt for dagen.',
-    toAutoLong: 'Tilbake til automatisk meny', other: 'Velg en annen', isNew: 'ny',
+    toAutoLong: 'Tilbake til automatisk meny', other: 'Velg en annen', pick: 'Velg', isNew: 'ny',
     hint: 'Sortert etter hvor lenge siden retten sto på menyen.',
     picked: (meal, d, name) => meal + ' ' + d + ': ' + name, none: meal => 'Ingen ' + meal.toLowerCase() + ' valgt', auto: 'Automatisk meny for dagen',
   },
@@ -319,7 +321,7 @@ const T = {
     noShifts: 'Filen mangler vakter.', noLines: 'Fant ingen linjer med dato og vaktkode.', notRota: 'Filen kunne ikke leses som turnus.',
     imported: n => 'Turnus importert: ' + plural(n, T.n.dag), needTimes: list => 'Legg inn tider for: ' + list,
     title: 'Partner og turnus', group: 'Partner', rotaOn: 'Bruk turnus',
-    nameInApp: 'Navn i appen', commute: 'Reisetid (min)', commuteHint: name => 'Reisetiden brukes til å avgjøre om ' + name + ' rekker middagen. Du kan alltid overstyre med knappen i middagsbolken.',
+    nameInApp: 'Visningsnavn', nameWhere: name => 'Visningsnavnet («' + name + '») endres i Profil.', commute: 'Reisetid (min)', commuteHint: name => 'Reisetiden brukes til å avgjøre om ' + name + ' rekker middagen. Du kan alltid overstyre med knappen i middagsbolken.',
     importHead: 'Importer turnus', importBtn: 'Velg turnusfil',
     importHint: 'Tar imot en turnusfil fra Døgn, eller en tekstfil med én dag per linje, for eksempel «2026-10-01 D». Har du turnusen som PDF, kan Claude lage filen for deg. Dager i filen erstatter dager som allerede ligger inne.',
     codes: 'Vaktkoder', codeOff: 'fri', codeNight: 'natt ', noTimes: 'tider mangler', newCode: 'Ny vaktkode',
@@ -332,6 +334,7 @@ const T = {
   profile: {
     notChosen: 'Ikke valgt', welcome: 'Velkommen til Døgn', title: 'Profil',
     haveFile: 'Har du en backup eller startfil?', importFile: 'Importer fil', importHint: 'Ellers setter du opp appen under. Alt kan endres senere under Meny › Profil.',
+    partnerSec: 'Partner', partnerName: 'Visningsnavn', partnerNameHint: 'Navnet appen bruker om den andre voksne, for eksempel «Kari spiser med». Skriv et fornavn eller det dere kaller hverandre.',
     kids: 'Barn', addKid: 'Legg til barn', born: 'Født', due: 'Termin', dueHint: 'Bare hvis barnene er født før termin. Da regnes korrigert alder til to år, som helsestasjonen gjør.',
     ages: list => list.join(' · '), ageLine: (name, age, corr) => name + ' ' + age + (corr ? ' (korrigert ' + corr + ')' : ''),
     ageFacts: m => m >= 11 && m < 19 ? 'Fra ett år: skummet- eller lettmelk som drikke, høyst 5 dl om dagen medregnet yoghurt. Overgangen til én lur skjer oftest mellom 12 og 18 mnd.' : m >= 5 && m < 11 ? 'Overgangen fra tre til to lurer skjer oftest mellom 6 og 9 mnd.' : '',
@@ -431,6 +434,7 @@ const T = {
   },
 
   shop: {
+    noDinners: 'Ingen middager er valgt i perioden. Velg middag i menyen eller i middagsbolken, så kommer ingrediensene hit.',
     title: 'Handleliste', range: (a, b) => a + ' til ' + b, prev: 'Tidligere', next: 'Senere',
     forDinners: 'Til middagene', staples: 'Faste varer', staplesHint: 'Kommer på listen igjen når det er gått så lang tid siden de sist ble handlet.',
     every: { 7: 'hver uke', 14: 'annenhver uke', 28: 'hver måned' }, stapleAria: name => 'Hvor ofte ' + name,

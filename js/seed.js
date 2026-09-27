@@ -224,7 +224,7 @@ function seed() {
     activities: seedActivities(),
     menu: {},
     menuWeeks: {},
-    settings: { fishPerWeek: 2, show: { nowbar: true, tomorrow: true, gear: true }, packList: DEFAULT_PACK.slice(), theme: 'dark', textSize: 1, kidsWord: T.kids.word, kidsDinnerDays: [], shopDay: 0, due: '' },
+    settings: { fishPerWeek: 2, show: { nowbar: true, tomorrow: true, gear: true }, packList: DEFAULT_PACK.slice(), theme: 'dark', textSize: 1, kidsWord: T.kids.word, kidsDinnerDays: [], shopDay: 0, due: '', autoMenu: false },
     shop: { checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice(), staples: defaultStaples(), cats: {}, boughtThrough: '', fromTakt: [] },
     appts: [],
     days: {},

@@ -167,16 +167,23 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date, isFull) {
         <span class="dh"><span class="dn">${dish.name}</span><span class="swap">${L.swap}</span></span>
         <span class="dm">${dishMeta(dish)}</span>
         ${b.link !== 'dinner' && dish.kids ? h`<span class="dk">${T.kids.forKids(kidsWord()) + dish.kids}</span>` : ''}</button>`);
+    } else if (b.link === 'dinner') {
+      inner.push(h`<p class="dk-line"><span class="dk-k">${T.kids.adults}</span><span class="m">${L.noDish(T.meals.dinner)}</span></p>`);
     } else if (b.type === 'meal' && (b.boys || b.adults)) {
       inner.push(h`<dl class="meal">${b.boys ? h`<dt>${cap(kidsWord())}</dt><dd>${b.boys}</dd>` : ''}${b.adults ? h`<dt>${T.kids.adults}</dt><dd>${b.adults}</dd>` : ''}</dl>`);
-      if (b.link) inner.push(h`<button type="button" class="btn small ghost pick-dish" data-act="dish" data-meal="${b.link}">${L.pickDish}</button>`);
+    }
+    if (b.link && !dish) {
+      // Ingen rett valgt: faste retter for dagen først, ellers velg fra banken
+      const sugg = fixedFor(date, b.link);
+      inner.push(h`<div class="rowline pick-row">${sugg.map(x => h`<button type="button" class="chip sm sugg-dish" data-act="pick-dish" data-meal="${b.link}" data-dish="${x.id}">${x.name}</button>`)}
+        <button type="button" class="btn small ghost pick-dish" data-act="dish" data-meal="${b.link}">${L.pickDish}</button></div>`);
     }
     if (b.link === 'dinner') {
       // Hva barna får: av middagen (med tilpasning), eller det som står i bolken
       const kw = kidsWord(), ke = kidsEat(date), adults = dish && dish.for === 'voksne';
       const own = b.boys || L.kidsOwn;
-      const kidsText = ke && dish && !adults ? (dish.kids || dish.name) : own + (ke && adults ? L.adultsOnly : '');
-      if (dish) inner.push(h`<p class="dk-line"><span class="dk-k">${cap(kw)}</span>${kidsText}</p>`);
+      const kidsText = ke && !dish ? L.kidsSame : ke && !adults ? (dish.kids || dish.name) : own + (ke && adults ? L.adultsOnly : '');
+      inner.push(h`<p class="dk-line"><span class="dk-k">${cap(kw)}</span>${kidsText}</p>`);
       inner.push(h`<div class="rowline"><button type="button" class="chip sm plain" data-act="kidsdin" aria-pressed="${ke}">${L.kidsEat(kw, ke)}</button></div>`);
       const ph = partnerHome(date);
       inner.push(h`<div class="rowline"><button type="button" class="chip sm plain" data-act="wife" aria-pressed="${ph.home}">${L.partnerEats(partnerName(), ph.home) + (ph.manual ? ' *' : '')}</button>

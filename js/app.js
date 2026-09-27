@@ -86,6 +86,7 @@ $('#timeline').addEventListener('click', e => {
     case 'report': shareReport(view); break;
     case 'health': openLogSheet(view); setTimeout(() => { const g = document.querySelector('#lg-health'); if (g) g.scrollIntoView({ block: 'start' }); }, 300); break;
     case 'dish': openSwapSheet(view, el.dataset.meal, null); break;
+    case 'pick-dish': { const d = dishById(el.dataset.dish); if (d) commit(T.swap.picked(T.meals[el.dataset.meal], fmtDateTiny(view), d.name), () => setMenu(view, el.dataset.meal, d.id, true), 'timeline'); break; }
     case 'wife': commit(null, () => togglePartnerHome(view), 'timeline'); break;
     case 'tpls': openTemplatesSheet(); break;
     case 'nap-later': commit(T.naps.laterToast, () => { state.settings.napHintUntil = addDays(todayISO(), 7); }); break;

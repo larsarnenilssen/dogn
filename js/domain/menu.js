@@ -14,12 +14,17 @@ function toggleKidsEat(date) {
   if (kidsEat(date) !== next) d.kidsDin = next;
 }
 const forAll = x => x.for !== 'voksne';
+/* Automatisk meny er valgfritt. Når den er av, finnes bare rettene du har valgt selv,
+   og bare de gir forberedelser i luren og varer på handlelisten. */
+const autoMenu = () => !!state.settings.autoMenu;
+/* Faste retter for ukedagen (for eksempel taco på lørdag) foreslås på sin dag */
+const fixedFor = (date, meal) => state.dishes.filter(x => x.meal === meal && Number(x.weekday) === isoWd(date));
 function setMenu(d, meal, dish, manual) { (state.menu[d] ??= {})[meal] = { dish, manual }; }
 function lastServed(dishId, before) {
   let last = null;
   for (const [d, m] of Object.entries(state.menu)) {
     if (d >= before) continue;
-    for (const k of ['dinner', 'lunch']) if (m[k] && m[k].dish === dishId && (!last || d > last)) last = d;
+    for (const k of ['dinner', 'lunch']) if (m[k] && m[k].dish === dishId && (m[k].manual || autoMenu()) && (!last || d > last)) last = d;
   }
   return last;
 }
@@ -72,6 +77,7 @@ function generateWeek(ws, from) {
 /* Menyen for en uke lages første gang uken vises. Det er en utregning, ikke en
    endring brukeren har gjort, og lagres derfor uten angremulighet. */
 function ensureWeek(date) {
+  if (!autoMenu()) return;
   const ws = weekStart(date);
   if (state.menuWeeks[ws]) return;
   generateWeek(ws, null);
@@ -79,6 +85,7 @@ function ensureWeek(date) {
   persist();
 }
 function regenerateFrom(from) {
+  if (!autoMenu()) return;
   const weeks = new Set(Object.keys(state.menuWeeks).filter(ws => addDays(ws, 6) >= from));
   weeks.add(weekStart(from));
   [...weeks].sort().forEach(ws => { generateWeek(ws, from); state.menuWeeks[ws] = true; });
@@ -86,7 +93,8 @@ function regenerateFrom(from) {
 function dishFor(date, meal) {
   ensureWeek(date);
   const m = state.menu[date] && state.menu[date][meal];
-  return m && m.dish ? dishById(m.dish) || null : null;
+  if (!m || !m.dish || (!m.manual && !autoMenu())) return null;
+  return dishById(m.dish) || null;
 }
 function dishMeta(d) {
   return T.dish.meta(d.minutes, T.cats[d.cat], Number(d.weekday) ? wdShort(d.weekday).toLowerCase() : '', d.for === 'voksne');

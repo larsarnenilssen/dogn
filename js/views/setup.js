@@ -46,6 +46,9 @@ function openProfileSheet(firstRun) {
         <div class="field"><label for="p-ls">${P.first}</label><input type="date" id="p-ls" value="${state.leave.start}"></div>
         <div class="field"><label for="p-le">${P.last}</label><input type="date" id="p-le" value="${state.leave.end}"></div>
       </div></section>
+      ${firstRun ? '' : h`<section class="grp"><h3>${P.partnerSec}</h3>
+        <div class="field"><label for="p-pname">${P.partnerName}</label><input id="p-pname" type="text" value="${partnerName()}" autocomplete="off"></div>
+        ${hint(P.partnerNameHint)}</section>`}
       ${display}${firstRunParts}
     </form>
     ${footSave(firstRun ? P.start : P.save)}`,
@@ -103,6 +106,7 @@ function openProfileSheet(firstRun) {
         if (!isDate(ls) || !isDate(le) || le < ls) { toast(P.checkDates); return; }
         const due = q('#p-due').value;
         const o = { kids, place, leave: { start: ls, end: le }, kidsWord: q('#p-kw').value.trim() || T.kids.word, due: isDate(due) ? due : '' };
+        if (!firstRun) o.partnerName = q('#p-pname').value.trim() || T.partner.defaultName;
         if (firstRun) { o.templateId = q('#p-tpl').value; o.partnerEnabled = pOn; o.partnerName = pOn ? (q('#p-pn').value.trim() || T.partner.defaultName) : null; }
         closeSheet();
         commit(firstRun ? P.ready : P.saved, () => { applySetup(o); const n = planHealthVisits(); return n ? (firstRun ? P.ready : P.saved) + '. ' + P.hsMade(n) : ''; });
@@ -123,10 +127,8 @@ function openPartnerSheet() {
     <div class="sh-body">
       <section class="grp"><h3>${P.group}</h3>
         ${switchBtn('data-p-on', '1', !!Pn.enabled, P.rotaOn)}
-        <div class="row2">
-          <div class="field"><label for="p-name">${P.nameInApp}</label><input id="p-name" type="text" value="${Pn.name}" autocomplete="off"></div>
-          <div class="field"><label for="p-com">${P.commute}</label><input id="p-com" type="number" inputmode="numeric" min="0" max="180" value="${Number(Pn.commute) || 0}"></div>
-        </div>
+        <div class="field"><label for="p-com">${P.commute}</label><input id="p-com" type="number" inputmode="numeric" min="0" max="180" value="${Number(Pn.commute) || 0}"></div>
+        ${hint(P.nameWhere(partnerName()))}
         ${hint(P.commuteHint(Pn.name))}
       </section>
       <section class="grp"><h3>${P.importHead}</h3>
@@ -146,7 +148,6 @@ function openPartnerSheet() {
     </div>`,
     (sheet, q) => {
       q('[data-p-on]').addEventListener('click', () => { commit(Pn.enabled ? P.toastOff : P.toastOn, () => { state.partner.enabled = !state.partner.enabled; }); openPartnerSheet(); });
-      q('#p-name').addEventListener('change', e => { const v = e.target.value.trim() || P.defaultName; commit(T.common.nameSaved, () => { state.partner.name = v; }); });
       q('#p-com').addEventListener('change', e => { const v = Math.max(0, Math.min(180, parseInt(e.target.value, 10) || 0)); commit(P.commuteSaved, () => { state.partner.commute = v; }); });
       q('#p-import').addEventListener('change', e => { const f = e.target.files[0]; if (f) importRota(f); e.target.value = ''; });
       sheet.querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => openCodeSheet(b.dataset.code)));

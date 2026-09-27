@@ -4,7 +4,7 @@
    for trinn, og sanitize() retter eller fjerner verdier som ikke har riktig
    form (for eksempel fra en fil som er redigert for hånd). Gyldige data
    endres ikke. */
-const DATA_VERSION = 12;
+const DATA_VERSION = 13;
 /* Startdata som kom til senere, og som legges til hos eksisterende brukere */
 const ADDED_V11 = ['a-lykt', 'a-havre', 'a-is', 'a-sansepose', 'a-kontakt', 'a-torkle', 'a-rulle', 'a-gaa', 'a-trapp', 'a-bamse', 'a-album', 'a-tegne', 'a-vindu', 'a-toy', 'a-rydde', 'a-vannmal', 'a-sno', 'a-kongler'];
 const ADDED_V9 = {
@@ -138,6 +138,12 @@ function migrate(s) {
     if (!Array.isArray(s.shop.staples)) s.shop.staples = defaultStaples();
     s.version = 12;
   }
+  if (s.version < 13) {
+    // v13: automatisk ukemeny er valgfri og av. Middager velges dag for dag.
+    s.settings = s.settings || {};
+    s.settings.autoMenu = false;
+    s.version = 13;
+  }
   (s.dishes || []).forEach(d => { if (d && !Array.isArray(d.ingredients)) d.ingredients = []; });
   s.shop = Object.assign({ checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() }, s.shop || {});
   if (!s.settings.theme) s.settings.theme = 'dark';
@@ -269,6 +275,7 @@ function sanitize(s, base) {
   for (const k of Object.keys(S.show)) S.show[k] = S.show[k] !== false;
   S.kidsWord = str(S.kidsWord).trim() || T.kids.word;
   S.kidsDinnerDays = wdays(S.kidsDinnerDays);
+  S.autoMenu = !!S.autoMenu;
   S.shopDay = oneOf(Number(S.shopDay), [0, 1, 2, 3, 4, 5, 6, 7], 0);
   S.due = isDate(S.due) ? S.due : '';
   if ('napHintUntil' in S && !isDate(S.napHintUntil)) delete S.napHintUntil;

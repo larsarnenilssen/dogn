@@ -407,3 +407,6 @@ body{padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px))}
 .tk-h{font:600 var(--fs-xs) var(--mono);color:var(--c-appt)}
 .checks.tk{width:100%;margin-top:0}
 .checks.tk li>.txt{display:flex;flex-direction:column;padding:var(--sp-3) 0 var(--sp-1) 32px}
+.pick-row{flex-wrap:wrap;gap:var(--sp-3)}
+.chip.sugg-dish{border-color:var(--accent-line);background:var(--accent-dim);color:var(--accent)}
+.list .row.fixed{box-shadow:inset 3px 0 0 var(--accent-line)}
