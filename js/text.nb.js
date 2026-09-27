@@ -61,7 +61,7 @@ const T = {
 
   top: {
     prev: 'Forrige dag', next: 'Neste dag', menu: 'Meny', pickDay: 'Velg dag', fab: 'Legg til husk, avtale eller bolk',
-    away: 'borte', startsIn: 'start om', leave: 'perm', leaveDone: 'ferdig', day: 'dag', template: 'mal', sun: 'sol', today: 'Til i dag',
+    startsIn: 'start om', leave: 'perm', leaveDone: 'ferdig', day: 'dag', template: 'mal', sun: 'sol', today: 'Til i dag',
   },
 
   banner: {
@@ -89,6 +89,11 @@ const T = {
     openLog: 'Åpne dagslogg', shareReport: 'Del dagsrapport', exportBackup: 'Eksporter backup',
     shiftHead: 'Flytt (min). Bolkene etter tilpasses fram til leggetid.', shiftHeadBed: 'Flytt leggetid (min). Nullstilling flyttes like mye.', startsNow: 'Starter nå',
     alreadyNow: title => title + ' starter allerede nå',
+  },
+  shift: {
+    off: 'fri', day: 'dagvakt', eve: 'kveldsvakt', night: 'nattevakt', work: 'vakt',
+    short: { off: 'fri', day: 'dag', eve: 'kveld', night: 'natt', work: 'vakt' },
+    away: t => 'borte ' + t, nextDay: ' neste dag',
   },
   hs: {
     k12: '12-månederskontrollen', k15: '15-månederskontrollen med MMR-vaksine', k17: 'gruppekonsultasjonen ved 17–18 mnd', k24: '2-årskontrollen',
@@ -142,7 +147,7 @@ const T = {
 
   cal: {
     title: 'Velg dag', prev: 'Forrige måned', next: 'Neste måned', week: 'uke', today: 'I dag', tomorrow: 'I morgen',
-    hint: partner => 'Prikk: avtale eller noe å huske. Stjerne: dagen har egne endringer.' + (partner ? ' Koden under datoen er vakten til ' + partner + '.' : '') + ' Dager utenfor permisjonen er nedtonet.',
+    hint: partner => 'Prikk: avtale eller noe å huske. Stjerne: dagen har egne endringer.' + (partner ? ' Under datoen står vakten til ' + partner + '.' : '') + ' Dager utenfor permisjonen er nedtonet.',
   },
 
   block: {
@@ -409,7 +414,7 @@ const T = {
 
   tomorrow: {
     head: d => 'i morgen, ' + d, weather: 'vær', light: 'lyst', lightRange: r => ', lyst ' + r, clothes: 'klær',
-    home: ', spiser middag med dere', away: ', ikke hjemme til middag', awayAt: t => ', borte ' + t, lunch: 'lunsj', dinner: 'middag', tonight: text => '. ' + text + ' i kveld',
+    home: ', spiser middag med dere', away: ', ikke hjemme til middag', lunch: 'lunsj', dinner: 'middag', tonight: text => '. ' + text + ' i kveld',
     firstNap: 'første lur', napShort: t => '1. lur ' + t, fixed: 'faste tilbud', appt: 'avtale', tasks: 'gjøremål', more: ' med flere',
   },
 

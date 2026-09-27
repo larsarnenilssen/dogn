@@ -20,7 +20,8 @@ button{font:inherit;color:inherit}
 .date-btn::after{content:" ▾";color:var(--muted);font-size:var(--fs-sm);font-weight:500}
 .date-btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .nav{display:flex;gap:var(--sp-2)}
-.sub{grid-column:1/-1;display:flex;align-items:baseline;gap:var(--sp-3);font-size:var(--fs-xs);color:var(--ink);border-top:1px solid var(--line-soft);padding-top:var(--sp-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sub{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--sp-1) var(--sp-3);font-size:var(--fs-xs);color:var(--ink);border-top:1px solid var(--line-soft);padding-top:var(--sp-4);min-width:0}
+.sub>span{white-space:nowrap}
 .sub>span{flex:none}
 .sub .acc{color:var(--accent)}
 .sub .k{color:var(--muted)}

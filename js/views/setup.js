@@ -143,7 +143,7 @@ function openPartnerSheet() {
       </div>${fromT ? hint(P.codesTakt) : h`<button type="button" class="btn wide" data-new-code>${P.newCode}</button>`}</section>
       ${fromT ? h`<section class="grp"><h3>${P.nextTakt}</h3><div class="list">
         ${days.map(d => { const ps = partnerStatus(d); return h`<div><span class="grow"><span class="wd">${fmtDateTiny(d)}</span>${ps && ps.away ? h`<span class="m">${T.tl.away(awayText(ps.away))}</span>` : ''}</span>
-          <span class="r">${ps && ps.code ? shiftText(ps) : P.none}</span></div>`; })}
+          <span class="r">${ps && ps.code ? shiftKind(ps) : P.none}</span></div>`; })}
       </div></section>` : h`<section class="grp"><h3>${P.next3}</h3><div class="list">
         ${days.map(d => h`<div><span class="grow"><span class="wd">${fmtDateTiny(d)}</span></span>
           <label class="vh" for="sd-${d}">${P.shiftAria(d)}</label><select id="sd-${d}" class="sel-sm" data-sd="${d}">${options([['', '–'], ...codes.map(([c]) => [c, c])], Pn.shifts[d] || '')}</select></div>`)}

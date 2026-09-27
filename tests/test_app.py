@@ -706,6 +706,19 @@ class DognTest(unittest.TestCase):
             before = top(); pg.click(sel); pg.wait_for_timeout(150)
             self.assertLess(abs(top() - before), 2, sel)
 
+    def test_partner_in_plain_words(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))                           # D 07:00–15:00, reisetid 30
+        pg.evaluate("commit(null, () => { state.partner.name = 'Karen'; state.partner.commute = 30; })")
+        self.assertIn('Karen borte ~06:30–15:30', pg.inner_text('#sub'))
+        self.assertNotIn(' D ', pg.inner_text('#sub') + ' ')
+        self.assertEqual(pg.evaluate("[7, 8, 9].map(d => shiftKind(partnerStatus('2026-10-0' + d)))"), ['dagvakt', 'kveldsvakt', 'fri'])
+        pg.evaluate("go(2)")                                                 # fri
+        self.assertIn('Karen fri', pg.inner_text('#sub'))
+        pg.set_viewport_size({'width': 320, 'height': 700})
+        pg.evaluate("commit(null, () => { state.settings.textSize = 1.2; }); applyTheme(); go(-2)")
+        w = pg.evaluate("[document.querySelector('#sub').scrollWidth, document.querySelector('#sub').clientWidth]")
+        self.assertLessEqual(w[0], w[1] + 1)                                # alt får plass, eventuelt på to linjer
+
     def test_snow_play_needs_cold(self):
         pg = self.open(when=(2026, 10, 7, 11, 35))
         self.assertNotIn('a-sno', pg.evaluate("suggest(view, 11*60+30, 13*60+30).list.map(a => a.id)"))
@@ -830,7 +843,7 @@ class DognTest(unittest.TestCase):
         pg.click('#date')
         pg.wait_for_selector('#sheet-root.open .cal')
         self.assertEqual(pg.get_attribute('.cal [aria-current="date"]', 'data-go'), '2026-10-07')
-        self.assertEqual(pg.inner_text('.cal .day[data-go="2026-10-08"] .c'), 'A')       # partnerens vakt
+        self.assertEqual(pg.inner_text('.cal .day[data-go="2026-10-08"] .c'), 'kveld')   # partnerens vakt i klartekst
         pg.click('[data-month="2026-11"]')
         pg.click('.cal .day[data-go="2026-11-20"]')
         pg.wait_for_timeout(300)
@@ -1037,13 +1050,13 @@ class DognTest(unittest.TestCase):
         self.assertEqual(P['shifts'], self.TAKT_FILE['rota']['shifts'])
         self.assertIn('A14', P['codes'])
         self.assertEqual(P['custom']['2026-10-10']['label'], 'Kurs')
-        # Fraværet vises i toppen, med * for valgt reise og ~ for beregnet
-        self.assertIn('borte 06:00* – ~15:48', pg.inner_text('#sub'))
+        # Fraværet vises i toppen i klartekst, uten vaktkoder
+        self.assertIn('Partner borte 06:00–15:48', pg.inner_text('#sub'))
         # Middagen: hjemme 15:48 før middag. Aftenvakt: borte fra 13:40, ikke hjemme. Natt: går 20:25, hjemme til middag.
         self.assertEqual(pg.evaluate("() => ['2026-10-07', '2026-10-08', '2026-10-09'].map(d => partnerHome(d).home)"), [True, False, True])
         self.assertEqual(pg.evaluate("() => awayText(taktAway('2026-10-09'))"), '~20:25 – ~08:20 (+1)')
         self.assertIsNone(pg.evaluate("() => taktAway('2026-10-11')"), 'ugyldige tider forkastes')
-        self.assertIn('Kurs', pg.evaluate("() => shiftText(partnerStatus('2026-10-10'))"))
+        self.assertEqual(pg.evaluate("() => shiftKind(partnerStatus('2026-10-10'))"), 'kurs')
         # Delte punkter: gjøremål kan krysses av, avtaler vises, handling havner på handlelisten én gang
         banner = pg.inner_text('.banner.takt')
         self.assertIn('Ringe <legen>', banner)

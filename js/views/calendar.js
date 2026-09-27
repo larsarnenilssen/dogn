@@ -13,7 +13,7 @@ function openCalendarSheet(month) {
   const L = state.leave;
   const marks = new Set([...(state.appts || []).map(a => a.date),
     ...state.tasks.filter(t => t.rule && t.rule.kind === 'once' && t.rule.start && !completions(t.id).length).map(t => t.rule.start)]);
-  const shift = d => partnerOn() ? state.partner.shifts[d] || '' : '';
+  const shift = d => partnerOn() ? shiftKind(partnerStatus(d), true) : '';
   const cell = d => {
     const cls = ['day'];
     if (d.slice(0, 7) !== month) cls.push('other');

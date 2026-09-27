@@ -25,8 +25,7 @@ function renderHeader() {
   else if (view > L.end) parts.push(kv(H.leave, H.leaveDone, 'acc'));
   else parts.push(kv(H.day, (diffDays(L.start, view) + 1) + '/' + (diffDays(L.start, L.end) + 1), 'acc'));
   const ps = partnerStatus(view);
-  if (ps && ps.code) parts.push(kv(partnerName().toLowerCase(), shiftText(ps).replace(/(\d\d):00/g, '$1')));
-  if (ps && ps.away) parts.push(kv(H.away, awayText(ps.away)));
+  if (ps && ps.code) parts.push(kv(partnerName(), partnerLine(ps)));
   const d = state.days[view];
   if (d && (d.blocks || d.templateId)) parts.push(kv(H.template, state.templates[templateFor(view)].name.toLowerCase() + '*'));
   setHtml($('#sub'), parts.map((p, i) => i ? h`<span class="sep">·</span>${p}` : p));
@@ -191,7 +190,7 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date, isFull) {
       inner.push(h`<div class="rowline"><button type="button" class="chip sm plain" data-act="kidsdin" aria-pressed="${ke}">${L.kidsEat(kw, ke)}</button></div>`);
       const ph = partnerHome(date);
       inner.push(h`<div class="rowline"><button type="button" class="chip sm plain" data-act="wife" aria-pressed="${ph.home}">${L.partnerEats(partnerName(), ph.home) + (ph.manual ? ' *' : '')}</button>
-        ${ph.ps && ph.ps.code ? h`<span class="rl">${shiftText(ph.ps)}${ph.ps.away ? ' · ' + L.away(awayText(ph.ps.away)) : ''}</span>` : ''}</div>`);
+        ${ph.ps && ph.ps.code ? h`<span class="rl">${partnerLine(ph.ps, true)}</span>` : ''}</div>`);
     }
     if (b.note) inner.push(h`<p class="note">${b.note}</p>`);
     if (b.type === 'awake') {
@@ -361,7 +360,7 @@ function tomorrowHTML(date) {
   else if (light) kv(M.light, light);
   if (w && showOn('gear')) kv(M.clothes, clothesFor(w, true));
   const ps = partnerStatus(t);
-  if (ps && ps.code) { const ph = partnerHome(t); kv(partnerName().toLowerCase(), shiftText(ps) + (ps.away ? M.awayAt(awayText(ps.away)) : '') + (ph.home ? M.home : M.away)); short.push(partnerName().toLowerCase() + ' ' + ps.code); }
+  if (ps && ps.code) { const ph = partnerHome(t); kv(partnerName(), partnerLine(ps, true) + (ph.home ? M.home : M.away)); short.push(partnerName() + ' ' + shiftKind(ps, true)); }
   const din = dishFor(t, 'dinner'), lun = dishFor(t, 'lunch');
   if (lun) kv(M.lunch, lun.name);
   if (din) { kv(M.dinner, din.name + (din.dayBefore ? M.tonight(din.dayBefore) : '')); short.push(din.name); }

@@ -154,10 +154,7 @@ det samme private repoet (for eksempel `dogn-data`), deler de data. Hver app skr
 så de kan aldri overskrive hverandre. Formatet står i `docs/deling.md`.
 
 - **Turnus:** Turnusen, vaktkodene og dager med egne tider hentes fra Takt. Endringer gjøres i Takt.
-- **Fravær dag for dag:** Toppen viser når partneren er borte, for eksempel «borte 06:00* – ~15:48».
-  `*` betyr at hun har valgt reisen i Takt, `~` at tiden er beregnet (vakten, tiden før og etter vakten og
-  reisetiden). `(+1)` betyr hjem neste dag (nattevakt). Det samme står i middagsbolken, i «i morgen» og for
-  tre uker fram under **Meny › Partner og turnus**.
+- **Fravær dag for dag:** Toppen viser i klartekst når partneren er borte, for eksempel «Kari borte 06:08–15:48», eller «Kari fri». Vaktkoder vises ikke; middagsbolken, «i morgen», ukemenyen og kalenderen bruker dagvakt, kveldsvakt, nattevakt og fri. «neste dag» betyr hjem neste dag (nattevakt), og `~` foran tiden betyr at den er beregnet fra vakten og reisetiden i Døgn fordi Takt ikke har sendt den. Under **Meny › Partner og turnus** står reisevalget fra Takt (`*` valgt reise, `~` beregnet) for tre uker fram.
 - **Middag:** Om partneren spiser med, avgjøres av når hun faktisk er hjemme. Knappen i middagsbolken
   kan fortsatt overstyre.
 - **Delte punkter:** Gjøremål og avtaler hun deler, står øverst på dagen under «Fra …». Gjøremål kan krysses

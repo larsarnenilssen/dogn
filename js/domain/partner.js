@@ -20,13 +20,35 @@ function partnerStatus(date) {
   if (aw) home = toMin(aw.back) + 1440 * aw.backDay <= dm || toMin(aw.leave) >= dm + 30;
   else if (def.kind === 'work' && def.start && def.end) home = (toMin(def.end) + c <= dm) || (toMin(def.start) - c >= dm + 30);
   else if (def.kind === 'night' && def.start) home = toMin(def.start) - c >= dm + 30;
-  return { code, def, home, away: aw };
+  return { code, def, home, away: aw, custom: !!cu };
 }
-function shiftText(ps) {
+/* Vakten i klartekst, uten koder: fri, dagvakt, kveldsvakt, nattevakt, eller egen beskrivelse */
+function shiftKind(ps, short) {
   if (!ps || !ps.code) return '';
-  if (!ps.def) return ps.code;
-  if (ps.def.kind === 'off') return ps.code + T.partner.off;
-  return ps.code + (ps.def.start && ps.def.end ? ' ' + ps.def.start + '–' + ps.def.end : '');
+  const S = short ? T.shift.short : T.shift, d = ps.def;
+  if (ps.custom) return short ? S.work : (d.label || T.shift.work).toLowerCase();
+  if (!d) return S.work;
+  if (d.kind === 'off') return S.off;
+  if (d.kind === 'night') return S.night;
+  if (!isTime(d.start)) return S.work;
+  return toMin(d.start) < 12 * 60 ? S.day : S.eve;
+}
+/* Når partneren er borte: fra Takt, eller beregnet fra vakten og reisetiden (est) */
+function partnerAway(ps) {
+  if (!ps || !ps.def || ps.def.kind === 'off') return null;
+  if (ps.away) return Object.assign({ est: false }, ps.away);
+  const d = ps.def, c = Number(state.partner.commute) || 0;
+  if (!isTime(d.start) || !isTime(d.end)) return null;
+  const leave = toMin(d.start) - c, back = toMin(d.end) + c + (toMin(d.end) <= toMin(d.start) ? 1440 : 0);
+  return { leave: toHM((leave + 1440) % 1440), back: toHM(back % 1440), backDay: Math.floor(back / 1440), est: true };
+}
+/* «borte 06:08–15:48», «fri» eller «dagvakt». full: med vakttype først. */
+function partnerLine(ps, full) {
+  if (!ps || !ps.code) return '';
+  const kind = shiftKind(ps), a = partnerAway(ps);
+  if (!a) return kind;
+  const t = T.shift.away((a.est ? '~' : '') + a.leave + '–' + a.back + (a.backDay ? T.shift.nextDay : ''));
+  return full ? kind + ', ' + t : t;
 }
 function partnerHome(date) {
   const d = state.days[date];

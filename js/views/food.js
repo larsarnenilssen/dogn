@@ -21,7 +21,7 @@ function openWeekSheet(ws) {
     const din = dishFor(d, 'dinner'), lun = dishFor(d, 'lunch');
     const m = state.menu[d] || {};
     const ph = partnerHome(d);
-    const pinfo = partnerOn() || ph.manual ? W.partnerShort(partnerName(), ph.home, ph.ps && ph.ps.code ? shiftText(ph.ps) : '') : '';
+    const pinfo = partnerOn() || ph.manual ? W.partnerShort(partnerName(), ph.home, ph.ps && ph.ps.code ? partnerLine(ph.ps, true) : '') : '';
     const withKids = kidsEat(d) && (!din || din.for !== 'voksne') ? W.withKids(kidsWord()) : '';
     const sugg = din ? [] : fixedFor(d, 'dinner');
     return h`<button type="button" class="row${d === today ? ' cur' : ''}" data-day="${d}"><span class="grow">
