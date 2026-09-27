@@ -599,6 +599,17 @@ class DognTest(unittest.TestCase):
         pg.evaluate("commit(null, () => { delete state.settings.napHintUntil; state.kids.forEach(k => { k.born = '2026-03-01'; }); })")
         self.assertIsNone(pg.evaluate("napAdvice('2026-10-07')"))
 
+    def test_sheets_fit_the_screen(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        pg.set_viewport_size({'width': 360, 'height': 780})
+        pg.evaluate("commit(null, () => { state.settings.textSize = 1.2; state.settings.shopDay = 6; state.shop.extra.push({ id: 'x1', text: 'Et svært langt varenavn som ikke får plass på én linje i det hele tatt' }); }); applyTheme();")
+        wide = """() => { const W = document.documentElement.clientWidth, b = document.querySelector('#sheet-root .sh-body');
+          const out = [...document.querySelectorAll('#sheet-root .sheet *')].filter(e => !e.closest('.tblwrap, svg, .vh') && e.getBoundingClientRect().width && e.getBoundingClientRect().right > W + 1).map(e => e.className || e.tagName);
+          return (b.scrollWidth > b.clientWidth + 1 ? ['sh-body'] : []).concat(out).slice(0, 5); }"""
+        for code in ['openShopSheet()', 'openWeekSheet()', 'openLogSheet(view)', 'openProfileSheet(false)', "openSuggestSheet(view, 'to-lurer.vaken2')", 'openHistorySheet()']:
+            pg.evaluate('closeSheet(); ' + code); pg.wait_for_timeout(450)
+            self.assertEqual(pg.evaluate(wide), [], code)
+
     def test_snow_play_needs_cold(self):
         pg = self.open(when=(2026, 10, 7, 11, 35))
         self.assertNotIn('a-sno', pg.evaluate("suggest(view, 11*60+30, 13*60+30).list.map(a => a.id)"))

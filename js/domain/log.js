@@ -114,8 +114,9 @@ function logBackAsleepNow(nightDate, kids) {
   });
   return T.night.backToast(whoText(kids), toHM(now), fmtDurShort(longest));
 }
-const whenAsleep = nightDate => { const t = todayISO(); return nightDate === t ? T.night.tonight : nightDate === addDays(t, -1) ? T.night.yesterday : T.night.evening(fmtDateTiny(nightDate)); };
-const whenWoke = nightDate => { const d = addDays(nightDate, 1), t = todayISO(); return d === t ? T.night.today : d === addDays(t, 1) ? T.night.tomorrow : fmtDateTiny(d); };
+const dayMonth = d => { const x = parseISO(d); return x.getDate() + '.' + (x.getMonth() + 1); };
+const whenAsleep = nightDate => { const t = todayISO(); return nightDate === t ? T.night.tonight : nightDate === addDays(t, -1) ? T.night.yesterday : T.night.evening(dayMonth(nightDate)); };
+const whenWoke = nightDate => { const d = addDays(nightDate, 1), t = todayISO(); return d === t ? T.night.today : d === addDays(t, 1) ? T.night.tomorrow : dayMonth(d); };
 function wokeAt(date, kid) { const n = getLog(wakeLogDate(date)).night[kid]; return (n && n.wake) || ''; }
 /* En lur som pågår (sovnet er logget, våknet ikke), for i dag */
 function openNap(date) {

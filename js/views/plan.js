@@ -22,7 +22,7 @@ function openMenu() {
       </section>
       <section class="grp"><h3>${M.food}</h3><div class="list">
         ${navRow('week', M.week, din ? M.todayDish(din.name) : '')}
-        ${navRow('shop', M.shop, M.shopMeta)}
+        ${(() => { const L = shopList(); return navRow('shop', M.shop, M.shopMeta(openCount(L), fmtDateTiny(L.p.end))); })()}
         ${navRow('bank', M.bank, M.bankMeta(state.dishes.length, state.settings.fishPerWeek))}
       </div></section>
       <section class="grp"><h3>${M.acts}</h3><div class="list">

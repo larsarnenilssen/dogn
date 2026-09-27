@@ -235,7 +235,7 @@ function openShopSheet(from) {
       <div class="row2"><button type="button" class="btn primary" data-shop-done>${P.done}</button><button type="button" class="btn" data-share>${P.share}</button></div>
       ${hint(P.doneHint)}
       <section class="grp"><h3>${P.day}</h3>
-        ${segRow('data-shopday', [[0, P.dayNone], ...T.date.wdShort.map((w, i) => [i + 1, w])], k => Number(k) === (Number(state.settings.shopDay) || 0))}
+        <div class="chips">${[[0, P.dayNone], ...T.date.wdShort.map((w, i) => [i + 1, w])].map(([k, l]) => h`<button type="button" class="chip" data-shopday="${k}" aria-pressed="${Number(k) === (Number(state.settings.shopDay) || 0)}">${l}</button>`)}</div>
         ${hint(P.dayHint)}</section>
       <section class="grp"><h3>${P.staples}</h3>
         <div class="items" id="sh-staples">${(S.staples || []).map(x => h`<div class="item" data-st="${x.id}"><input type="text" value="${x.text}" aria-label="${T.common.name}" autocomplete="off" data-st-text>

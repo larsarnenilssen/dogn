@@ -171,7 +171,7 @@ const T = {
     saveDay: 'Lagre dagen som mal', undo: label => 'Angre: ' + label, reset: 'Tilbakestill dagen til malen',
     resetRest: 'Tilbakestill resten av dagen', toastResetRest: 'Resten av dagen følger malen igjen',
     resetHint: 'Dagen har egne endringer i bolkene. Lagre dem som mal, eller tilbakestill hele dagen eller bare resten av den (fra nå). Avkrysninger og logg beholdes uansett.',
-    food: 'Mat', week: 'Ukemeny', todayDish: name => 'I dag: ' + name, shop: 'Handleliste', shopMeta: 'Neste 7 dager fra ukemenyen',
+    food: 'Mat', week: 'Ukemeny', todayDish: name => 'I dag: ' + name, shop: 'Handleliste', shopMeta: (n, end) => plural(n, T.n.vare) + ', til og med ' + end,
     bank: 'Middagsbank', bankMeta: (n, fish) => plural(n, T.n.rett) + ', fisk ' + fish + ' ganger i uken',
     acts: 'Aktiviteter', library: 'Aktivitetsbibliotek',
     libraryMeta: (n, place) => plural(n, T.n.aktivitet) + (place ? ', vær for ' + place : ', velg sted i Profil for vær'),
@@ -242,7 +242,7 @@ const T = {
   night: {
     title: (kid, d) => kid + ', natt til ' + d,
     asleep: when => 'Sovnet ' + when, woke: when => 'Våknet ' + when,
-    tonight: 'i kveld', yesterday: 'i går', today: 'i dag', tomorrow: 'i morgen', evening: d => d + ' kveld',
+    tonight: 'i kveld', yesterday: 'i går', today: 'i dag', tomorrow: 'i morgen', evening: d => d,
     hint: 'Tom tid betyr ikke logget. Nattesøvn er tiden fra sovnet til våknet, minus tiden våken i natt.', saved: 'Nattesøvn lagret',
     wakes: 'Oppvåkninger', up: 'Våken i natt, min', fewer: 'Én færre', more: 'Én til',
     slept: d => 'sov ' + d, wakesShort: n => n + ' oppv.', upSince: t => 'våken siden ' + t,
