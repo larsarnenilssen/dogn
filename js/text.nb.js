@@ -207,7 +207,7 @@ const T = {
   log: {
     title: d => 'Dagslogg ' + d, naps: 'Lurer', total: d => 'totalt ' + d, ongoing: 'pågår', noNaps: 'ingen lurer logget',
     napsHint: 'Lurer logges med knappene i søvnbolkene. Trykk på en lur for å endre tidene.', napFallback: 'lur',
-    night: 'Natt', asleepEve: 'Sovnet i kveld', wokeMorning: 'Våknet i morgen',
+    nightTo: d => 'Natt til ' + d, nightHint: 'Natten føres på dagen den slutter: sovnet kvelden før, våknet om morgenen.',
     health: 'Helse', isSick: name => name + ' er syk',
     healthHint: 'For temperatur, medisin og symptomer. Appen gir ikke råd om dosering. Når et barn er sykt, foreslås bare aktiviteter hjemme.',
     meals: 'Måltider', noMeals: 'Ingen måltider i dagens plan.', ratesHint: 'Trykk på valget igjen for å fjerne det.',
@@ -215,6 +215,12 @@ const T = {
     healthToast: (kid, kind, value, time) => 'Helse: ' + kid + ', ' + kind.toLowerCase() + (value ? ' ' + value : '') + ' kl. ' + time,
   },
 
+  night: {
+    title: (kid, d) => kid + ', natt til ' + d,
+    asleep: when => 'Sovnet ' + when, woke: when => 'Våknet ' + when,
+    tonight: 'i kveld', yesterday: 'i går', today: 'i dag', tomorrow: 'i morgen', evening: d => d + ' kveld',
+    hint: 'Tom tid betyr ikke logget.', saved: 'Nattesøvn lagret',
+  },
   nap: {
     title: (kid, blk) => kid + ', ' + blk, times: 'Tider', del: 'Slett luren fra loggen', saved: 'Lur lagret', deleted: 'Lur slettet fra loggen',
   },
@@ -357,7 +363,7 @@ const T = {
   },
 
   report: {
-    head: d => 'Døgn, ' + d, nap: list => 'lur ' + list, sleeping: s => 'fra ' + s + ', sover fortsatt', noNap: 'ingen lur logget', slept: t => '. Sovnet ' + t,
+    head: d => 'Døgn, ' + d, nap: list => 'lur ' + list, sleeping: s => 'fra ' + s + ', sover fortsatt', noNap: 'ingen lur logget', slept: t => '. Sovnet ' + t, woke: t => 'våknet ' + t + ', ',
     food: 'Mat: ', did: 'Gjorde: ', dinner: 'Middag: ', appts: 'Avtaler: ', note: 'Notat: ',
     shareTitle: d => 'Døgn ' + d, copied: 'Dagsrapporten er kopiert', sheet: 'Dagsrapport', copyHint: 'Kopier teksten:',
   },

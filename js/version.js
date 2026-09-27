@@ -2,7 +2,7 @@
    Lastes både av appen og av service workeren (sw.js), slik at lageret
    for bruk uten nett får nytt navn hver gang versjonen endres.
    Legges det til en fil i appen, må den også stå i APP_FILES. */
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.0.1';
 const APP_FILES = [
   './', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png',
   './styles/tokens.css', './styles/app.css',

@@ -50,6 +50,15 @@ function logSleepNow(date, blockId, kids) {
 /* Morgen: når siste barn har våknet, starter dagen (morgenbolken) nå,
    og resten av dagen tilpasses fram til leggetid. Våknetiden føres på natten før. */
 const wakeLogDate = date => addDays(date, -1);
+/* Natten lagres på datoen for kvelden den starter. Den vises på dagen den slutter. */
+function nightRec(nightDate, kid) { return getLog(nightDate).night[kid] || {}; }
+function setNight(nightDate, kid, asleep, wake) {
+  const n = (logRec(nightDate).night[kid] ??= {});
+  n.asleep = isTime(asleep) ? asleep : '';
+  n.wake = isTime(wake) ? wake : '';
+}
+const whenAsleep = nightDate => { const t = todayISO(); return nightDate === t ? T.night.tonight : nightDate === addDays(t, -1) ? T.night.yesterday : T.night.evening(fmtDateTiny(nightDate)); };
+const whenWoke = nightDate => { const d = addDays(nightDate, 1), t = todayISO(); return d === t ? T.night.today : d === addDays(t, 1) ? T.night.tomorrow : fmtDateTiny(d); };
 function wokeAt(date, kid) { const n = getLog(wakeLogDate(date)).night[kid]; return (n && n.wake) || ''; }
 /* En lur som pågår (sovnet er logget, våknet ikke), for i dag */
 function openNap(date) {
@@ -148,7 +157,8 @@ function dayReport(date) {
     const naps = L.sleep.filter(e => e.kid === k.id && e.start).sort((a, b) => a.start.localeCompare(b.start));
     const n = L.night[k.id] || {};
     const parts = naps.map(e => e.end ? e.start + '–' + e.end + ' (' + fmtDurShort(toMin(e.end) - toMin(e.start)) + ')' : R.sleeping(e.start));
-    out.push(k.name + ': ' + (parts.length ? R.nap(parts.join(', ')) : R.noNap) + (n.asleep ? R.slept(n.asleep) : '') + '.');
+    const w = wokeAt(date, k.id);
+    out.push(k.name + ': ' + (w ? R.woke(w) : '') + (parts.length ? R.nap(parts.join(', ')) : R.noNap) + (n.asleep ? R.slept(n.asleep) : '') + '.');
   });
   const meals = blocks.filter(b => L.meals[b.id]).map(b => b.title + ' ' + state.kids.map(k => k.name.charAt(0) + ' ' + (L.meals[b.id][k.id] ? T.rates[L.meals[b.id][k.id]] : '–')).join(', '));
   if (meals.length) out.push(R.food + meals.join('; ') + '.');

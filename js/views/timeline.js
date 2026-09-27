@@ -225,7 +225,7 @@ function nightLogHTML(date, b) {
   const rowsH = state.kids.map(k => {
     const a = N[k.id] && N[k.id].asleep;
     return h`<div class="lg-row"><span class="kn">${k.name}</span>
-      <button type="button" class="lg-t" data-act="log">${a ? S.asleepAt(a) : S.notLogged}</button>
+      <button type="button" class="lg-t" data-act="night-edit" data-night="${date}" data-kid="${k.id}">${a ? S.asleepAt(a) : S.notLogged}</button>
       ${isToday && !a ? h`<button type="button" class="btn small" data-act="night-now" data-kid="${k.id}">${S.asleep}</button>` : ''}</div>`;
   });
   const none = state.kids.every(k => !(N[k.id] && N[k.id].asleep));
@@ -238,7 +238,7 @@ function morningLogHTML(date) {
   const rowsH = state.kids.map(k => {
     const w = wokeAt(date, k.id);
     return h`<div class="lg-row"><span class="kn">${k.name}</span>
-      <button type="button" class="lg-t" data-act="log">${w ? S.wokeAt(w) : S.notLogged}</button>
+      <button type="button" class="lg-t" data-act="night-edit" data-night="${addDays(date, -1)}" data-kid="${k.id}">${w ? S.wokeAt(w) : S.notLogged}</button>
       ${isToday && !w ? h`<button type="button" class="btn small" data-act="wake-now" data-kid="${k.id}">${S.awake}</button>` : ''}</div>`;
   });
   const none = state.kids.every(k => !wokeAt(date, k.id));

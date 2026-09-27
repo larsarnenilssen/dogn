@@ -229,6 +229,31 @@ class DognTest(unittest.TestCase):
         self.assert_day_is_sane(pg)
         self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a.wake"), '08:10')
 
+    def test_night_is_shown_on_the_day_it_ends_and_can_be_edited(self):
+        pg = self.open(when=(2026, 10, 7, 8, 10))
+        pg.evaluate("commit(null, () => { logRec('2026-10-06').night = { a: { asleep: '19:05' } }; })")
+        pg.click('#nowbar [data-nb="act"]')                         # «Begge våknet» 08:10
+        self.expand(pg, 'to-lurer.mme-morgen')
+        pg.click('.blk[data-id="to-lurer.mme-morgen"] [data-act="night-edit"][data-kid="a"]')
+        pg.wait_for_selector('#sheet-root.open #nt-w')
+        self.assertEqual(pg.input_value('#nt-w'), '08:10')
+        self.assertIn('i dag', pg.text_content('label[for="nt-w"]'))
+        pg.fill('#nt-w', '08:00')
+        pg.click('.sh-foot [data-save]')
+        pg.wait_for_timeout(300)
+        self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a"), {'asleep': '19:05', 'wake': '08:00'})
+        # Dagsloggen for i dag viser natten som slutter i dag: sovnet i går, våknet i dag
+        pg.evaluate("openLogSheet('2026-10-07')")
+        pg.wait_for_selector('#sheet-root.open #n-w-a')
+        self.assertEqual(pg.input_value('#n-a-a'), '19:05')
+        self.assertEqual(pg.input_value('#n-w-a'), '08:00')
+        self.assertIn('i går', pg.text_content('label[for="n-a-a"]'))
+        self.assertIn('i dag', pg.text_content('label[for="n-w-a"]'))
+        pg.fill('#n-a-a', '19:20')
+        pg.dispatch_event('#n-a-a', 'change')
+        self.assertEqual(pg.evaluate("getLog('2026-10-06').night.a.asleep"), '19:20')
+        self.assertEqual(pg.evaluate("getLog('2026-10-07').night.a || null"), None)
+
     def test_start_passed_block_offers_next_of_same_type(self):
         pg = self.open(when=(2026, 10, 7, 14, 0))
         pg.evaluate("expanded.add('to-lurer.lur1'); renderTimeline()")

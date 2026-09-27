@@ -95,6 +95,7 @@ $('#timeline').addEventListener('click', e => {
     case 'night-now': commit('', () => logNightNow(view, blk.dataset.id, kidsOf())); break;
     case 'wake-now': commit('', () => logWakeNow(view, kidsOf())); break;
     case 'sleep-edit': openNapSheet(view, blk.dataset.id, el.dataset.kid, null); break;
+    case 'night-edit': openNightSheet(el.dataset.night, el.dataset.kid, null); break;
   }
 });
 $('#timeline').addEventListener('change', e => {

@@ -32,11 +32,12 @@ function openLogSheet(date) {
       ${list.length ? h`<div class="list">${list.map(e => h`<button type="button" class="row" data-nap="${e.id}"><span class="grow">${e.start + '–' + (e.end || '…')}
         <span class="m">${bName(e.blockId)}</span></span><span class="r">${e.end ? fmtDurShort(toMin(e.end) - toMin(e.start)) : ''}</span></button>`)}</div>` : ''}`;
   };
+  const prevNight = addDays(date, -1);
   const nightFor = k => {
-    const n = L.night[k.id] || {};
+    const n = nightRec(prevNight, k.id);
     return h`<div class="field"><span class="lbl">${k.name}</span><div class="row2">
-      <div class="field"><label for="n-a-${k.id}">${G.asleepEve}</label><input type="time" id="n-a-${k.id}" data-night="${k.id}" data-f="asleep" value="${n.asleep || ''}"></div>
-      <div class="field"><label for="n-w-${k.id}">${G.wokeMorning}</label><input type="time" id="n-w-${k.id}" data-night="${k.id}" data-f="wake" value="${n.wake || ''}"></div>
+      <div class="field"><label for="n-a-${k.id}">${T.night.asleep(whenAsleep(prevNight))}</label><input type="time" id="n-a-${k.id}" data-night="${k.id}" data-f="asleep" value="${n.asleep || ''}"></div>
+      <div class="field"><label for="n-w-${k.id}">${T.night.woke(whenWoke(prevNight))}</label><input type="time" id="n-w-${k.id}" data-night="${k.id}" data-f="wake" value="${n.wake || ''}"></div>
       </div></div>`;
   };
   const health = [...(L.health || [])].sort((a, b) => a.time.localeCompare(b.time));
@@ -48,7 +49,7 @@ function openLogSheet(date) {
   openSheet(h`<div class="sh-head"><h2>${G.title(fmtDateTiny(date))}</h2><button type="button" class="btn ghost" data-close>${T.common.close}</button></div>
     <div class="sh-body">
       <section class="grp"><h3>${G.naps}</h3>${state.kids.map(napsFor)}${hint(G.napsHint)}</section>
-      <section class="grp"><h3>${G.night}</h3>${state.kids.map(nightFor)}</section>
+      <section class="grp"><h3>${G.nightTo(fmtDateTiny(date))}</h3>${state.kids.map(nightFor)}${hint(G.nightHint)}</section>
       <section class="grp" id="lg-health"><h3>${G.health}</h3>
         <div class="switches">${state.kids.map(k => switchBtn('data-sick', k.id, !!(L.sick && L.sick[k.id]), G.isSick(k.name)))}</div>
         ${health.length ? h`<div class="list">${health.map(x => h`<div><span class="grow">${x.time + ' ' + kidName(x.kid)}<span class="m">${T.health[x.kind] + (x.value ? ': ' + x.value : '')}</span></span><button type="button" class="icon-btn sm" data-rm-h="${x.id}" aria-label="${T.common.remove}">${ICON_X}</button></div>`)}</div>` : ''}
@@ -67,7 +68,7 @@ function openLogSheet(date) {
     (sheet, q) => {
       sheet.querySelectorAll('[data-night]').forEach(inp => inp.addEventListener('change', () => {
         const v = isTime(inp.value) ? inp.value : '';
-        commit(null, () => { (logRec(date).night[inp.dataset.night] ??= {})[inp.dataset.f] = v; }, 'none');
+        commit(null, () => { (logRec(prevNight).night[inp.dataset.night] ??= {})[inp.dataset.f] = v; }, 'timeline');
       }));
       sheet.querySelectorAll('[data-lrate]').forEach(btn => btn.addEventListener('click', () => {
         commit(null, () => setRate(date, btn.dataset.lrate, btn.dataset.kid, btn.dataset.val), 'timeline');
@@ -91,6 +92,25 @@ function openLogSheet(date) {
       const note = q('#l-note');
       note.addEventListener('input', () => commit(null, () => { logRec(date).note = note.value; }, 'none'));
     });
+}
+
+function openNightSheet(nightDate, kid, back) {
+  const n = nightRec(nightDate, kid), Nt = T.night;
+  reopen = null;
+  openSheet(h`${headMaybeBack(Nt.title(kidName(kid), fmtDateTiny(addDays(nightDate, 1))), back)}
+    <form class="sh-body" id="ntf" novalidate>
+      <section class="grp"><h3>${T.nap.times}</h3><div class="row2">
+        <div class="field"><label for="nt-a">${Nt.asleep(whenAsleep(nightDate))}</label><input type="time" id="nt-a" value="${n.asleep || ''}"></div>
+        <div class="field"><label for="nt-w">${Nt.woke(whenWoke(nightDate))}</label><input type="time" id="nt-w" value="${n.wake || ''}"></div>
+      </div>${hint(Nt.hint)}</section>
+    </form>
+    ${footSave(T.common.save)}`,
+    (sheet, q) => {
+      q('[data-save]').addEventListener('click', () => {
+        commit(Nt.saved, () => setNight(nightDate, kid, q('#nt-a').value, q('#nt-w').value));
+        if (back) back(); else closeSheet();
+      });
+    }, back);
 }
 
 function openNapSheet(date, blockId, kid, back) {
