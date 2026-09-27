@@ -128,9 +128,11 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date, isFull) {
   const doneN = rows.filter(r => isDone(date, r.id)).length;
   const lateN = rows.filter(r => r.late && !isDone(date, r.id)).length;
   const napOpen = date === today && getLog(date).sleep.some(x => x.blockId === b.id && x.start && !x.end);
-  const forced = expanded.has(b.id) || shiftOpen === b.id || napOpen || (b === wakeBlock(blocks) && morningOpen(date, blocks, now));
+  const isFolded = folded.has(b.id);
+  const forced = shiftOpen === b.id || (!isFolded && (expanded.has(b.id) || napOpen || (b === wakeBlock(blocks) && morningOpen(date, blocks, now))));
   const collapsed = phase === 'past' && !forced;
-  const compact = !collapsed && !forced && !isFull;
+  const compact = !collapsed && !forced && (!isFull || isFolded);
+  const small = collapsed || compact;
   const last = i === blocks.length - 1;
   const title = b.title || T.types[b.type];
   let meta = '';
@@ -198,10 +200,10 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date, isFull) {
     <div class="panel">
       <div class="hrow">
         <button type="button" class="tbtn" data-act="time" aria-expanded="${shiftOpen === b.id}" aria-label="${L.moveAria(title, b.start)}">${b.start}</button>
-        <button type="button" class="head" data-act="${collapsed || compact ? 'expand' : 'edit'}" aria-label="${collapsed || compact ? L.showAria(title) : L.editAria(title)}">
-          <span class="hl"><span class="title">${title}</span>${sum ? h`<span class="sum">${sum}</span>` : ''}${!collapsed && !compact && meta ? h`<span class="sl"><span class="meta">${meta}</span></span>` : ''}</span>
-          ${collapsed || compact ? h`<span class="side">${late}<span class="meta">${meta}</span></span>` : h`<span class="edit" aria-hidden="true">${ICON_EDIT}</span>`}
-        </button>
+        <button type="button" class="head" data-act="${small ? 'expand' : 'fold'}" aria-expanded="${!small}" aria-label="${small ? L.showAria(title) : L.foldAria(title)}">
+          <span class="hl"><span class="title">${title}</span>${sum ? h`<span class="sum">${sum}</span>` : ''}${!small && meta ? h`<span class="sl"><span class="meta">${meta}</span></span>` : ''}</span>
+          ${small ? h`<span class="side">${late}<span class="meta">${meta}</span></span>` : ''}
+        </button>${small ? '' : h`<button type="button" class="edit-btn" data-act="edit" aria-label="${L.editAria(title)}">${ICON_EDIT}</button>`}
       </div>${shiftOpen === b.id ? shiftBarHTML(date, nightBlock(blocks) === b) : ''}${inner}${prog}
     </div></section>`;
 }
@@ -459,6 +461,7 @@ function scrollToNow() {
 function go(n, date) {
   view = date || (n === 0 ? todayISO() : addDays(view, n));
   expanded.clear();
+  folded.clear();
   shiftOpen = null;
   render();
   scrollToNow();

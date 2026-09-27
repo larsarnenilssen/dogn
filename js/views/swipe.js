@@ -3,7 +3,8 @@
    Dag: tidslinjen følger fingeren, nabodagen vises i kanten, og slipper du langt nok,
    glir den over til neste eller forrige dag.
    Kalender: sveip bytter måned. Dagstripen: sveip bytter dag.
-   Ark: dra toppen av arket ned for å lukke, sveip fra venstre kant for «Tilbake».
+   Ark: dra arket ned for å lukke (fra toppen, eller fra innholdet når det står øverst),
+   sveip fra venstre kant for «Tilbake».
    Loddrett blaing, dra-grep, skjemafelt og tabeller som ruller vannrett utløser ikke sveip. */
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const noSwipe = t => !!(t && t.closest && t.closest('[data-handle], input, textarea, select, .tblwrap, .seg, .strip'));
@@ -112,27 +113,73 @@ const isFling = (dx, ms, width) => Math.abs(dx) > Math.min(90, width * 0.22) || 
       if (b) b.click();
     },
   });
-  // Ark: dra toppen ned for å lukke
-  let sy = 0, dy = 0, sheet = null;
+  // Ark: dra ned for å lukke, fra toppen av arket eller fra innholdet når det står øverst
+  let sy = 0, sx = 0, t0 = 0, dy = 0, sheet = null, body = null, head = false, mode = null;
   root.addEventListener('touchstart', e => {
-    sheet = null;
+    sheet = null; mode = null;
     const s = e.target.closest('.sheet');
-    if (!s || e.touches.length !== 1) return;
-    const head = e.target.closest('.sh-head, .grab') || e.touches[0].clientY - s.getBoundingClientRect().top < 24;
-    if (!head || e.target.closest('button, input, select, textarea')) return;
-    sheet = s; sy = e.touches[0].clientY; dy = 0;
+    if (!s || e.touches.length !== 1 || e.target.closest('input, select, textarea, [data-handle], .tblwrap, .chart')) return;
+    const p = e.touches[0];
+    head = !!e.target.closest('.sh-head, .grab') || p.clientY - s.getBoundingClientRect().top < 24;
+    body = e.target.closest('.sh-body');
+    sheet = s; sy = p.clientY; sx = p.clientX; t0 = Date.now(); dy = 0;
   }, { passive: true });
   root.addEventListener('touchmove', e => {
-    if (!sheet) return;
-    dy = Math.max(0, e.touches[0].clientY - sy);
+    if (!sheet || mode === 'off') return;
+    const p = e.touches[0], ddy = p.clientY - sy, ddx = p.clientX - sx;
+    if (!mode) {
+      if (Math.abs(ddy) < 8 && Math.abs(ddx) < 8) return;
+      const atTop = !body || body.scrollTop <= 0;
+      mode = ddy > 0 && ddy > Math.abs(ddx) * 1.2 && (head || atTop) ? 'drag' : 'off';
+      if (mode === 'off') return;
+      sy = p.clientY;
+    }
+    dy = Math.max(0, p.clientY - sy);
     sheet.style.transition = 'none';
     sheet.style.transform = 'translateY(' + dy + 'px)';
   }, { passive: true });
-  root.addEventListener('touchend', () => {
+  const release = () => {
     if (!sheet) return;
-    const s = sheet; sheet = null;
+    const s = sheet, was = mode; sheet = null; mode = null;
+    if (was !== 'drag') return;
+    const fling = dy > 40 && dy / Math.max(1, Date.now() - t0) > 0.5;
     s.style.transition = reduceMotion() ? 'none' : '';
-    if (dy > 90) { s.style.transform = 'translateY(100%)'; setTimeout(closeSheet, reduceMotion() ? 0 : 200); }
+    if (dy > 90 || fling) { s.style.transform = 'translateY(100%)'; setTimeout(closeSheet, reduceMotion() ? 0 : 200); }
     else s.style.transform = '';
+  };
+  root.addEventListener('touchend', release, { passive: true });
+  root.addEventListener('touchcancel', () => { dy = 0; release(); }, { passive: true });
+})();
+
+/* ---------- fast skall ----------
+   Siden og arkene blar bare når det finnes mer innhold i den retningen.
+   Drar du forbi toppen eller bunnen, eller der ingenting kan blas, står alt stille
+   (ingen gummistrikk). Vannrette sveip og vannrett blaing i tabeller er ikke berørt. */
+(() => {
+  let sy = 0, sx = 0, verdict = null;
+  const scroller = t => {
+    for (let el = t; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+      const oy = getComputedStyle(el).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+      if (el.id === 'sheet-root') return null;
+    }
+    const d = document.scrollingElement || document.documentElement;
+    return sheetOpen() || d.scrollHeight <= d.clientHeight + 1 ? null : d;
+  };
+  document.addEventListener('touchstart', e => {
+    verdict = null;
+    if (e.touches.length === 1) { sy = e.touches[0].clientY; sx = e.touches[0].clientX; }
+    else verdict = 'allow';
   }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (verdict === 'allow' || e.touches.length !== 1) return;
+    if (verdict === 'block') { if (e.cancelable) e.preventDefault(); return; }
+    const dy = e.touches[0].clientY - sy, dx = e.touches[0].clientX - sx;
+    if (!dy && !dx) return;
+    if (Math.abs(dx) > Math.abs(dy) || (e.target.closest && e.target.closest('input, textarea, select'))) { verdict = 'allow'; return; }
+    const el = scroller(e.target);
+    const top = el ? el.scrollTop <= 0 : true, bottom = el ? el.scrollTop + el.clientHeight >= el.scrollHeight - 1 : true;
+    verdict = (dy > 0 && top) || (dy < 0 && bottom) ? 'block' : 'allow';
+    if (verdict === 'block' && e.cancelable) e.preventDefault();
+  }, { passive: false });
 })();

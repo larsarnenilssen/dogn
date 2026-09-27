@@ -115,8 +115,9 @@ Målet er at tvillingene er sultne og trøtte til vanlig tid, og at planen holde
 - **Toppen** viser datoen, dag i permisjonen og partnerens vakt, dagstripen og nå-kortet. Når du blar ned, krymper den til dato, stripe og nå-kort.
 - **Dagstripen** viser dagens bolker i typefargene, med en strek for nå. Trykk på et sted i stripen for å gå til bolken der.
 - **Nå-kortet** viser bolken dere er i, hva som kommer og hvor lenge barnene har vært våkne, og har én hovedknapp: sovnet, våknet eller «Begge våknet» om morgenen. Ved siden av neste bolk står en liten «start nå» som krever to trykk.
-- **Tidslinjen:** Bolken dere er i og den neste vises fullt. De andre er én linje med tid, navn og det viktigste (rett, forslag eller hvor mye som er gjort). Trykk på linjen for å folde den ut. «Vis alle detaljer» nederst viser alt.
-- **Sveip:** Sveip til siden på tidslinjen eller dagstripen for å bytte dag, i kalenderen for å bytte måned. Dra toppen av et ark ned for å lukke det, og sveip fra venstre kant for å gå tilbake.
+- **Tidslinjen:** Bolken dere er i og den neste vises fullt. De andre er én linje med tid, navn og det viktigste (rett, forslag eller hvor mye som er gjort). Trykk på linjen for å folde den ut, og på tittelen igjen for å gjøre den til én linje. Det gjelder alle bolker, også den dere er i. Blyanten til høyre redigerer bolken, og klokkeslettet flytter den. «Vis alle detaljer» nederst viser alt.
+- **Sveip:** Sveip til siden på tidslinjen eller dagstripen for å bytte dag, i kalenderen for å bytte måned. Dra et ark ned for å lukke det, fra toppen eller fra innholdet når det står øverst, og sveip fra venstre kant for å gå tilbake.
+- **Fast skall:** Siden og arkene blar bare når det er mer innhold i den retningen. Drar du forbi toppen eller bunnen, står alt stille.
 - **Hopp til en dag:** Trykk på datoen i toppen. Kalenderen viser ukenummer, partnerens vakter, avtaler og huskepunkter (prikk) og dager med egne endringer (stjerne).
 - **Rekkefølge:** Sjekklister i bolkene, gjøremål, huskelisten, barnene i Profil og «Andre varer» i handlelisten kan sorteres. Dra i grepet (⋮⋮) til venstre, eller velg grepet og bruk pil opp og ned.
 - **Spiste:** Velg godt, midd. eller lite for hvert barn. Trykk på valget igjen for å fjerne det.

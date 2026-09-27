@@ -74,7 +74,7 @@ const T = {
     log: 'Dagslogg', week: 'Ukemeny', acts: 'Aktiviteter',
     allDone: 'alt gjort', left: dur => dur + ' igjen',
     moveAria: (title, start) => 'Flytt ' + title + ', starter ' + start,
-    showAria: title => 'Vis ' + title, editAria: title => 'Rediger ' + title,
+    showAria: title => 'Vis ' + title, foldAria: title => 'Vis ' + title + ' på én linje', editAria: title => 'Rediger ' + title,
     dishAria: (meal, name) => meal + ': ' + name + '. Trykk for å bytte', swap: 'bytt',
     pickDish: 'Velg rett fra banken',
     partnerEats: (name, home) => (home ? '[x] ' : '[ ] ') + name + ' spiser med',

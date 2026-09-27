@@ -652,6 +652,14 @@ class DognTest(unittest.TestCase):
         self.assertIn('forslag:', pg.inner_text('.blk[data-id="to-lurer.vaken2"]'))
         pg.click('.blk[data-id="to-lurer.vaken2"] .head')           # trykk folder ut
         self.assertTrue(pg.is_visible('.blk[data-id="to-lurer.vaken2"] .sugg'))
+        pg.click('.blk[data-id="to-lurer.vaken2"] .head')           # trykk på tittelen igjen: én linje
+        self.assertIn('compact', pg.get_attribute('.blk[data-id="to-lurer.vaken2"]', 'class'))
+        pg.click('.blk[data-id="to-lurer.lur1"] .head')              # også neste bolk kan gjøres kompakt
+        self.assertIn('compact', pg.get_attribute('.blk[data-id="to-lurer.lur1"]', 'class'))
+        pg.click('.blk[data-id="to-lurer.lur1"] .head')
+        pg.click('.blk[data-id="to-lurer.lur1"] .edit-btn')          # blyanten redigerer
+        pg.wait_for_selector('#sheet-root.open #f-start')
+        pg.evaluate('closeSheet()'); pg.wait_for_timeout(300)
         pg.click('[data-act="toggle-all"]')
         self.assertEqual(pg.eval_on_selector_all('.blk.compact', 'els => els.length'), 0)
 
@@ -697,6 +705,24 @@ class DognTest(unittest.TestCase):
         pg.evaluate('openTasksSheet()'); pg.wait_for_selector('#sheet-root.open'); pg.wait_for_timeout(400)
         self.touch_swipe(pg, 8, 500, 200, 505)                            # fra venstre kant: tilbake til menyen
         self.assertIn('Meny', pg.inner_text('#sheet-root .sh-head'))
+        body = pg.locator('.sh-body').last.bounding_box()
+        self.touch_swipe(pg, 200, body['y'] + 60, 200, body['y'] + 320)   # dra ned fra innholdet øverst lukker
+        pg.wait_for_timeout(300)
+        self.assertFalse(pg.evaluate('sheetOpen()'))
+
+    def test_page_does_not_scroll_past_the_ends(self):
+        pg = self.open(when=(2026, 10, 7, 14, 10))
+        pg.evaluate("window.scrollTo(0, 0); window._pd = []; window.addEventListener('touchmove', e => _pd.push(e.defaultPrevented))")
+        self.touch_swipe(pg, 200, 400, 200, 700)                       # dra ned fra toppen: ingenting skjer
+        self.assertTrue(all(pg.evaluate('_pd')) and pg.evaluate('_pd.length') > 0)
+        pg.evaluate("_pd = []")
+        self.touch_swipe(pg, 200, 700, 200, 400)                       # oppover er det mer innhold
+        self.assertFalse(any(pg.evaluate('_pd')))
+        pg.evaluate("openLogSheet(view)"); pg.wait_for_selector('#sheet-root.open'); pg.wait_for_timeout(400)
+        pg.evaluate("_pd = []")
+        head = pg.locator('.sh-head').bounding_box()
+        self.touch_swipe(pg, 300, head['y'] + 20, 300, head['y'] - 200)   # toppen av arket kan ikke blas
+        self.assertTrue(all(pg.evaluate('_pd')))
 
     def test_rates_and_switches(self):
         pg = self.open(when=(2026, 10, 7, 13, 40))

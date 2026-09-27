@@ -3,7 +3,8 @@
 const DAY_END = 22 * 60;                      // siste bolk varer til kl. 22
 let view = todayISO();                        // dagen som vises
 let lastToday = todayISO();
-const expanded = new Set();                   // passerte bolker som er foldet ut
+const expanded = new Set();                   // bolker som er foldet ut med et trykk
+const folded = new Set();                     // bolker som er gjort kompakte med et trykk
 let shiftOpen = null;                         // bolken som har flyttelinjen åpen
 let reopen = null;                            // arket som skal vises igjen etter «Angre»
 let showAll = false;                          // vis alle bolker fullt (ellers er fjerne bolker én linje)

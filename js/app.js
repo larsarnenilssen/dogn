@@ -29,6 +29,7 @@ $('#strip').addEventListener('click', e => {
   let b = blocks[0];
   blocks.forEach(x => { if (toMin(x.start) <= m) b = x; });
   if (!b) return;
+  folded.delete(b.id);
   expanded.add(b.id);
   renderTimeline();
   const el = document.querySelector('.blk[data-id="' + CSS.escape(b.id) + '"]');
@@ -72,7 +73,8 @@ $('#timeline').addEventListener('click', e => {
   const blk = el.closest('.blk');
   const kidsOf = () => el.dataset.kid === 'all' ? state.kids.map(k => k.id) : [el.dataset.kid];
   switch (a) {
-    case 'expand': expanded.add(blk.dataset.id); renderTimeline(); break;
+    case 'expand': folded.delete(blk.dataset.id); expanded.add(blk.dataset.id); renderTimeline(); break;
+    case 'fold': if (expanded.has(blk.dataset.id)) expanded.delete(blk.dataset.id); else folded.add(blk.dataset.id); if (shiftOpen === blk.dataset.id) shiftOpen = null; renderTimeline(); break;
     case 'time': shiftOpen = shiftOpen === blk.dataset.id ? null : blk.dataset.id; renderTimeline(); break;
     case 'edit': openBlockSheet(blk.dataset.id); break;
     case 'new': openBlockSheet(null); break;
@@ -110,7 +112,7 @@ function tick() {
   refreshWeather();
   const t = todayISO();
   if (t !== lastToday) {
-    if (view === lastToday) { view = t; expanded.clear(); }
+    if (view === lastToday) { view = t; expanded.clear(); folded.clear(); }
     lastToday = t;
     render(); scrollToNow();
   } else if (view === t) render();
