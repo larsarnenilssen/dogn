@@ -469,6 +469,7 @@ class DognTest(unittest.TestCase):
           s.dishes = s.dishes.filter(d => !ADDED_V9.dishes.includes(d.id));
           s.activities = s.activities.filter(a => !ADDED_V9.activities.includes(a.id) && a.id !== 'a-gulv');
           s.activities.push({ id: 'a-bobler', name: 'Mine bobler', kind: 'inne', minutes: 5 });
+          s.activities.push({ id: 'a-egen', name: 'Babysang i kirken', kind: 'inne', minutes: 45 });
           localStorage.setItem('dogn-state', JSON.stringify(s)); indexedDB.deleteDatabase('dogn');
         }""")
         pg.reload()
@@ -482,6 +483,27 @@ class DognTest(unittest.TestCase):
         self.assertNotIn('a-gulv', acts)                                   # slettede aktiviteter kommer ikke tilbake
         self.assertIn('a-sanse', acts)
         self.assertTrue(pg.evaluate("state.dishes.find(d => d.id === 'd-sei').ingredients.length > 0"))
+        # v10: aktivitetene som fulgte med, får kategorier
+        self.assertEqual(pg.evaluate("state.activities.find(a => a.id === 'a-skog').tags"), ['natur', 'bevegelse'])
+        self.assertEqual(pg.evaluate("state.activities.find(a => a.id === 'a-egen').tags"), ['sprak', 'sosialt'])   # forslag ut fra navnet
+
+    def test_filter_activities_by_place_and_category(self):
+        pg = self.open(when=(2026, 10, 7, 11, 35))
+        pg.evaluate("openSuggestSheet(view, 'to-lurer.vaken2')"); pg.wait_for_selector('#sheet-root.open .act-filter')
+        visible = lambda: pg.eval_on_selector_all('#sheet-root [data-pick]', 'els => els.filter(e => !e.hidden).map(e => e.dataset.pick)')
+        allv = visible()
+        pg.click('[data-fkind="ute"]')
+        ute = visible()
+        self.assertTrue(ute and len(ute) < len(allv))
+        self.assertTrue(all(pg.evaluate("id => state.activities.find(a => a.id === id).kind", i) == 'ute' for i in ute))
+        pg.click('[data-fkind=""]'); pg.click('[data-ftag="sanser"]')
+        self.assertIn('a-sanse', visible()); self.assertNotIn('a-ball', visible())
+        pg.click('[data-ftag="sanser"]')                                 # samme igjen viser alle
+        self.assertEqual(visible(), allv)
+        # kategorier settes i redigeringen
+        pg.evaluate("openActivitySheet('a-ball')"); pg.wait_for_selector('#sheet-root.open [data-tag="rolig"]')
+        pg.click('[data-tag="rolig"]'); pg.click('.sh-foot [data-save]'); pg.wait_for_timeout(300)
+        self.assertEqual(pg.evaluate("state.activities.find(a => a.id === 'a-ball').tags"), ['rolig', 'bevegelse'])
 
     def test_export_import_roundtrip(self):
         pg = self.open()

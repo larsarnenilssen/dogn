@@ -59,8 +59,12 @@ function pickTop(list, n) {
 function actMeta(a) {
   const parts = [T.kinds[a.kind], (a.minutes || 30) + ' ' + T.unit.min, T.travel[a.travel] || ''];
   if (a.days && a.days.length) parts.push(a.days.slice().sort().map(d => wdShort(d).toLowerCase()).join('/') + (a.from ? ' ' + a.from + (a.to ? '–' + a.to : '') : ''));
-  return parts.filter(Boolean).join(', ');
+  const tags = (a.tags || []).map(t => T.tags[t]).filter(Boolean);
+  return parts.filter(Boolean).join(', ') + (tags.length ? ' · ' + tags.join(', ') : '');
 }
+/* Filter i forslagsarket: inne/ute og én kategori. Huskes til appen lukkes. */
+const actFilter = { kind: '', tag: '' };
+const actMatches = a => (!actFilter.kind || a.kind === actFilter.kind) && (!actFilter.tag || (a.tags || []).includes(actFilter.tag));
 function pickedActivity(date, blockId) {
   const d = state.days[date];
   const id = d && d.picks && d.picks[blockId];

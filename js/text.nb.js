@@ -34,6 +34,7 @@ const T = {
   ratesShort: { godt: 'godt', middels: 'midd.', lite: 'lite' },
   travel: { hjemme: 'hjemme', gange: 'gå/vogn', kollektiv: 'buss/bybane', bil: 'bil' },
   kinds: { inne: 'inne', ute: 'ute' },
+  tags: { rolig: 'rolig', bevegelse: 'bevegelse', sanser: 'sanser', sprak: 'sang og språk', natur: 'natur', sosialt: 'sosialt', hverdag: 'hverdag', utflukt: 'utflukt' },
   health: { temp: 'Temperatur', med: 'Medisin', sym: 'Symptom', other: 'Annet' },
   wmo: { 0: 'klart', 1: 'lettskyet', 2: 'delvis skyet', 3: 'overskyet', 45: 'tåke', 48: 'tåke', 51: 'lett yr', 53: 'yr', 55: 'tett yr', 56: 'underkjølt yr', 57: 'underkjølt yr',
     61: 'lett regn', 63: 'regn', 65: 'kraftig regn', 66: 'underkjølt regn', 67: 'underkjølt regn', 71: 'lett snø', 73: 'snø', 75: 'kraftig snø', 77: 'snøkorn',
@@ -348,7 +349,7 @@ const T = {
   acts: {
     weather: 'vær', dark: ', mørkt', change: 'Bytt', more: 'Mer informasjon', suggestions: 'forslag', moreSugg: 'Flere forslag',
     suggestTitle: (s, e) => 'Forslag ' + s + '–' + e, noWeather: 'Ingen værmelding for dette tidspunktet.',
-    fits: 'Passer nå', noHits: 'Ingen treff.', fitsLess: 'Passer mindre godt', fitsLessHint: 'Feil ukedag, for kort tid, mørkt eller for vått.',
+    fits: 'Passer nå', noHits: 'Ingen treff.', all: 'alle', filterAria: 'Filtrer aktivitetene', filterHint: 'Filtrer på inne eller ute og en kategori. Trykk på valgt kategori igjen for å vise alle.', noFilterHits: 'Ingen treff med dette filteret.', tagsLbl: 'Kategorier', tagsHint: 'Velg én eller flere. Kategoriene brukes til å filtrere forslagene.', fitsLess: 'Passer mindre godt', fitsLessHint: 'Feil ukedag, for kort tid, mørkt eller for vått.',
     openLib: 'Åpne aktivitetsbiblioteket',
     title: 'Aktiviteter', inside: 'Inne', outside: 'Ute', new: 'Ny aktivitet', groups: { home: 'Hjemme', walk: 'I gåavstand', far: 'Med buss eller bil' },
     pack: 'Pakkeliste', packAria: 'Pakkeliste, ett punkt per linje', packHint: 'Ett punkt per linje. Listen dukker opp i bolken når du velger en aktivitet utenfor huset.',

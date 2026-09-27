@@ -75,8 +75,18 @@ function seedDishes() {
   ];
 }
 
+/* Kategorier for aktivitetene som følger med. Brukes også når eldre data løftes til v10. */
+const ACT_TAGS = {
+  'a-gulv': ['rolig'], 'a-sang': ['sprak', 'rolig'], 'a-musikk': ['sprak', 'bevegelse'], 'a-hinder': ['bevegelse'],
+  'a-skuff': ['hverdag', 'sanser'], 'a-vann': ['sanser'], 'a-tur': ['natur'], 'a-leke': ['bevegelse', 'sosialt'],
+  'a-handel': ['hverdag'], 'a-bibl': ['sprak', 'sosialt'], 'a-besok': ['sosialt'],
+  'a-bobler': ['sanser', 'bevegelse'], 'a-ball': ['bevegelse'], 'a-titt': ['rolig', 'sprak'], 'a-esker': ['bevegelse'],
+  'a-sanse': ['sanser', 'rolig'], 'a-tromme': ['sprak'], 'a-putte': ['rolig'], 'a-stable': ['rolig'], 'a-maling': ['sanser'],
+  'a-lese': ['sprak', 'rolig'], 'a-badelek': ['sanser'], 'a-kjokken': ['hverdag', 'sanser'], 'a-laken': ['bevegelse', 'sanser'],
+  'a-teip': ['rolig'], 'a-speil': ['sprak', 'rolig'], 'a-skog': ['natur', 'bevegelse'], 'a-blader': ['natur', 'sanser'],
+};
 function seedActivities() {
-  const A = (id, name, kind, minutes, x = {}) => Object.assign({ id, name, kind, minutes, weather: 'any', travel: 'hjemme', where: '', note: '', url: '', days: [], from: '', to: '' }, x);
+  const A = (id, name, kind, minutes, x = {}) => Object.assign({ id, name, kind, minutes, weather: 'any', travel: 'hjemme', where: '', note: '', url: '', days: [], from: '', to: '', tags: (ACT_TAGS[id] || []).slice() }, x);
   return [
     A('a-gulv',    'Gulvlek med klosser og bøker', 'inne', 30),
     A('a-sang',    'Sang, rim og regler',          'inne', 15),

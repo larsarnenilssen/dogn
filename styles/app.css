@@ -381,3 +381,8 @@ body{padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px))}
 @media (prefers-reduced-motion: reduce){
   .sheet,.scrim,#toast,.top,#timeline.settle{transition:none}
 }
+.act-filter{display:flex;flex-direction:column;gap:var(--sp-4)}
+.act-filter .seg{align-self:stretch;display:flex}
+.act-filter .seg button{flex:1}
+.act-filter .chips{gap:var(--sp-2)}
+.act-filter .chip{min-height:34px;padding:4px 10px;font-size:var(--fs-xs)}

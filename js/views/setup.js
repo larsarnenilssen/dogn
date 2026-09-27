@@ -299,15 +299,40 @@ function openSuggestSheet(date, blockId) {
   const res = suggest(date, s, e);
   const rest = state.activities.filter(a => !res.list.includes(a));
   reopen = null;
-  const row = a => h`<button type="button" class="row" data-pick="${a.id}"><span class="grow">${a.name}<span class="m">${actMeta(a)}</span></span><span class="r">›</span></button>`;
+  const row = a => h`<button type="button" class="row" data-pick="${a.id}" data-kind="${a.kind}" data-tags="${(a.tags || []).join(' ')}"><span class="grow">${a.name}<span class="m">${actMeta(a)}</span></span><span class="r">›</span></button>`;
+  const used = Object.keys(T.tags).filter(t => state.activities.some(a => (a.tags || []).includes(t)));
+  if (actFilter.tag && !used.includes(actFilter.tag)) actFilter.tag = '';
+  const filters = h`<div class="act-filter" role="group" aria-label="${A.filterAria}">
+      ${segRow('data-fkind', [['', A.all], ['inne', A.inside.toLowerCase()], ['ute', A.outside.toLowerCase()]], k => k === actFilter.kind)}
+      ${used.length ? h`<div class="chips">${used.map(t => h`<button type="button" class="chip sm" data-ftag="${t}" aria-pressed="${t === actFilter.tag}">${T.tags[t]}</button>`)}</div>` : ''}
+    </div>`;
   openSheet(h`${headHTML(A.suggestTitle(blocks[i].start, toHM(e)))}
     <div class="sh-body">
       ${hint(res.w ? wxText(res.w) : A.noWeather)}
-      <section class="grp"><h3>${A.fits}</h3><div class="list">${res.list.length ? res.list.map(row) : emptyRow(A.noHits)}</div></section>
-      ${rest.length ? h`<section class="grp"><h3>${A.fitsLess}</h3><div class="list">${rest.map(row)}</div>${hint(A.fitsLessHint)}</section>` : ''}
+      ${filters}
+      <section class="grp" data-fsec><h3>${A.fits}</h3><div class="list">${res.list.length ? res.list.map(row) : emptyRow(A.noHits)}<div class="f-none" hidden><span class="hint">${A.noFilterHits}</span></div></div></section>
+      ${rest.length ? h`<section class="grp" data-fsec data-fhide><h3>${A.fitsLess}</h3><div class="list">${rest.map(row)}</div>${hint(A.fitsLessHint)}</section>` : ''}
       <button type="button" class="btn wide" data-lib>${A.openLib}</button>
     </div>`,
     (sheet, q) => {
+      const apply = () => {
+        sheet.querySelectorAll('[data-fkind]').forEach(b => b.setAttribute('aria-pressed', b.dataset.fkind === actFilter.kind));
+        sheet.querySelectorAll('[data-ftag]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ftag === actFilter.tag));
+        sheet.querySelectorAll('[data-fsec]').forEach(sec => {
+          let n = 0;
+          sec.querySelectorAll('[data-pick]').forEach(r => {
+            const ok = actMatches({ kind: r.dataset.kind, tags: r.dataset.tags.split(' ') });
+            r.hidden = !ok; if (ok) n++;
+          });
+          const had = sec.querySelectorAll('[data-pick]').length;
+          if ('fhide' in sec.dataset) sec.hidden = !n;
+          const none = sec.querySelector('.f-none');
+          if (none) none.hidden = !(had && !n);
+        });
+      };
+      sheet.querySelectorAll('[data-fkind]').forEach(b => b.addEventListener('click', () => { actFilter.kind = b.dataset.fkind; apply(); }));
+      sheet.querySelectorAll('[data-ftag]').forEach(b => b.addEventListener('click', () => { actFilter.tag = actFilter.tag === b.dataset.ftag ? '' : b.dataset.ftag; apply(); }));
+      apply();
       sheet.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
         closeSheet();
         commit(null, () => setPick(date, blockId, b.dataset.pick), 'timeline');
@@ -346,7 +371,7 @@ function openActivitiesSheet() {
 
 function openActivitySheet(id) {
   const isNew = !id, A = T.acts;
-  const src = isNew ? { id: 'a-' + uid(), name: '', kind: 'inne', minutes: 30, weather: 'any', travel: 'hjemme', where: '', note: '', url: '', days: [], from: '', to: '' } : state.activities.find(a => a.id === id);
+  const src = isNew ? { id: 'a-' + uid(), name: '', kind: 'inne', minutes: 30, weather: 'any', travel: 'hjemme', where: '', note: '', url: '', days: [], from: '', to: '', tags: [] } : state.activities.find(a => a.id === id);
   if (!src) return;
   const a = clone(src);
   a.days = a.days || [];
@@ -363,6 +388,9 @@ function openActivitySheet(id) {
           <div class="field" id="a-w-f"><label for="a-w">${A.weatherLbl}</label><select id="a-w">${options([['any', A.anyWeather], ['dry', A.dry]], a.weather === 'dry' ? 'dry' : 'any')}</select></div>
           <div class="field"><label for="a-tr">${A.travel}</label><select id="a-tr">${options(Object.entries(T.travel), a.travel)}</select></div>
         </div>
+        <div class="field"><span class="lbl" id="a-tags-l">${A.tagsLbl}</span>
+          <div class="chips" role="group" aria-labelledby="a-tags-l">${Object.entries(T.tags).map(([k, l]) => h`<button type="button" class="chip" data-tag="${k}" aria-pressed="${(a.tags || []).includes(k)}">${l}</button>`)}</div>
+          ${hint(A.tagsHint)}</div>
       </section>
       <section class="grp"><h3>${A.fixed}</h3>
         <div class="chips">${T.date.wdShort.map((w, i) => h`<button type="button" class="chip" data-wd="${i + 1}" aria-pressed="${a.days.includes(i + 1)}">${w}</button>`)}</div>
@@ -383,7 +411,7 @@ function openActivitySheet(id) {
     (sheet, q) => {
       const syncKind = () => { q('#a-w-f').hidden = q('#a-kind').value !== 'ute'; };
       syncKind(); q('#a-kind').addEventListener('change', syncKind);
-      sheet.querySelectorAll('[data-wd]').forEach(c => c.addEventListener('click', () => c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') !== 'true')));
+      sheet.querySelectorAll('[data-wd], [data-tag]').forEach(c => c.addEventListener('click', () => c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') !== 'true')));
       bindDelete(sheet, () => { commit(A.deleted, () => { state.activities = state.activities.filter(x => x.id !== a.id); }); openActivitiesSheet(); });
       q('[data-save]').addEventListener('click', () => {
         const name = q('#a-name').value.trim();
@@ -394,6 +422,7 @@ function openActivitySheet(id) {
           name, kind: q('#a-kind').value, minutes: Math.max(5, parseInt(q('#a-min').value, 10) || 30),
           weather: q('#a-kind').value === 'ute' ? q('#a-w').value : 'any', travel: q('#a-tr').value,
           days: [...sheet.querySelectorAll('[data-wd][aria-pressed="true"]')].map(c => Number(c.dataset.wd)),
+          tags: [...sheet.querySelectorAll('[data-tag][aria-pressed="true"]')].map(c => c.dataset.tag),
           from: t(q('#a-from').value), to: t(q('#a-to').value),
           where: q('#a-where').value.trim(), note: q('#a-note').value.trim(),
           url: safeUrl(/^https?:\/\//i.test(url) ? url : (url ? 'https://' + url : ''))

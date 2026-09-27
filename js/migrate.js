@@ -4,7 +4,7 @@
    for trinn, og sanitize() retter eller fjerner verdier som ikke har riktig
    form (for eksempel fra en fil som er redigert for hånd). Gyldige data
    endres ikke. */
-const DATA_VERSION = 9;
+const DATA_VERSION = 10;
 /* Startdata som kom til senere, og som legges til hos eksisterende brukere */
 const ADDED_V9 = {
   dishes: ['d-laksepasta', 'd-fiskesuppe', 'd-sei', 'd-fiskegryte', 'd-orret', 'd-kyllingsuppe', 'd-kyllingboller', 'd-kyllingcurry', 'd-karbonader', 'd-svinefilet', 'd-burger', 'd-linsesuppe', 'd-kikertgryte', 'd-pytt'],
@@ -12,10 +12,26 @@ const ADDED_V9 = {
 };
 const TYPE_KEYS = Object.keys(T.types);
 const ROLE_KEYS = Object.keys(T.roles);
+const ACT_TAG_KEYS = Object.keys(T.tags);
 
 /* Feil med en melding som kan vises til brukeren */
 class UserError extends Error {}
 
+/* Kategorier ut fra navnet på en aktivitet */
+const TAG_WORDS = [
+  [/babysang|sangstund|rytmikk|musikk/i, ['sprak', 'sosialt']],
+  [/bibliotek|eventyrstund/i, ['sprak', 'sosialt']],
+  [/barnehage|babytreff|treff|lekegruppe|besøk/i, ['sosialt']],
+  [/lekeland|lekeplass|svømm|babysvøm|klatre/i, ['bevegelse']],
+  [/akvari|museum|dyrepark|gård|lekeland|arboret|botanisk|utflukt/i, ['utflukt']],
+  [/storsenter|senter|handle|butikk|marked/i, ['hverdag']],
+];
+function guessTags(a) {
+  const name = String(a.name || ''), out = new Set();
+  TAG_WORDS.forEach(([re, tags]) => { if (re.test(name)) tags.forEach(t => out.add(t)); });
+  if (a.kind === 'ute' && /tur|skog|park|hage|arboret|vann|fjell|strand|natur/i.test(name)) out.add('natur');
+  return [...out];
+}
 function migrate(s) {
   if (!s || typeof s !== 'object' || !s.templates || typeof s.templates !== 'object') throw new UserError(T.file.notBackup);
   const base = seed();
@@ -101,6 +117,12 @@ function migrate(s) {
     addNew(s.dishes, seedDishes(), ADDED_V9.dishes);
     addNew(s.activities, seedActivities(), ADDED_V9.activities);
     s.version = 9;
+  }
+  if (s.version < 10) {
+    // v10: kategorier på aktivitetene. De som fulgte med appen, får kategorier; egne aktiviteter står uten.
+    // Egne aktiviteter får et forslag ut fra navnet, som kan endres i redigeringen.
+    (s.activities || []).forEach(a => { if (a && !Array.isArray(a.tags)) a.tags = ACT_TAGS[a.id] ? ACT_TAGS[a.id].slice() : guessTags(a); });
+    s.version = 10;
   }
   (s.dishes || []).forEach(d => { if (d && !Array.isArray(d.ingredients)) d.ingredients = []; });
   s.shop = Object.assign({ checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() }, s.shop || {});
@@ -192,6 +214,7 @@ function sanitize(s, base) {
     a.weather = oneOf(a.weather, ['any', 'dry'], 'any'); a.travel = oneOf(a.travel, Object.keys(T.travel), 'hjemme');
     a.where = str(a.where); a.note = str(a.note); a.url = safeUrl(a.url);
     a.days = wdays(a.days); a.from = optTime(a.from); a.to = optTime(a.to);
+    a.tags = [...new Set(arr(a.tags))].filter(t => ACT_TAG_KEYS.includes(t));
     if (a.sickOk != null && a.sickOk !== false) delete a.sickOk;
   });
 
