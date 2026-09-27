@@ -31,6 +31,7 @@ function suggest(date, s, e) {
     if (a.kind === 'ute') {
       if (light < 30) continue;
       if (wet && a.weather === 'dry') continue;
+      if (a.weather === 'cold' && !(w && w.tmax <= 1)) continue;
       if (w) score += wet ? -2 : 3;
       if (windy) score -= 1.5;
       if (light >= Math.min(90, e - s)) score += 0.5;

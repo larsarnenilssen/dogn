@@ -276,6 +276,27 @@ function importData(file) {
   r.onerror = () => toast(T.file.readFailed);
   r.readAsText(file);
 }
+/* Legger til aktiviteter fra en fil (en liste, { activities: [...] } eller en backup).
+   De kontrolleres som ved vanlig innlesing, og de som finnes fra før (samme id eller navn), hoppes over. */
+function importActivities(file) {
+  const A = T.acts, r = new FileReader();
+  r.onload = () => {
+    try {
+      const raw = JSON.parse(r.result);
+      const list = Array.isArray(raw) ? raw : raw && Array.isArray(raw.activities) ? raw.activities : null;
+      if (!list || !list.length) throw new UserError(A.importNone);
+      const probe = migrate(Object.assign(clone(state), { activities: list }));
+      const ids = new Set(state.activities.map(a => a.id)), names = new Set(state.activities.map(a => a.name.trim().toLowerCase()));
+      const fresh = probe.activities.filter(a => a.name && !ids.has(a.id) && !names.has(a.name.trim().toLowerCase()));
+      fresh.forEach(a => { if (!a.tags.length) a.tags = guessTags(a); });
+      if (!fresh.length) { toast(A.importNothing); return; }
+      commit(A.imported(fresh.length, probe.activities.length - fresh.length), () => { state.activities.push(...fresh); });
+      openActivitiesSheet();
+    } catch (e) { toast(e instanceof UserError ? e.message : T.file.notReadable); }
+  };
+  r.onerror = () => toast(T.file.readFailed);
+  r.readAsText(file);
+}
 function importRota(file) {
   const r = new FileReader();
   r.onload = () => {
@@ -354,6 +375,7 @@ function openActivitiesSheet() {
     <div class="sh-body">
       ${groups.map(([k, test]) => h`<section class="grp"><h3>${A.groups[k]}</h3><div class="list">${list(test)}</div></section>`)}
       <button type="button" class="btn primary wide" data-new>${A.new}</button>
+      <label class="btn wide" for="a-import">${A.importBtn}</label><input type="file" id="a-import" class="vh" accept="application/json,.json">
       <section class="grp"><h3>${A.pack}</h3><label for="pk-list" class="vh">${A.packAria}</label>
         <textarea id="pk-list" rows="6">${packList().join('\n')}</textarea>
         ${hint(A.packHint)}</section>
@@ -362,6 +384,7 @@ function openActivitiesSheet() {
     (sheet, q) => {
       sheet.querySelectorAll('[data-aid]').forEach(b => b.addEventListener('click', () => openActivitySheet(b.dataset.aid)));
       q('[data-new]').addEventListener('click', () => openActivitySheet(null));
+      q('#a-import').addEventListener('change', e => { const f = e.target.files[0]; if (f) importActivities(f); e.target.value = ''; });
       q('#pk-list').addEventListener('change', e => {
         const list = e.target.value.split('\n').map(x => x.trim()).filter(Boolean);
         commit(A.packSaved, () => { state.settings.packList = list; });
@@ -385,7 +408,7 @@ function openActivitySheet(id) {
           <div class="field"><label for="a-min">${T.common.minutes}</label><input id="a-min" type="number" inputmode="numeric" min="5" max="300" value="${a.minutes}"></div>
         </div>
         <div class="row2">
-          <div class="field" id="a-w-f"><label for="a-w">${A.weatherLbl}</label><select id="a-w">${options([['any', A.anyWeather], ['dry', A.dry]], a.weather === 'dry' ? 'dry' : 'any')}</select></div>
+          <div class="field" id="a-w-f"><label for="a-w">${A.weatherLbl}</label><select id="a-w">${options([['any', A.anyWeather], ['dry', A.dry], ['cold', A.cold]], ['dry', 'cold'].includes(a.weather) ? a.weather : 'any')}</select></div>
           <div class="field"><label for="a-tr">${A.travel}</label><select id="a-tr">${options(Object.entries(T.travel), a.travel)}</select></div>
         </div>
         <div class="field"><span class="lbl" id="a-tags-l">${A.tagsLbl}</span>

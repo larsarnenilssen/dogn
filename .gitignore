@@ -6,3 +6,4 @@
 # Midlertidige filer fra testene
 __pycache__/
 tests/.tmp-*
+*aktiviteter*.json

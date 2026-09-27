@@ -467,7 +467,7 @@ class DognTest(unittest.TestCase):
         pg.evaluate("""() => {
           const s = seed(); s.version = 8; s.meta.setupDone = true;
           s.dishes = s.dishes.filter(d => !ADDED_V9.dishes.includes(d.id));
-          s.activities = s.activities.filter(a => !ADDED_V9.activities.includes(a.id) && a.id !== 'a-gulv');
+          s.activities = s.activities.filter(a => !ADDED_V9.activities.includes(a.id) && !ADDED_V11.includes(a.id) && a.id !== 'a-gulv');
           s.activities.push({ id: 'a-bobler', name: 'Mine bobler', kind: 'inne', minutes: 5 });
           s.activities.push({ id: 'a-egen', name: 'Babysang i kirken', kind: 'inne', minutes: 45 });
           localStorage.setItem('dogn-state', JSON.stringify(s)); indexedDB.deleteDatabase('dogn');
@@ -486,6 +486,34 @@ class DognTest(unittest.TestCase):
         # v10: aktivitetene som fulgte med, får kategorier
         self.assertEqual(pg.evaluate("state.activities.find(a => a.id === 'a-skog').tags"), ['natur', 'bevegelse'])
         self.assertEqual(pg.evaluate("state.activities.find(a => a.id === 'a-egen').tags"), ['sprak', 'sosialt'])   # forslag ut fra navnet
+        self.assertEqual(acts.count('a-lykt'), 1)                          # v11: nye aktiviteter hjemme
+
+    def test_import_activities_from_file(self):
+        pg = self.open(when=(2026, 10, 7, 11, 35))
+        path = os.path.join(ROOT, 'tests', '.tmp-acts.json')
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump({'activities': [
+                {'id': 'l-tur', 'name': 'Tur rundt vannet', 'kind': 'ute', 'minutes': 45, 'travel': 'gange', 'tags': ['natur', 'ukjent']},
+                {'id': 'l-bibl', 'name': 'Babysang i kirken', 'kind': 'inne', 'minutes': 45, 'travel': 'gange'},
+                {'id': 'l-dobbel', 'name': 'Såpebobler', 'kind': 'inne'},                    # finnes fra før
+                {'id': 'l-farlig', 'name': '<img src=x onerror=alert(1)>', 'kind': 'inne', 'url': 'javascript:alert(1)'},
+            ]}, f)
+        try:
+            pg.evaluate('openActivitiesSheet()'); pg.wait_for_selector('#sheet-root.open #a-import', state='attached')
+            pg.set_input_files('#a-import', path)
+            pg.wait_for_timeout(400)
+        finally:
+            os.remove(path)
+        acts = pg.evaluate("Object.fromEntries(state.activities.map(a => [a.id, a]))")
+        self.assertEqual(acts['l-tur']['tags'], ['natur'])
+        self.assertEqual(acts['l-bibl']['tags'], ['sprak', 'sosialt'])
+        self.assertNotIn('l-dobbel', acts)
+        self.assertEqual(acts['l-farlig']['url'], '')
+        self.assertEqual(pg.eval_on_selector_all('#sheet-root img', 'els => els.length'), 0)
+
+    def test_snow_play_needs_cold(self):
+        pg = self.open(when=(2026, 10, 7, 11, 35))
+        self.assertNotIn('a-sno', pg.evaluate("suggest(view, 11*60+30, 13*60+30).list.map(a => a.id)"))
 
     def test_filter_activities_by_place_and_category(self):
         pg = self.open(when=(2026, 10, 7, 11, 35))

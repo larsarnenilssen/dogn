@@ -84,6 +84,10 @@ const ACT_TAGS = {
   'a-sanse': ['sanser', 'rolig'], 'a-tromme': ['sprak'], 'a-putte': ['rolig'], 'a-stable': ['rolig'], 'a-maling': ['sanser'],
   'a-lese': ['sprak', 'rolig'], 'a-badelek': ['sanser'], 'a-kjokken': ['hverdag', 'sanser'], 'a-laken': ['bevegelse', 'sanser'],
   'a-teip': ['rolig'], 'a-speil': ['sprak', 'rolig'], 'a-skog': ['natur', 'bevegelse'], 'a-blader': ['natur', 'sanser'],
+  'a-lykt': ['rolig', 'sanser'], 'a-havre': ['sanser'], 'a-is': ['sanser'], 'a-sansepose': ['sanser', 'rolig'], 'a-kontakt': ['sanser', 'rolig'],
+  'a-torkle': ['sanser', 'rolig'], 'a-rulle': ['bevegelse', 'sanser'], 'a-gaa': ['bevegelse'], 'a-trapp': ['bevegelse'], 'a-bamse': ['sprak', 'rolig'],
+  'a-album': ['sprak', 'rolig'], 'a-tegne': ['rolig'], 'a-vindu': ['sprak', 'rolig'], 'a-toy': ['hverdag'], 'a-rydde': ['hverdag'],
+  'a-vannmal': ['sanser'], 'a-sno': ['natur', 'sanser'], 'a-kongler': ['natur', 'sanser'],
 };
 function seedActivities() {
   const A = (id, name, kind, minutes, x = {}) => Object.assign({ id, name, kind, minutes, weather: 'any', travel: 'hjemme', where: '', note: '', url: '', days: [], from: '', to: '', tags: (ACT_TAGS[id] || []).slice() }, x);
@@ -117,6 +121,25 @@ function seedActivities() {
     A('a-speil',   'Speillek',                     'inne', 10, { note: 'Pek og si navnet på øyne, nese og munn.' }),
     A('a-skog',    'Rusletur i skogen',            'ute',  60, { weather: 'dry', travel: 'gange', note: 'Kjenne på mose, kongler og blader. Bæreseler er lettere enn vogn.' }),
     A('a-blader',  'Lek med høstblader',           'ute',  30, { weather: 'dry', note: 'Samle blader og kast dem i lufta, like utenfor døren.' }),
+    // Lagt til i v11: flere hjemme, for barn rundt ett år
+    A('a-lykt',     'Lommelykt og skygger',        'inne', 10, { note: 'Dempet lys, og lommelykten mot veggen og i taket. Fint i mørketiden.' }),
+    A('a-havre',    'Tørrbad med havregryn',       'inne', 20, { note: 'Havregryn i en balje med kopper og skjeer. Ufarlig om noe havner i munnen.' }),
+    A('a-is',       'Frosne leker i balje',        'inne', 15, { note: 'Frys store leker i vann kvelden før. Håndkle under baljen.' }),
+    A('a-sansepose','Sansepose på gulvet',         'inne', 15, { note: 'To tette fryseposer med vann, matolje og litt farge, teipet fast i gulvet.' }),
+    A('a-kontakt',  'Kontaktpapir på veggen',      'inne', 15, { note: 'Klebesiden ut, i sittehøyde. Store, myke ting å feste og dra av.' }),
+    A('a-torkle',   'Tørklær ut av boks',          'inne', 10, { note: 'Tynne skjerf i en boks med hull i lokket.' }),
+    A('a-rulle',    'Rulleløype for baller',       'inne', 15, { note: 'Papprør eller en planke mot sofaen, og store baller.' }),
+    A('a-gaa',      'Gåtrening',                   'inne', 15, { note: 'Skyve en stol, en fylt eske eller en gåvogn over gulvet.' }),
+    A('a-trapp',    'Trappeklatring',              'inne', 10, { note: 'Alltid med en voksen rett bak. Øv på å krabbe baklengs ned.' }),
+    A('a-bamse',    'Stelle bamsen',               'inne', 15, { note: 'Mate, stryke, vaske og legge bamsen. Si hva dere gjør.' }),
+    A('a-album',    'Fotoalbum med kjente ansikter', 'inne', 10, { note: 'Pek og si navnene.' }),
+    A('a-tegne',    'Tegne med tykke fargestifter', 'inne', 10, { note: 'Store ark teipet fast i bordet. Tykke voksfarger.' }),
+    A('a-vindu',    'Se ut vinduet',               'inne', 10, { note: 'Biler, busser, fugler og regn. Si navnene på det dere ser.' }),
+    A('a-toy',      'Hjelpe med tøyvasken',        'inne', 10, { note: 'Putte klær i maskinen og ta dem ut igjen.' }),
+    A('a-rydde',    'Rydde i kurven sammen',       'inne', 10, { note: 'Putte leker i kurven, med klapp når den er full.' }),
+    A('a-vannmal',  'Male med vann',               'ute',  15, { weather: 'dry', note: 'Pensel og en kopp vann på trappen eller veggen utenfor døren.' }),
+    A('a-sno',      'Snølek utenfor døren',        'ute',  20, { weather: 'cold', note: 'Foreslås bare når det er kaldt nok til snø.' }),
+    A('a-kongler',  'Samle kongler og pinner',     'ute',  20, { note: 'I en bøtte like utenfor huset. Passer i sansekurven etterpå.' }),
   ];
 }
 

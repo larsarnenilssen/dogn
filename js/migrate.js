@@ -4,8 +4,9 @@
    for trinn, og sanitize() retter eller fjerner verdier som ikke har riktig
    form (for eksempel fra en fil som er redigert for hånd). Gyldige data
    endres ikke. */
-const DATA_VERSION = 10;
+const DATA_VERSION = 11;
 /* Startdata som kom til senere, og som legges til hos eksisterende brukere */
+const ADDED_V11 = ['a-lykt', 'a-havre', 'a-is', 'a-sansepose', 'a-kontakt', 'a-torkle', 'a-rulle', 'a-gaa', 'a-trapp', 'a-bamse', 'a-album', 'a-tegne', 'a-vindu', 'a-toy', 'a-rydde', 'a-vannmal', 'a-sno', 'a-kongler'];
 const ADDED_V9 = {
   dishes: ['d-laksepasta', 'd-fiskesuppe', 'd-sei', 'd-fiskegryte', 'd-orret', 'd-kyllingsuppe', 'd-kyllingboller', 'd-kyllingcurry', 'd-karbonader', 'd-svinefilet', 'd-burger', 'd-linsesuppe', 'd-kikertgryte', 'd-pytt'],
   activities: ['a-bobler', 'a-ball', 'a-titt', 'a-esker', 'a-sanse', 'a-tromme', 'a-putte', 'a-stable', 'a-maling', 'a-lese', 'a-badelek', 'a-kjokken', 'a-laken', 'a-teip', 'a-speil', 'a-skog', 'a-blader'],
@@ -124,6 +125,12 @@ function migrate(s) {
     (s.activities || []).forEach(a => { if (a && !Array.isArray(a.tags)) a.tags = ACT_TAGS[a.id] ? ACT_TAGS[a.id].slice() : guessTags(a); });
     s.version = 10;
   }
+  if (s.version < 11) {
+    // v11: flere aktiviteter hjemme. Legges til hos alle som ikke allerede har dem (samme id).
+    const have = new Set((s.activities || []).map(a => a && a.id));
+    seedActivities().filter(a => ADDED_V11.includes(a.id) && !have.has(a.id)).forEach(a => s.activities.push(a));
+    s.version = 11;
+  }
   (s.dishes || []).forEach(d => { if (d && !Array.isArray(d.ingredients)) d.ingredients = []; });
   s.shop = Object.assign({ checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice() }, s.shop || {});
   if (!s.settings.theme) s.settings.theme = 'dark';
@@ -211,7 +218,7 @@ function sanitize(s, base) {
   ids(s.activities, 'a-');
   s.activities.forEach(a => {
     a.name = str(a.name); a.kind = oneOf(a.kind, ['inne', 'ute'], 'inne'); a.minutes = num(a.minutes, 30, 1, 600);
-    a.weather = oneOf(a.weather, ['any', 'dry'], 'any'); a.travel = oneOf(a.travel, Object.keys(T.travel), 'hjemme');
+    a.weather = oneOf(a.weather, ['any', 'dry', 'cold'], 'any'); a.travel = oneOf(a.travel, Object.keys(T.travel), 'hjemme');
     a.where = str(a.where); a.note = str(a.note); a.url = safeUrl(a.url);
     a.days = wdays(a.days); a.from = optTime(a.from); a.to = optTime(a.to);
     a.tags = [...new Set(arr(a.tags))].filter(t => ACT_TAG_KEYS.includes(t));
