@@ -77,7 +77,7 @@ const T = {
     log: 'Dagslogg', week: 'Ukemeny', acts: 'Aktiviteter',
     allDone: 'alt gjort', left: dur => dur + ' igjen',
     moveAria: (title, start) => 'Flytt ' + title + ', starter ' + start,
-    showAria: title => 'Vis ' + title, foldAria: title => 'Vis ' + title + ' på én linje', editAria: title => 'Rediger ' + title,
+    asleepFor: d => 'sovet ' + d, showAria: title => 'Vis ' + title, foldAria: title => 'Vis ' + title + ' på én linje', editAria: title => 'Rediger ' + title,
     dishAria: (meal, name) => meal + ': ' + name + '. Trykk for å bytte', swap: 'bytt',
     pickDish: 'Velg rett fra banken',
     partnerEats: (name, home) => (home ? '[x] ' : '[ ] ') + name + ' spiser med',
@@ -110,7 +110,7 @@ const T = {
   },
 
   nowbar: {
-    left: (title, dur) => title + ', ' + dur + ' igjen', dayStarts: t => 'Dagen starter ' + t, awakeFor: d => ', våken ' + d,
+    left: (title, dur) => title + ', ' + dur + ' igjen', asleepFor: (title, dur) => title + ', sovet ' + dur, dayStarts: t => 'Dagen starter ' + t, awakeFor: d => ', våken ' + d,
     next: (t, title) => 'neste ' + t + ' ' + title, last: 'siste bolk i dag',
     woke: who => who + ' våknet', slept: who => who + ' sovnet',
     nightWake: 'Oppvåkning', backAsleep: who => who + ' sovnet igjen',

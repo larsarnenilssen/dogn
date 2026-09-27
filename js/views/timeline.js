@@ -153,6 +153,7 @@ function blockHTML(b, i, blocks, tasks, gen, phase, now, date, isFull) {
   const title = b.title || T.types[b.type];
   let meta = '';
   if (collapsed) meta = rows.length ? (doneN === rows.length ? L.allDone : doneN + '/' + rows.length) : '';
+  else if (phase === 'now' && napOpen) meta = L.asleepFor(fmtDurShort(Math.max(0, now - napStart(date, b.id))));
   else if (phase === 'now') meta = L.left(fmtDur(Math.max(1, e - now)));
   else if (compact) meta = rows.length ? doneN + '/' + rows.length : (!last ? fmtDur(e - s) : '');
   else if (!last) meta = fmtDur(e - s);
@@ -405,6 +406,7 @@ function nowModel() {
   }
   if (!act && nn) act = { kind: 'nightwake', night: nn.nightDate, kids: nn.kids, label: N.nightWake };
   let line1 = b ? N.left(b.title || T.types[b.type], fmtDur(Math.max(1, endOf(blocks, cur) - now))) : N.dayStarts(blocks[0].start);
+  if (on && b && b.id === on.blockId) line1 = N.asleepFor(b.title || T.types[b.type], fmtDurShort(Math.max(0, now - napStart(date, b.id))));
   const inNight = ow || nn;
   if (ow) {
     const since = Math.min(...ow.kids.map(k => (now - toMin(getLog(ow.nightDate).night[k].upAt) + 1440) % 1440));
@@ -414,7 +416,7 @@ function nowModel() {
     const slept = Math.max(...nn.kids.map(k => (now - toMin(N0[k].asleep) + 1440) % 1440));
     line1 = N.night(slept >= 30 ? fmtDurShort(slept) : '');
   }
-  if (b && b.type !== 'sleep' && !inNight) {
+  if (b && b.type !== 'sleep' && !inNight && !on) {
     const w = lastWake(date);
     if (w && toMin(w) <= now) line1 += N.awakeFor(fmtDurShort(now - toMin(w)));
   }

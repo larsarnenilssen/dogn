@@ -117,6 +117,7 @@ function tick() {
   refreshWeather();
   maybePullTakt();
   const t = todayISO();
+  if (extendOpenNap(t)) commit(null, () => {}, 'none');
   if (t !== lastToday) {
     if (view === lastToday) { view = t; expanded.clear(); folded.clear(); }
     lastToday = t;
@@ -145,6 +146,7 @@ try { window.matchMedia('(prefers-color-scheme: light)').addEventListener('chang
     if (saved) { await store.setKey('rescue', saved); rescued = true; }
     state = seed();
   }
+  extendOpenNap(todayISO());
   persist();
   if (rescued) setTimeout(() => toast(T.file.rescued), 800);
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch (e) {}

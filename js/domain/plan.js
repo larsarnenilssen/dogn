@@ -64,15 +64,15 @@ const isKidMeal = b => b.type === 'meal' && !!(b.boys || b.link);
    endres når noe skjer: våknet, sovnet, våknet fra lur, «start nå».
 
    Når en bolk starter tidligere eller senere enn planlagt, går de neste bolkene tilbake
-   til planlagt tid så fort det lar seg gjøre. Bolkene imellom kan krympe til tre
-   fjerdedeler av planlagt lengde (stell og forberedelser til halvparten). Lurer kan
-   strekkes litt, mens måltider og våkentid kan vare lenger, fordi trøttheten følger
-   tiden siden forrige søvn og ikke måltidet. Da tas en forsinkelse igjen i løpet av få bolker, slik at
-   tvillingene blir sultne og trøtte til vanlig tid, og planen holder dag for dag.
+   til planlagt tid så fort det lar seg gjøre. Våkentid tar støyten: den kan krympe mest.
+   Stell og forberedelser kan krympe til halvparten, lurer litt, og måltider nesten ikke.
+   Da blir mat og søvn mest mulig stabilt, og en forsinkelse tas igjen i løpet av få bolker.
+   Er det ikke plass nok, krymper våkentid først og måltider sist, og ingen bolk forsvinner.
    Leggetid er fast og endres bare når leggebolken selv flyttes. */
 const MIN_BLOCK = 10;          // korteste bolk
 const SNAP = 5;                // nye tider rundes til nærmeste fem minutter
-const SQUEEZE = { meal: [0.75, 15], sleep: [0.75, 20], awake: [0.75, 10], routine: [0.5, 10], prep: [0.5, 10] };   // [andel, minst min]
+const SQUEEZE = { meal: [0.85, 20], sleep: [0.85, 30], awake: [0.35, 15], routine: [0.5, 10], prep: [0.5, 10] };   // [andel, minst min]
+const SQUEEZE_ORDER = [['awake'], ['routine', 'prep'], ['sleep'], ['meal']];                                    // hvem som krymper først når det er trangt
 const STRETCH = { sleep: [1.25, 15], other: [3, 60] };                                                                  // [andel, minst min ekstra]
 
 function planMinutes(arr, date) {
@@ -95,7 +95,7 @@ function catchUp(arr, i, date) {
   for (let k = i + 1; k < endIdx; k++) {
     const prev = N[k - i - 1];
     const lo = prev + minD(k - 1), hi = Math.min(prev + maxD(k - 1), end - need[k]);
-    if (lo > hi) return spreadEvenly(arr, i, endIdx, end, P, pEnd);
+    if (lo > hi) return squeezeToFit(arr, i, endIdx, end, minD);
     let n = Math.round(Math.min(Math.max(P[k], lo), hi) / SNAP) * SNAP;
     if (n < lo) n = Math.ceil(lo / SNAP) * SNAP;
     if (n > hi) n = Math.max(lo, Math.floor(hi / SNAP) * SNAP);
@@ -103,21 +103,27 @@ function catchUp(arr, i, date) {
   }
   N.forEach((m, j) => { if (j) arr[i + j].start = toHM(m); });
 }
-/* Når det ikke er plass innenfor grensene: fordel etter planlagt lengde fram til leggetid */
-function spreadEvenly(arr, i, endIdx, end, P, pEnd) {
-  const s0 = toMin(arr[i].start), f = pEnd - P[i] > 0 ? (end - s0) / (pEnd - P[i]) : 1;
-  let prev = s0;
-  for (let k = i + 1; k < endIdx; k++) {
-    let m = Math.round((s0 + (P[k] - P[i]) * f) / SNAP) * SNAP;
-    m = Math.min(Math.max(m, prev + MIN_BLOCK), end - (endIdx - k) * MIN_BLOCK);
-    arr[k].start = toHM(m);
-    prev = m;
+/* Når det ikke er plass innenfor grensene: bolkene får sin minste lengde, og det som
+   fortsatt er for mye, tas fra våkentid først, så stell og forberedelser, så søvn og til
+   sist måltider. Ingen bolk blir kortere enn MIN_BLOCK. */
+function squeezeToFit(arr, i, endIdx, end, minD) {
+  const dur = [];
+  for (let k = i; k < endIdx; k++) dur[k] = minD(k);
+  let over = toMin(arr[i].start) + dur.slice(i, endIdx).reduce((s, d) => s + d, 0) - end;
+  for (const types of SQUEEZE_ORDER) {
+    for (let k = i; k < endIdx && over > 0; k++) {
+      if (!types.includes(arr[k].type)) continue;
+      const cut = Math.min(over, dur[k] - MIN_BLOCK);
+      if (cut > 0) { dur[k] -= cut; over -= cut; }
+    }
   }
+  let m = toMin(arr[i].start);
+  for (let k = i + 1; k < endIdx; k++) { m += dur[k - 1]; arr[k].start = toHM(Math.round(m)); }
 }
 /* Flytter en bolk. explicit = brukeren har selv satt ny tid (±15/30, leggetid), og da
    endres også planen for dagen. Ellers er det bare den faktiske tiden som endres. */
-function moveBlock(id, newMin, explicit) {
-  const arr = ensureDayBlocks(view);
+function moveBlock(id, newMin, explicit, date = view) {
+  const arr = ensureDayBlocks(date);
   sortBlocks(arr);
   const i = arr.findIndex(x => x.id === id);
   if (i < 0) return null;
@@ -134,18 +140,18 @@ function moveBlock(id, newMin, explicit) {
     // Leggetid endres bare her. Det som kommer etter, følger med, og bolkene fra nå
     // (eller fra morgenen) fram til leggetid legges inn så nær planen som mulig.
     let a = Math.max(0, arr.indexOf(wakeBlock(arr)));
-    if (view === todayISO()) arr.forEach((b, k) => { if (k < bi && toMin(b.start) <= nowMin()) a = Math.max(a, k); });
+    if (date === todayISO()) arr.forEach((b, k) => { if (k < bi && toMin(b.start) <= nowMin()) a = Math.max(a, k); });
     newMin = Math.max(a < bi ? toMin(arr[a].start) + (bi - a) * MIN_BLOCK : 0, Math.min(24 * 60 - 1, newMin));
     const delta = newMin - toMin(arr[bi].start);
     for (let k = bi; k < arr.length; k++) { arr[k].start = toHM(toMin(arr[k].start) + delta); arr[k].plan = arr[k].start; }
-    if (a < bi) catchUp(arr, a, view);
+    if (a < bi) catchUp(arr, a, date);
     return { block: arr[i], kind: 'bedtime' };
   }
   const endIdx = bi >= 0 ? bi : arr.length;
   const end = bi >= 0 ? toMin(arr[bi].start) : Math.max(DAY_END, toMin(arr[arr.length - 1].start) + MIN_BLOCK);
   const lo = i > 0 ? toMin(arr[i - 1].start) + SNAP : 0;
   set(arr[i], Math.max(lo, Math.min(end - (endIdx - i) * MIN_BLOCK, newMin)));
-  catchUp(arr, i, view);
+  catchUp(arr, i, date);
   return { block: arr[i], kind: 'fit', end: bi >= 0 ? arr[bi].start : null };
 }
 

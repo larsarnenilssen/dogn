@@ -193,6 +193,34 @@ class DognTest(unittest.TestCase):
         self.assertEqual(self.start_of(pg, 'kvelds'), '17:30')
         self.assert_day_is_sane(pg)
 
+    def test_nap_lasts_while_they_sleep_and_awake_time_takes_the_hit(self):
+        pg = self.open(when=(2026, 10, 7, 9, 15))
+        pg.evaluate("commit(null, () => { logRec('2026-10-06').night = { a: { wake: '07:00' }, b: { wake: '07:00' } }; })")
+        pg.click('.blk[data-id="to-lurer.lur1"] [data-act="sleep-now"][data-kid="all"]')
+        for hm in ['10:40', '10:50', '11:10', '11:40']:                     # de sover fortsatt
+            pg.clock.set_system_time(datetime.datetime(2026, 10, 7, int(hm[:2]), int(hm[3:]), tzinfo=TZ))
+            pg.evaluate('tick()')
+            self.assertGreater(self.start_of(pg, 'opp1'), hm)             # luren varer, neste bolk ligger foran nå
+        self.assertEqual(self.start_of(pg, 'opp1'), '11:45')
+        self.assertIn('Lur, sovet 2t25', pg.inner_text('#nowbar .nb-1'))
+        self.assertEqual(self.start_of(pg, 'middag'), '13:30')           # våkentiden tar støyten
+        self.assertEqual(self.start_of(pg, 'lur2'), '14:15')
+        self.assertEqual(pg.eval_on_selector_all('.blk.now', 'els => els.map(e => e.dataset.id)'), ['to-lurer.lur1'])
+        pg.click('#nowbar [data-nb="act"]')                                # «Begge våknet» 11:40
+        self.assertEqual(self.start_of(pg, 'opp1'), '11:40')
+        self.assertEqual(self.start_of(pg, 'middag'), '13:30')
+        self.assert_day_is_sane(pg)
+
+    def test_crowded_day_squeezes_awake_time_before_meals(self):
+        pg = self.open(when=(2026, 10, 7, 9, 5))
+        pg.evaluate("commit(null, () => moveBlock('to-lurer.vaken3', 18 * 60))")   # for lite plass: våkentid krymper, ikke måltider
+        blocks = pg.evaluate("blocksFor(view).map((b, i, a) => [b.slot, b.type, i + 1 < a.length ? toMin(a[i + 1].start) - toMin(b.start) : 0])")
+        dur = {s: d for s, t, d in blocks}
+        self.assertGreaterEqual(dur['kvelds'], 20)                         # måltidet står
+        self.assertEqual(dur['vaken3'], 10)                                # våkentiden tok støyten
+        self.assertEqual(self.start_of(pg, 'legging'), '19:00')
+        self.assert_day_is_sane(pg)
+
     def test_early_dinner_does_not_move_nap(self):
         pg = self.open(when=(2026, 10, 7, 12, 40))
         pg.click('#nowbar [data-nb="start"]')

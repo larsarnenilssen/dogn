@@ -98,8 +98,8 @@ En mal er en fast dagsrytme. **Meny → Maler** viser hvilken mal som gjelder n�
 Målet er at tvillingene er sultne og trøtte til vanlig tid, og at planen holder dag for dag. Leggetiden er fast og endres bare når du flytter leggebolken selv.
 
 - Hver bolk har en planlagt tid (fra malen, eller det du selv har satt for dagen) og en faktisk tid.
-- Når en bolk starter tidligere eller senere enn planlagt (våknet, sovnet, våknet fra lur, «start nå»), går de neste bolkene tilbake til planlagt tid så fort det lar seg gjøre. Bolkene imellom kan krympe til tre fjerdedeler av planlagt lengde (stell og forberedelser til halvparten). Lurer strekkes lite, mens måltider og våkentid kan vare lenger, fordi trøttheten følger tiden siden forrige søvn.
-- Eksempel: Våkner barnene 08:10 i stedet for 07:00, blir frokost 09:10, første lur 10:00 og lunsj 11:20, mens middag, andre lur og resten av dagen står som planlagt. En lur som varer én time for lenge, gir middag 20 minutter senere og andre lur litt senere, og så er dagen tilbake i planen.
+- Når en bolk starter tidligere eller senere enn planlagt (våknet, sovnet, våknet fra lur, «start nå»), går de neste bolkene tilbake til planlagt tid så fort det lar seg gjøre. Våkentid tar støyten og kan krympe mest (til om lag en tredjedel), stell og forberedelser til halvparten, lurer litt og måltider nesten ikke. Er det ikke plass nok, krymper våkentid først og måltider sist, og ingen bolk forsvinner. Slik blir mat og søvn mest mulig stabilt.
+- Eksempel: Våkner barnene 08:10 i stedet for 07:00, blir frokost 09:10, første lur 10:00 og lunsj 11:20, mens middag, andre lur og resten av dagen står som planlagt. En lur som varer én time for lenge, gir senere lunsj og kortere våkentid etterpå, mens middag og andre lur står.
 - Flytter du selv en bolk med ±15/30 eller i bolkeditoren, blir det dagens nye plan for den bolken, og de neste tilpasses som over.
 - Våkner barnene sent, trykk **Begge våknet**. Dagen starter da, og resten tas igjen så fort det går.
 - **Nattesøvnen** føres på dagen den slutter: dagsloggen for en dag viser «Sovnet i går» og «Våknet i dag». Trykk på et logget klokkeslett i morgen- eller leggebolken for å rette det. Å rette tiden i etterkant endrer ikke planen; det gjør bare knappene.
@@ -109,7 +109,7 @@ Målet er at tvillingene er sultne og trøtte til vanlig tid, og at planen holde
 - Er det ikke plass innenfor grensene, fordeles bolkene jevnt fram til leggetid.
 - «Start nå» virker direkte på bolken dere er i og den neste. På andre bolker får du et valg: Er bolken passert, foreslås neste bolk av samme type, eller en kopi nå. Ligger den langt fram, foreslås neste bolk av samme type, og måltider kan aldri hoppes over. Nullstilling kan ikke startes før leggetid.
 - Sovner barnene før leggetid, logges tiden, men leggetiden står. Nullstillingen starter tidligst ti minutter etter leggetid.
-- En lur som varer lenger enn planlagt, forsvinner ikke fra tidslinjen, og «våknet» står i nå-kortet til den er logget.
+- **Luren varer så lenge de sover:** Er «sovnet» trykket i en lur, holdes neste bolk hele tiden litt foran klokken til «våknet» trykkes, og resten av dagen tilpasses fortløpende. Nå-kortet viser hvor lenge de har sovet. Etter fire timer stopper det, i tilfelle «våknet» er glemt. Leggetid flyttes aldri.
 - **Meny → Tilbakestill resten av dagen** setter alt fra nå tilbake til tidene i malen. Det som er gjort og logget, beholdes.
 
 ## 7. Daglig bruk

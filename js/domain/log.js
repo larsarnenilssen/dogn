@@ -48,6 +48,23 @@ function logSleepNow(date, blockId, kids) {
   }
   return msg;
 }
+/* Lur som varer lenger enn planlagt: så lenge et barn sover i luren, holdes neste bolk
+   litt foran nå, og resten av dagen tilpasses (våkentid tar støyten). Leggetid flyttes
+   aldri. Etter fire timer stopper det, i tilfelle «våknet» er glemt. */
+const NAP_MAX = 240;
+function extendOpenNap(date) {
+  if (date !== todayISO()) return false;
+  const on = openNap(date);
+  if (!on) return false;
+  const blocks = blocksFor(date), i = blocks.findIndex(b => b.id === on.blockId);
+  const next = blocks[i + 1], bi = bedtimeIndex(blocks);
+  if (i < 0 || blocks[i].type !== 'sleep' || !next || (bi >= 0 && i + 1 >= bi)) return false;
+  const now = nowMin();
+  const started = napStart(date, on.blockId);
+  if (now - started > NAP_MAX || now < started || toMin(next.start) >= now + SNAP) return false;
+  moveBlock(next.id, Math.ceil((now + SNAP) / SNAP) * SNAP, false, date);
+  return true;
+}
 /* Morgen: når siste barn har våknet, starter dagen (morgenbolken) nå,
    og resten av dagen tilpasses fram til leggetid. Våknetiden føres på natten før. */
 const wakeLogDate = date => addDays(date, -1);
@@ -122,6 +139,8 @@ const whenAsleep = nightDate => { const t = todayISO(); return nightDate === t ?
 const whenWoke = nightDate => { const d = addDays(nightDate, 1), t = todayISO(); return d === t ? T.night.today : d === addDays(t, 1) ? T.night.tomorrow : dayMonth(d); };
 function wokeAt(date, kid) { const n = getLog(wakeLogDate(date)).night[kid]; return (n && n.wake) || ''; }
 /* En lur som pågår (sovnet er logget, våknet ikke), for i dag */
+/* Når luren begynte: første «sovnet» blant dem som fortsatt sover */
+const napStart = (date, blockId) => Math.min(...getLog(date).sleep.filter(e => e.blockId === blockId && e.start && !e.end).map(e => toMin(e.start)));
 function openNap(date) {
   const open = getLog(date).sleep.filter(e => e.start && !e.end);
   if (!open.length) return null;
