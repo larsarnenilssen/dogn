@@ -61,7 +61,7 @@ const T = {
 
   top: {
     prev: 'Forrige dag', next: 'Neste dag', menu: 'Meny', pickDay: 'Velg dag', fab: 'Legg til husk, avtale eller bolk',
-    startsIn: 'start om', leave: 'perm', leaveDone: 'ferdig', day: 'dag', template: 'mal', sun: 'sol', today: 'Til i dag',
+    away: 'borte', startsIn: 'start om', leave: 'perm', leaveDone: 'ferdig', day: 'dag', template: 'mal', sun: 'sol', today: 'Til i dag',
   },
 
   banner: {
@@ -72,7 +72,7 @@ const T = {
   },
 
   tl: {
-    sunrise: 'Soloppgang', sunset: 'Solnedgang', sunriseRow: '↑ soloppgang ', sunsetRow: '↓ solnedgang ',
+    away: t => 'borte ' + t, sunrise: 'Soloppgang', sunset: 'Solnedgang', sunriseRow: '↑ soloppgang ', sunsetRow: '↓ solnedgang ',
     empty: 'Dagen har ingen bolker. Legg til den første.',
     log: 'Dagslogg', week: 'Ukemeny', acts: 'Aktiviteter',
     allDone: 'alt gjort', left: dur => dur + ' igjen',
@@ -313,7 +313,9 @@ const T = {
   },
 
   partner: {
-    defaultName: 'Partner', off: ' fri', unknownCode: 'Ukjent kode',
+    defaultName: 'Partner', off: ' fri', unknownCode: 'Ukjent kode', customCode: 'egne tider',
+    fromTakt: name => 'Turnusen og når ' + name + ' er borte, hentes fra Takt. Endringer gjøres der. * er valgt reise, ~ er beregnet, (+1) er hjem neste dag.',
+    nextTakt: 'Neste tre uker', none: '–',
     noShifts: 'Filen mangler vakter.', noLines: 'Fant ingen linjer med dato og vaktkode.', notRota: 'Filen kunne ikke leses som turnus.',
     imported: n => 'Turnus importert: ' + plural(n, T.n.dag), needTimes: list => 'Legg inn tider for: ' + list,
     title: 'Partner og turnus', group: 'Partner', rotaOn: 'Bruk turnus',
@@ -348,6 +350,13 @@ const T = {
     start: 'Start', save: 'Lagre profil',
     noGeo: 'Posisjon er ikke tilgjengelig her.', geoDenied: 'Fikk ikke tilgang til posisjonen. Søk etter stedet i stedet.',
     needName: 'Skriv inn minst ett navn.', checkDates: 'Sjekk permisjonsdatoene.', ready: 'Klar. God permisjon!', saved: 'Profil lagret',
+  },
+
+  takt: {
+    from: name => 'Fra ' + name, notTakt: 'Filen fra Takt kunne ikke leses.', commitMsg: 'Døgn: dagen hjemme',
+    head: 'Deling med Takt', shareOn: 'Del dagen hjemme med Takt', taktOn: 'Hent turnus og fravær fra Takt',
+    lastShare: s => 'Sist delt ' + s + '.', lastTakt: s => 'Sist hentet fra Takt ' + s + '.', never: 'Ikke ennå.',
+    hint: 'Takt er appen for den som har turnus. Den leser dogn-deling.json og skriver takt-deling.json i det samme repoet. Hver app skriver bare sine egne filer.',
   },
 
   sync: {
@@ -393,7 +402,7 @@ const T = {
 
   tomorrow: {
     head: d => 'i morgen, ' + d, weather: 'vær', light: 'lyst', lightRange: r => ', lyst ' + r, clothes: 'klær',
-    home: ', spiser middag med dere', away: ', ikke hjemme til middag', lunch: 'lunsj', dinner: 'middag', tonight: text => '. ' + text + ' i kveld',
+    home: ', spiser middag med dere', away: ', ikke hjemme til middag', awayAt: t => ', borte ' + t, lunch: 'lunsj', dinner: 'middag', tonight: text => '. ' + text + ' i kveld',
     firstNap: 'første lur', napShort: t => '1. lur ' + t, fixed: 'faste tilbud', appt: 'avtale', tasks: 'gjøremål', more: ' med flere',
   },
 

@@ -136,10 +136,13 @@ function openPartnerSheet() {
       <section class="grp"><h3>${P.codes}</h3><div class="list">
         ${codes.map(([c, d]) => h`<button type="button" class="row" data-code="${c}"><span class="grow">${c}<span class="m">${[d.label, codeMeta(d)].filter(Boolean).join(', ')}</span></span><span class="r">›</span></button>`)}
       </div><button type="button" class="btn wide" data-new-code>${P.newCode}</button></section>
-      <section class="grp"><h3>${P.next3}</h3><div class="list">
+      ${Pn.source === 'takt' ? h`<section class="grp"><h3>${P.nextTakt}</h3>${hint(P.fromTakt(Pn.name))}<div class="list">
+        ${days.map(d => { const ps = partnerStatus(d); return h`<div><span class="grow"><span class="wd">${fmtDateTiny(d)}</span>${ps && ps.away ? h`<span class="m">${T.tl.away(awayText(ps.away))}</span>` : ''}</span>
+          <span class="r">${ps && ps.code ? shiftText(ps) : P.none}</span></div>`; })}
+      </div></section>` : h`<section class="grp"><h3>${P.next3}</h3><div class="list">
         ${days.map(d => h`<div><span class="grow"><span class="wd">${fmtDateTiny(d)}</span></span>
           <label class="vh" for="sd-${d}">${P.shiftAria(d)}</label><select id="sd-${d}" class="sel-sm" data-sd="${d}">${options([['', '–'], ...codes.map(([c]) => [c, c])], Pn.shifts[d] || '')}</select></div>`)}
-      </div>${hint(P.emptyHint)}</section>
+      </div>${hint(P.emptyHint)}</section>`}
     </div>`,
     (sheet, q) => {
       q('[data-p-on]').addEventListener('click', () => { commit(Pn.enabled ? P.toastOff : P.toastOn, () => { state.partner.enabled = !state.partner.enabled; }); openPartnerSheet(); });
@@ -205,7 +208,11 @@ function openSyncSheet() {
       <button type="button" class="btn primary wide" data-push>${S.saveNow}</button>
       <button type="button" class="btn wide" data-pull>${S.pull}</button>
       <div class="confirm" id="s-confirm" hidden>${hint(S.pullConfirm)}<button type="button" class="btn small danger" data-pull-yes>${S.replace}</button></div>
-      <button type="button" class="btn link" data-disconnect>${S.disconnect}</button>`
+      <button type="button" class="btn link" data-disconnect>${S.disconnect}</button>
+      <h3>${T.takt.head}</h3>
+      ${switchBtn('data-share', 'share', shareOn(), T.takt.shareOn)}${hint(c.lastShare ? T.takt.lastShare(fmtStamp(c.lastShare)) : T.takt.never)}
+      ${switchBtn('data-share', 'takt', taktOn(), T.takt.taktOn)}${hint(c.lastTakt ? T.takt.lastTakt(fmtStamp(c.lastTakt)) : T.takt.never)}
+      ${hint(T.takt.hint)}`
     : h`${hint(S.intro)}
       <div class="row2">
         <div class="field"><label for="s-owner">${S.owner}</label><input id="s-owner" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
@@ -234,6 +241,13 @@ function openSyncSheet() {
         try { const obj = await pullSync(); closeSheet(); commit(S.pulled, () => { state = obj; }); applyTheme(); }
         catch (e) { toast(netMessage(e, S.noContactShort)); }
       });
+      sheet.querySelectorAll('[data-share]').forEach(b => b.addEventListener('click', () => {
+        const k = b.dataset.share;
+        sync.cfg[k] = sync.cfg[k] === false;
+        if (k === 'share' && sync.cfg.share) sync.cfg.shareDirty = true;
+        saveSync(); scheduleSync();
+        if (k === 'takt' && sync.cfg.takt) pullTakt(); else openSyncSheet();
+      }));
       on('[data-disconnect]', () => { disconnectSync(); openSyncSheet(); toast(S.disconnected); });
       on('[data-connect]', async () => {
         const owner = q('#s-owner').value.trim(), repo = q('#s-repo').value.trim(), token = q('#s-token').value.trim();

@@ -26,6 +26,7 @@ function startBlockAt(blockId, now) {
 /* Søvnklokken for lurer. Første «sovnet» starter luren nå. Når siste barn våkner,
    starter neste bolk nå. Resten av dagen tilpasses fram til leggetid, som står. */
 function logSleepNow(date, blockId, kids) {
+  shareSoon();
   const L = logRec(date), now = nowMin(), t = toHM(now);
   const had = L.sleep.some(x => x.blockId === blockId);
   let ended = false, woke = null;
@@ -96,11 +97,13 @@ function nightNow(date, blocks, now) {
   return null;
 }
 function logNightWakeNow(nightDate, kids) {
+  shareSoon();
   const t = toHM(nowMin()), N = logRec(nightDate).night;
   kids.forEach(k => { const n = (N[k] ??= {}); if (!n.upAt) n.upAt = t; });
   return T.night.upToast(whoText(kids), t);
 }
 function logBackAsleepNow(nightDate, kids) {
+  shareSoon();
   const now = nowMin(), N = logRec(nightDate).night;
   let longest = 0;
   kids.forEach(k => {
@@ -135,6 +138,7 @@ function morningOpen(date, blocks, now) {
   return state.kids.some(k => !wokeAt(date, k.id));
 }
 function logWakeNow(date, kids) {
+  shareSoon();
   const L = logRec(wakeLogDate(date)), now = nowMin(), t = toHM(now);
   const allBefore = state.kids.every(k => wokeAt(date, k.id));
   kids.forEach(kid => { const n = (L.night[kid] ??= {}); n.wake = n.upAt || t; delete n.upAt; });
@@ -147,6 +151,7 @@ function logWakeNow(date, kids) {
 /* Nattesøvn: når siste barn har sovnet, starter nullstillingen nå, men aldri før
    leggetid. Leggetiden endres ikke. */
 function logNightNow(date, blockId, kids) {
+  shareSoon();
   const L = logRec(date), now = nowMin(), t = toHM(now);
   const allBefore = state.kids.every(k => L.night[k.id] && L.night[k.id].asleep);
   kids.forEach(kid => { (L.night[kid] ??= {}).asleep = t; });

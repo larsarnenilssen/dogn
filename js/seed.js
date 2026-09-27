@@ -155,7 +155,7 @@ function defaultPartner() {
       N: { label: 'Nattevakt', kind: 'night', start: '21:15', end: '07:30' },
       F: { label: 'Fri', kind: 'off', start: '', end: '' }
     },
-    shifts: {}
+    shifts: {}, custom: {}, source: '', acks: {}
   };
 }
 
@@ -225,7 +225,7 @@ function seed() {
     menu: {},
     menuWeeks: {},
     settings: { fishPerWeek: 2, show: { nowbar: true, tomorrow: true, gear: true }, packList: DEFAULT_PACK.slice(), theme: 'dark', textSize: 1, kidsWord: T.kids.word, kidsDinnerDays: [], shopDay: 0, due: '' },
-    shop: { checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice(), staples: defaultStaples(), cats: {}, boughtThrough: '' },
+    shop: { checked: {}, extra: [], pantry: DEFAULT_PANTRY.slice(), staples: defaultStaples(), cats: {}, boughtThrough: '', fromTakt: [] },
     appts: [],
     days: {},
     meta: { created: todayISO(), lastExport: null, setupDone: false }

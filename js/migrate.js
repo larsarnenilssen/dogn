@@ -248,6 +248,13 @@ function sanitize(s, base) {
   for (const d of Object.values(P.codes)) { d.label = str(d.label); d.kind = oneOf(d.kind, ['work', 'night', 'off'], 'work'); d.start = optTime(d.start); d.end = optTime(d.end); }
   if (!obj(P.shifts)) P.shifts = {};
   cleanObj(P.shifts, (d, c) => isDate(d) && typeof c === 'string' && c);
+  // Fra Takt: egne tider enkeltdager, hvor turnusen kommer fra, og punkter som er krysset av her
+  if (!obj(P.custom)) P.custom = {};
+  cleanObj(P.custom, (d, x) => isDate(d) && obj(x) && isTime(x.start) && isTime(x.end));
+  for (const x of Object.values(P.custom)) x.label = str(x.label);
+  P.source = oneOf(P.source, ['', 'takt'], '');
+  if (!obj(P.acks)) P.acks = {};
+  cleanObj(P.acks, (k, v) => v === true);
 
   s.appts = arr(s.appts).filter(a => obj(a) && isDate(a.date) && isTime(a.start));
   ids(s.appts, 'ap-');
@@ -278,6 +285,7 @@ function sanitize(s, base) {
   if (!obj(s.shop.cats)) s.shop.cats = {};
   cleanObj(s.shop.cats, (k, v) => SHOP_CAT_KEYS.includes(v));
   s.shop.boughtThrough = isDate(s.shop.boughtThrough) ? s.shop.boughtThrough : '';
+  s.shop.fromTakt = arr(s.shop.fromTakt).map(str).filter(Boolean).slice(-500);
 
   cleanObj(s.days, (d, rec) => isDate(d) && obj(rec));
   for (const d of Object.values(s.days)) {

@@ -893,5 +893,93 @@ class DognTest(unittest.TestCase):
         self.assertEqual(pg.evaluate("[...document.querySelectorAll('.sh-body')].pop().innerText.includes('rubrikk')"), False)
 
 
+    # ---------- deling med Takt ----------
+    def _fake_github(self, pg, files):
+        """Et privat repo i minnet som svarer som GitHubs API."""
+        import base64, re as _re
+
+        def handle(route):
+            req = route.request
+            m = _re.match(r'https://api\.github\.com/repos/[^/]+/[^/]+(/contents/(.+))?$', req.url.split('?')[0])
+            if not m or not m.group(1):
+                return route.fulfill(status=200, content_type='application/json', body=json.dumps({'private': True}))
+            path = m.group(2)
+            if req.method == 'PUT':
+                files[path] = base64.b64decode(json.loads(req.post_data)['content']).decode('utf-8')
+                return route.fulfill(status=200, content_type='application/json', body='{}')
+            if path not in files:
+                return route.fulfill(status=404, body='{}')
+            if 'raw' in (req.headers.get('accept') or ''):
+                return route.fulfill(status=200, content_type='text/plain', body=files[path])
+            return route.fulfill(status=200, content_type='application/json', body=json.dumps({'sha': 'x'}))
+        pg.route('https://api.github.com/**', handle)
+        pg.evaluate("""() => { sync.cfg = { owner: 't', repo: 'd', token: 'x', path: 'dogn-backup.json', lastPush: '', lastError: '', dirty: false }; }""")
+
+    TAKT_FILE = {
+        'format': 'takt-deling', 'v': 1, 'updated': '2026-10-07T05:00:00Z', 'name': 'Kari',
+        'rota': {'codes': {'D': {'label': 'Dagvakt', 'kind': 'work', 'start': '07:00', 'end': '15:00'},
+                           'A14': {'label': 'Aftenvakt', 'kind': 'work', 'start': '14:30', 'end': '22:00'},
+                           'N': {'label': 'Natt', 'kind': 'night', 'start': '21:15', 'end': '07:30'}},
+                 'shifts': {'2026-10-07': 'D', '2026-10-08': 'A14', '2026-10-09': 'N'},
+                 'custom': {'2026-10-10': {'start': '08:00', 'end': '12:00', 'label': 'Kurs'}}},
+        'away': {'2026-10-07': {'leave': '06:00', 'back': '15:48', 'backDay': 0, 'chosenTo': True, 'chosenHome': False, 'basis': 'fastest'},
+                 '2026-10-08': {'leave': '13:40', 'back': '22:40', 'backDay': 0, 'chosenTo': False, 'chosenHome': False, 'basis': 'fastest'},
+                 '2026-10-09': {'leave': '20:25', 'back': '08:20', 'backDay': 1, 'chosenTo': False, 'chosenHome': False, 'basis': 'set'},
+                 '2026-10-11': {'leave': '<b>', 'back': '99:99'}},
+        'items': [{'id': 't1', 'kind': 'todo', 'date': '2026-10-07', 'time': '', 'title': 'Ringe <legen>', 'note': '', 'done': False},
+                  {'id': 't2', 'kind': 'appt', 'date': '2026-10-07', 'time': '13:00', 'title': 'Frisør', 'note': '', 'done': False},
+                  {'id': 't3', 'kind': 'shop', 'date': '', 'time': '', 'title': 'Bleier', 'note': '', 'done': False}],
+    }
+
+    def test_takt_rota_absence_and_items(self):
+        pg = self.open()
+        files = {'takt-deling.json': json.dumps(self.TAKT_FILE)}
+        self._fake_github(pg, files)
+        pg.evaluate('() => pullTakt()')
+        pg.wait_for_function('() => state.partner.source === "takt"')
+        P = pg.evaluate('() => state.partner')
+        self.assertEqual(P['shifts'], self.TAKT_FILE['rota']['shifts'])
+        self.assertIn('A14', P['codes'])
+        self.assertEqual(P['custom']['2026-10-10']['label'], 'Kurs')
+        # Fraværet vises i toppen, med * for valgt reise og ~ for beregnet
+        self.assertIn('borte 06:00* – ~15:48', pg.inner_text('#sub'))
+        # Middagen: hjemme 15:48 før middag. Aftenvakt: borte fra 13:40, ikke hjemme. Natt: går 20:25, hjemme til middag.
+        self.assertEqual(pg.evaluate("() => ['2026-10-07', '2026-10-08', '2026-10-09'].map(d => partnerHome(d).home)"), [True, False, True])
+        self.assertEqual(pg.evaluate("() => awayText(taktAway('2026-10-09'))"), '~20:25 – ~08:20 (+1)')
+        self.assertIsNone(pg.evaluate("() => taktAway('2026-10-11')"), 'ugyldige tider forkastes')
+        self.assertIn('Kurs', pg.evaluate("() => shiftText(partnerStatus('2026-10-10'))"))
+        # Delte punkter: gjøremål kan krysses av, avtaler vises, handling havner på handlelisten én gang
+        banner = pg.inner_text('.banner.takt')
+        self.assertIn('Ringe <legen>', banner)
+        self.assertIn('13:00 Frisør', banner)
+        pg.check('input[data-tk="t1"]')
+        self.assertTrue(pg.evaluate('() => state.partner.acks.t1'))
+        self.assertEqual(pg.evaluate("() => state.shop.extra.filter(x => x.text === 'Bleier').length"), 1)
+        pg.evaluate('() => pullTakt()')
+        pg.wait_for_timeout(200)
+        self.assertEqual(pg.evaluate("() => state.shop.extra.filter(x => x.text === 'Bleier').length"), 1)
+        # Dagen hjemme sendes til Takt, med avkryssingen
+        pg.evaluate('() => pushShare()')
+        pg.wait_for_function('() => !sync.cfg.shareDirty && !!sync.cfg.lastShare')
+        share = json.loads(files['dogn-deling.json'])
+        self.assertEqual(share['format'], 'dogn-deling')
+        self.assertEqual(sorted(share['days']), ['2026-10-06', '2026-10-07', '2026-10-08'])
+        self.assertTrue(share['acks']['t1']['done'])
+        self.assertIn('Bleier', share['shop'])
+        self.assertEqual([k['name'] for k in share['kids']], ['Ola', 'Kari'])
+        self.assertNotIn('token', json.dumps(share))
+
+    def test_share_file_shows_who_sleeps(self):
+        pg = self.open()
+        pg.evaluate("""() => { commit('', () => logNightNow('2026-10-06', roleBlock(blocksFor('2026-10-06'), 'bedtime').id, ['a', 'b']));
+          commit('', () => { const n = logRec('2026-10-06').night; n.a.wake = '06:40'; }); }""")
+        day = pg.evaluate("() => shareFile().days['2026-10-06']")
+        night = {e['kid']: e for e in day['sleep'] if e['night']}
+        self.assertEqual(night['a']['end'], '06:40')
+        self.assertEqual(night['b']['end'], '', 'Kari sover fortsatt')
+        blocks = pg.evaluate("() => shareFile().days['2026-10-07'].blocks")
+        self.assertTrue(all(b['start'] and b['end'] for b in blocks))
+
+
 if __name__ == '__main__':
     unittest.main()

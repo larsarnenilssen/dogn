@@ -13,11 +13,12 @@ Døgn er en dagsplan for foreldrepermisjon. Appen er en nettside som legges på 
 | `js/version.js` | Versjonsnummer og listen over filer som lagres for bruk uten nett |
 | `js/seed.js` | Startdata: maler, retter og aktiviteter en ny bruker får |
 | `js/migrate.js`, `js/store.js` | Oppgradering og kontroll av data, lagring og angre |
-| `js/domain/` | Regler: dagsplan, gjøremål, meny, logg, vær, aktiviteter, turnus og backup |
+| `js/domain/` | Regler: dagsplan, gjøremål, meny, logg, vær, aktiviteter, turnus, backup og deling med Takt |
 | `js/views/` | Det som vises: tidslinjen og arkene |
 | `js/app.js` | Knapper, sveiping og oppstart |
 | `sw.js` | Gjør at appen virker uten nett |
 | `manifest.webmanifest`, ikonene | Navn og ikon på hjemskjermen |
+| `docs/deling.md` | Formatet på filene som deles med Takt |
 | `tests/` | Automatiske tester (se nederst) |
 
 Last aldri opp backupfiler, startfiler eller turnusfiler hit. Repoet er offentlig.
@@ -74,6 +75,8 @@ Turnus importeres fra fil. To formater fungerer:
 - En turnusfil fra Døgn (JSON) med både koder og dager.
 
 Har du turnusen som PDF, kan du be Claude om å lese den og lage filen.
+
+Bruker partneren Takt, hentes turnusen derfra i stedet (se punkt 9).
 
 ## 5. Vær og aktiviteter
 
@@ -140,6 +143,28 @@ Målet er at tvillingene er sultne og trøtte til vanlig tid, og at planen holde
 - **Søvnoversikt:** Meny → Oversikt viser en graf over lur per dag for hvert barn, og snitt for de siste sju dagene mot uken før.
 - **Helse:** I dagsloggen, eller med pluss-knappen → Helse, fører du temperatur, medisin og symptomer. Når et barn er merket som sykt, vises et varsel øverst med siste medisin og temperatur, og forslagene holder seg hjemme. Appen gir ikke råd om dosering.
 - **Visning:** Meny → Profil → Visning har lyst tema (lettere å lese ute), «følg telefonen» og større tekst. Større tekst gjør bare teksten større, ikke knapper og luft.
+
+## 9. Deling med Takt (partnerens app)
+
+Takt er appen for den som har turnus: vakter, reiser med Skyss og notater. Når begge appene er koblet til
+det samme private repoet (for eksempel `dogn-data`), deler de data. Hver app skriver bare sine egne filer,
+så de kan aldri overskrive hverandre. Formatet står i `docs/deling.md`.
+
+- **Turnus:** Turnusen, vaktkodene og dager med egne tider hentes fra Takt. Endringer gjøres i Takt.
+- **Fravær dag for dag:** Toppen viser når partneren er borte, for eksempel «borte 06:00* – ~15:48».
+  `*` betyr at hun har valgt reisen i Takt, `~` at tiden er beregnet (vakten, tiden før og etter vakten og
+  reisetiden). `(+1)` betyr hjem neste dag (nattevakt). Det samme står i middagsbolken, i «i morgen» og for
+  tre uker fram under **Meny › Partner og turnus**.
+- **Middag:** Om partneren spiser med, avgjøres av når hun faktisk er hjemme. Knappen i middagsbolken
+  kan fortsatt overstyre.
+- **Delte punkter:** Gjøremål og avtaler hun deler, står øverst på dagen under «Fra …». Gjøremål kan krysses
+  av, og hun ser det i Takt. Varer hun deler, havner på handlelisten under «Andre varer».
+- **Dagen hjemme:** Døgn sender dagen i går, i dag og i morgen til Takt: bolkene, hvem som sover, middag,
+  avtaler og handlelisten. Det skjer høyst hvert femte minutt, og etter et halvt minutt når barna sovner
+  eller våkner.
+
+Deling slås på automatisk når backup til GitHub er koblet til, og kan slås av under **Meny › Backup › Deling
+med Takt**. Takt hentes når appen åpnes og hver halvtime.
 
 ## Oppdateringer
 

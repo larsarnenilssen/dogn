@@ -104,6 +104,8 @@ $('#timeline').addEventListener('click', e => {
   }
 });
 $('#timeline').addEventListener('change', e => {
+  const tk = e.target.closest('input[data-tk]');
+  if (tk) { commit(null, () => toggleTaktAck(tk.dataset.tk), 'timeline'); return; }
   const cb = e.target.closest('input[data-done]');
   if (!cb) return;
   const id = cb.dataset.done, on = cb.checked, date = view;
@@ -113,6 +115,7 @@ $('#timeline').addEventListener('change', e => {
 function tick() {
   if (!state) return;
   refreshWeather();
+  maybePullTakt();
   const t = todayISO();
   if (t !== lastToday) {
     if (view === lastToday) { view = t; expanded.clear(); folded.clear(); }
@@ -132,6 +135,7 @@ try { window.matchMedia('(prefers-color-scheme: light)').addEventListener('chang
   await store.init();
   await loadSync();
   await loadWeatherCache();
+  await loadTaktCache();
   let saved = null;
   try { saved = await store.get(); } catch (e) {}
   let rescued = false;
@@ -148,7 +152,7 @@ try { window.matchMedia('(prefers-color-scheme: light)').addEventListener('chang
   render();
   scrollToNow();
   if (!state.meta.setupDone) setTimeout(() => openProfileSheet(true), 300);
-  if (syncOn() && sync.cfg.dirty) setTimeout(pushNow, 3000);
+  if (syncOn()) { scheduleSync(); setTimeout(maybePullTakt, 1500); }
   refreshWeather();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderHeader);
   setInterval(tick, 30000);

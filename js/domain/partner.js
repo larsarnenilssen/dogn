@@ -2,20 +2,25 @@
 /* ---------- partner og turnus ---------- */
 const partnerOn = () => !!(state.partner && state.partner.enabled);
 const partnerName = () => (state.partner && state.partner.name) || T.partner.defaultName;
+/* Vakten en dag: { code, def, home, away }. home: rekker middagen.
+   Med fravær fra Takt (taktAway) brukes tidene hun er borte; ellers vakten og reisetiden. */
 function partnerStatus(date) {
   if (!partnerOn()) return null;
   const P = state.partner;
-  const code = P.shifts[date];
-  if (!code) return { code: '', def: null, home: null };
-  const def = P.codes[code];
-  if (!def) return { code, def: null, home: null };
+  const cu = P.custom && P.custom[date];
+  const code = cu ? (cu.label || T.partner.customCode) : P.shifts[date];
+  if (!code) return { code: '', def: null, home: null, away: null };
+  const def = cu ? { label: cu.label, kind: 'work', start: cu.start, end: cu.end } : P.codes[code];
+  if (!def) return { code, def: null, home: null, away: null };
   const b = blocksFor(date).find(x => x.link === 'dinner');
   const dm = b ? toMin(b.start) : 17 * 60 + 30;
+  const aw = def.kind === 'off' ? null : taktAway(date);
   const c = Number(P.commute) || 0;
   let home = true;
-  if (def.kind === 'work' && def.start && def.end) home = (toMin(def.end) + c <= dm) || (toMin(def.start) - c >= dm + 30);
+  if (aw) home = toMin(aw.back) + 1440 * aw.backDay <= dm || toMin(aw.leave) >= dm + 30;
+  else if (def.kind === 'work' && def.start && def.end) home = (toMin(def.end) + c <= dm) || (toMin(def.start) - c >= dm + 30);
   else if (def.kind === 'night' && def.start) home = toMin(def.start) - c >= dm + 30;
-  return { code, def, home };
+  return { code, def, home, away: aw };
 }
 function shiftText(ps) {
   if (!ps || !ps.code) return '';

@@ -401,3 +401,9 @@ body{padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px))}
 .checks.shop .txt{min-width:0}
 .checks.shop small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .item>.btn{flex:none;white-space:nowrap}
+
+/* Punkter fra Takt (partnerens app) */
+.banner.takt{border-color:var(--c-appt)}
+.tk-h{font:600 var(--fs-xs) var(--mono);color:var(--c-appt)}
+.checks.tk{width:100%;margin-top:0}
+.checks.tk li>.txt{display:flex;flex-direction:column;padding:var(--sp-3) 0 var(--sp-1) 32px}
