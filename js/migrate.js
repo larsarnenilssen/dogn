@@ -265,7 +265,7 @@ function sanitize(s, base) {
 
   s.appts = arr(s.appts).filter(a => obj(a) && isDate(a.date) && isTime(a.start));
   ids(s.appts, 'ap-');
-  s.appts.forEach(a => { a.title = str(a.title); a.minutes = num(a.minutes, 0, 0, 1440); a.where = str(a.where); a.note = str(a.note); });
+  s.appts.forEach(a => { a.title = str(a.title); a.minutes = num(a.minutes, 0, 0, 1440); a.where = str(a.where); a.note = str(a.note); if (a.private !== true) delete a.private; });
 
   const S = s.settings;
   S.fishPerWeek = Math.round(num(S.fishPerWeek, 2, 0, 7));

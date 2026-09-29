@@ -77,6 +77,7 @@ function toggleTaktAck(id) { const A = state.partner.acks; if (A[id]) delete A[i
    I tillegg til planen sendes det som er logget (natt, lurer, mat, helse, aktiviteter
    og notatet når det er merket for Takt), og merknader om det som skiller seg ut.
    Reglene for merknadene står her, så Takt bare viser dem. Se docs/deling.md. */
+const APPTS_BACK = 7, APPTS_AHEAD = 92;   // avtalene som deles med Takt
 const USUAL_DAYS = 14, USUAL_MIN = 7;   // det vanlige: snittet de siste 14 dagene, når minst 7 er logget
 const FLAG = {
   FEVER: 38,              // temperatur fra og med dette er feber
@@ -165,7 +166,7 @@ function shareDay(date, usual) {
     flags: dayFlags(date, usual),
     lastLog: lastLogged(date),
     dinner: din ? { dish: din.name, partnerEats: !!(ph && ph.home) } : null,
-    appts: apptsFor(date).map(a => ({ title: a.title, start: a.start, where: a.where })),
+    appts: apptsFor(date).filter(a => !a.private).map(a => ({ title: a.title, start: a.start, where: a.where })),
     sick: sickKids(date).map(k => k.name),
   };
 }
@@ -175,8 +176,12 @@ function shareFile() {
   for (const d of [addDays(t, -1), t, addDays(t, 1)]) days[d] = shareDay(d, usual);
   const L = shopList(shopPeriod(t)), C = state.shop.checked;
   const shop = [...L.items.filter(x => !C[x.key]).map(x => x.name), ...L.staples.filter(x => !C['st:' + x.id]).map(x => x.text), ...L.extra.filter(x => !C['x:' + x.id]).map(x => x.text)];
+  // Avtalene som deles (ikke merket «ikke i Takt»), fra en uke tilbake til tre måneder fram
+  const appts = (state.appts || []).filter(a => !a.private && a.date >= addDays(t, -APPTS_BACK) && a.date <= addDays(t, APPTS_AHEAD))
+    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
+    .map(a => ({ id: a.id, date: a.date, start: a.start, end: a.minutes ? toHM(toMin(a.start) + a.minutes) : '', title: a.title, where: a.where }));
   const acks = {};
   for (const id of Object.keys(state.partner.acks)) acks[id] = { done: true };
   for (const x of state.shop.extra) if (x.id.startsWith('tk-') && C['x:' + x.id]) acks[x.id.slice(3)] = { done: true };
-  return { format: 'dogn-deling', v: 1, updated: new Date().toISOString(), kidsWord: kidsWord(), kids: state.kids.map(k => ({ id: k.id, name: k.name })), usual, days, shop, acks };
+  return { format: 'dogn-deling', v: 1, updated: new Date().toISOString(), kidsWord: kidsWord(), kids: state.kids.map(k => ({ id: k.id, name: k.name })), usual, days, appts, shop, acks };
 }

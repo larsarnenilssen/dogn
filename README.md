@@ -165,6 +165,9 @@ så de kan aldri overskrive hverandre. Formatet står i `docs/deling.md`.
 - **Merknader:** Døgn merker det som skiller seg ut, og Takt viser det øverst i rødt eller gult: feber (fra 38,0)
   eller sykdom, medisin, kort eller urolig natt, lite lur og dårlig matlyst. Natt og lur sammenlignes med snittet
   de siste 14 dagene, så de merkes først når minst 7 dager er logget. Reglene står i `docs/deling.md`.
+- **Avtaler:** Avtalene dine vises hos partneren i Takt til orientering (i kalenderen, i listen for måneden og under
+  Hjemme), fra en uke tilbake til tre måneder fram. Slå av **Vis hos … i Takt** i avtalen for å holde den for deg selv.
+  Notatet i avtalen sendes ikke.
 - **Beskjed:** Under notatet i dagsloggen velger du **Bare her**, **Vis i Takt** (gul linje) eller **Viktig** (rød).
 
 Deling slås på automatisk når backup til GitHub er koblet til, og kan slås av under **Meny › Backup › Deling

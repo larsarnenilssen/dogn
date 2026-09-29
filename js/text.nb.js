@@ -428,6 +428,7 @@ const T = {
   appt: {
     tag: 'avtale', group: 'Avtale', what: 'Hva', whatPh: 'For eksempel Helsestasjonen', where: 'Sted',
     hint: 'Avtalen vises i tidslinjen og i «I morgen», uten å endre dagens bolker.',
+    toTakt: n => 'Vis hos ' + n + ' i Takt', toTaktHint: n => 'Til orientering: ' + n + ' ser avtalen i Takt, men får den ikke som sin egen.',
     pickTime: 'Velg dato og klokkeslett.', saved: (d, t) => 'Avtale ' + d + ' kl. ' + t, save: 'Lagre avtale', del: 'Slett avtalen', deleted: 'Avtale slettet',
   },
 

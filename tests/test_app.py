@@ -1157,5 +1157,31 @@ class DognTest(unittest.TestCase):
         self.assertEqual(pg.evaluate("() => shareFile().days['2026-10-07'].flags.length"), 4)
 
 
+    def test_appointments_shared_with_takt(self):
+        pg = self.open()
+        pg.evaluate("""() => commit(null, () => { state.appts = [
+          { id: 'ap-1', title: 'Helsestasjon', date: '2026-10-07', start: '13:00', minutes: 45, where: 'Bydelshuset', note: 'hemmelig notat' },
+          { id: 'ap-2', title: 'Tannlege', date: '2026-11-06', start: '08:30', minutes: 0, where: '', note: '' },
+          { id: 'ap-3', title: 'Privat', date: '2026-10-08', start: '10:00', minutes: 30, where: '', note: '', private: true },
+          { id: 'ap-4', title: 'Langt fram', date: '2027-05-01', start: '10:00', minutes: 30, where: '', note: '' } ]; })""")
+        f = pg.evaluate('() => shareFile()')
+        self.assertEqual(f['appts'], [
+            {'id': 'ap-1', 'date': '2026-10-07', 'start': '13:00', 'end': '13:45', 'title': 'Helsestasjon', 'where': 'Bydelshuset'},
+            {'id': 'ap-2', 'date': '2026-11-06', 'start': '08:30', 'end': '', 'title': 'Tannlege', 'where': ''}])
+        self.assertEqual([a['title'] for a in f['days']['2026-10-08']['appts']], [], 'avtaler merket «ikke i Takt» sendes ikke')
+        # Bryteren i avtalen vises bare når deling er på, og står på som standard
+        pg.evaluate("() => openApptSheet('ap-2')")
+        self.assertEqual(pg.locator('[data-ap-takt]').count(), 0)
+        pg.evaluate('() => closeSheet()')
+        self._fake_github(pg, {})
+        pg.evaluate("() => openApptSheet('ap-2')")
+        sw = pg.locator('[data-ap-takt]')
+        self.assertEqual(sw.get_attribute('aria-checked'), 'true')
+        sw.click()
+        pg.click('.sheet [data-save]')
+        self.assertTrue(pg.evaluate("() => state.appts.find(a => a.id === 'ap-2').private"))
+        self.assertEqual([a['id'] for a in pg.evaluate('() => shareFile().appts')], ['ap-1'])
+
+
 if __name__ == '__main__':
     unittest.main()

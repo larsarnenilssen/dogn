@@ -562,15 +562,21 @@ function apptFormHTML(a) {
     <div class="field"><label for="ap-min">${T.common.minutes}</label><input id="ap-min" type="number" inputmode="numeric" min="0" max="600" value="${a.minutes || 0}"></div>
     <div class="field"><label for="ap-where">${P.where}</label><input id="ap-where" type="text" value="${a.where}" autocomplete="off"></div>
     <div class="field"><label for="ap-note">${T.common.note}</label><textarea id="ap-note" rows="2">${a.note}</textarea></div>
+    ${shareOn() ? h`${switchBtn('data-ap-takt', '1', !a.private, P.toTakt(partnerName()))}${hint(P.toTaktHint(partnerName()))}` : ''}
     ${hint(P.hint)}</section>`;
 }
 function bindApptForm(sheet, id) {
   const q = s => sheet.querySelector(s);
+  const tk = q('[data-ap-takt]');
+  if (tk) tk.addEventListener('click', () => tk.setAttribute('aria-checked', String(tk.getAttribute('aria-checked') !== 'true')));
   q('[data-save]').addEventListener('click', () => {
     const title = q('#ap-title').value.trim(), date = q('#ap-date').value, start = q('#ap-start').value;
     if (!title) { q('#ap-title').focus(); return; }
     if (!isDate(date) || !isTime(start)) { toast(T.appt.pickTime); return; }
     const a = { id: id || 'ap-' + uid(), title, date, start, minutes: Math.max(0, parseInt(q('#ap-min').value, 10) || 0), where: q('#ap-where').value.trim(), note: q('#ap-note').value.trim() };
+    // Uten deling beholdes valget som var; ellers «ikke i Takt» når bryteren er av
+    const old = (state.appts || []).find(x => x.id === id);
+    if (tk ? tk.getAttribute('aria-checked') !== 'true' : old && old.private) a.private = true;
     closeSheet();
     commit(T.appt.saved(fmtDateTiny(date), start), () => {
       state.appts = state.appts || [];
